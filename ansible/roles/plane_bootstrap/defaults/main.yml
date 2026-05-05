@@ -59,3 +59,21 @@ plane_bootstrap_labels_business:
   - { name: "Pricing",        color: "#16A34A" }
   - { name: "Community",      color: "#A855F7" }
   - { name: "Discovery",      color: "#F59E0B" }
+
+# Marketing-track taxonomy. Use on the MKT project (Marketing Manager's
+# website + brand + SEO lane). Two-dimensional: pick at least one
+# **track** label (`OSS` for the open-source narrative on .org, `EE` for
+# the enterprise sales funnel on .com) plus at least one **content-area**
+# label per Story.
+plane_bootstrap_labels_marketing:
+  - { name: "OSS",            color: "#0EA5E9" }
+  - { name: "EE",             color: "#1F2937" }
+  - { name: "Landing",        color: "#10B981" }
+  - { name: "Hero",           color: "#F97316" }
+  - { name: "Pricing",        color: "#16A34A" }
+  - { name: "Blog",           color: "#8B5CF6" }
+  - { name: "Docs",           color: "#14B8A6" }
+  - { name: "Nav",            color: "#64748B" }
+  - { name: "SEO",            color: "#EF4444" }
+  - { name: "Brand",          color: "#DB2777" }
+  - { name: "Campaign",       color: "#A855F7" }

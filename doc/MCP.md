@@ -45,11 +45,11 @@ annotations and handovers travel as comments.
 Each persona acts in Plane with its own API token. In the consumer's
 `.mcp.json` (rendered by `bin/install.py` from the inputs in
 `config.yaml` + `credentials.yaml`) there is one entry per persona
-per server — `plane-venture-advisor`, `plane-extras-venture-advisor`,
+per server — `plane-general-manager`, `plane-extras-general-manager`,
 `plane-business-analyst`, etc. — twenty entries in total for a
 ten-persona deployment.
 
-When a slash command (`/va`, `/ba`, …) puts the main loop into a
+When a slash command (`/gm`, `/ba`, …) puts the main loop into a
 persona's role, the main loop sees all twenty servers. The persona
 prompt explicitly constrains it: *"use only `plane-<name>__*` and
 `plane-extras-<name>__*` tools so every API call is attributed to

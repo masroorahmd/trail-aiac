@@ -1,4 +1,16 @@
-# The ten personas
+# The eleven personas
+
+> **Note (masroor branch).** This branch retires the Venture Advisor
+> in favour of a `general-manager` persona scoped to founder
+> operations (Behörden, Notar, Recht, Steuern, Staffing, Förderung,
+> Compliance) on a separate `HQ` Plane project, and adds a
+> `marketing-manager` for the website (`.org` OSS narrative +
+> `.com` enterprise funnel), brand voice, and SEO on a separate
+> `MKT` Plane project. The lightweight strategy sanity-check that
+> VA used to gate ideas now lives in the Business Analyst's prompt;
+> the BA also takes over `roadmap.md` ownership. The table below
+> reflects this branch's persona set.
+
 
 Each persona is a role the **main loop** Claude Code session takes on
 when you invoke its slash command — own identity in Plane (per-persona
@@ -13,8 +25,8 @@ command.
 
 | Avatar | Username | Slash | Role | When you invoke |
 |---|---|---|---|---|
-| <img src="../avatars/venture-advisor.png" width="60"/>       | `venture-advisor`       | `/va` | Strategic advisor for founders; operates on a private "business" track. | Whenever you want a sounding board outside the Story workflow. |
-| <img src="../avatars/business-analyst.png" width="60"/>      | `business-analyst`      | `/ba` | Turns feature ideas into Stories; writes the requirements directly into the Story body; owns backlog + priorities + product-area labels. | First step of any new Story — `/ba "I want X"`. |
+| <img src="../avatars/general-manager.png" width="60"/>       | `general-manager`       | `/gm` | Operative GmbH-Begleitung: Behörden, Notar, Recht, Steuern, Staffing, Förderung, Verträge, Compliance-Fristen. Eigenes Plane-Projekt `HQ`. | Whenever you face an operational, organisational, legal, financial, or staffing matter — `/gm "<thema>"`. |
+| <img src="../avatars/business-analyst.png" width="60"/>      | `business-analyst`      | `/ba` | Turns feature ideas into Stories; writes the requirements directly into the Story body; owns backlog + priorities + product-area labels; owns `roadmap.md`. | First step of any new Story — `/ba "I want X"`. |
 | <img src="../avatars/requirements-engineer.png" width="60"/> | `requirements-engineer` | `/re` | Adds testable acceptance criteria (Gherkin) and edge cases as a comment on the Story (or passthroughs when BA's spec is already AC-quality). | After BA — `/re <STORY-ID>`. |
 | <img src="../avatars/software-architect.png" width="60"/>    | `software-architect`    | `/sa` | Designs the solution and decomposes the Story into 1–4 sub-work-items in `frontend / backend / testing / documentation` modules; the architecture slice for each module lives in that sub-work-item's body. | After RE — `/sa <STORY-ID>`. |
 | <img src="../avatars/security-reviewer.png" width="60"/>     | `security-reviewer`     | `/sr` | Strict, non-negotiable gate over every sub-work-item. Posts a security-review comment per child. Maintains project-level security state. | After SA — `/sr <STORY-ID>`. |
@@ -23,6 +35,7 @@ command.
 | <img src="../avatars/test-manager.png" width="60"/>          | `test-manager`          | `/tm` | Implements the `testing`-module sub-work-item; owns test strategy and verification across the Story. | After SR — `/tm <SUBTASK-ID>`. |
 | <img src="../avatars/technical-writer.png" width="60"/>      | `technical-writer`      | `/tw` | Implements the `documentation`-module sub-work-item; edits files in the project repo's docs directory. | After SR — `/tw <SUBTASK-ID>`. |
 | <img src="../avatars/release-manager.png" width="60"/>       | `release-manager`       | `/rm` | Drives versioning, tagging, and release. Runs outside the Story workflow. | When you're cutting a release — `/rm`. |
+| <img src="../avatars/marketing-manager.png" width="60"/>     | `marketing-manager`     | `/mm` | Owns the website(s) — positioning, IA, copy, CTAs, brand voice, SEO across `.org` (OSS narrative) and `.com` (enterprise funnel). Edits text-only content directly; hands site code (layout, components, build) to UI Developer via Plane Story on the `MKT` project. Co-owns `.org` documentation prose with Technical Writer. | When you scope a website / brand / SEO initiative — `/mm "<brief>"`. |
 
 ## Handover model
 
@@ -94,3 +107,7 @@ list). The two shipped sets:
   `Enterprise`, `Distribution`, `Notifications`, `Configuration`.
 - **Business track**: `Strategy`, `Go-to-Market`, `Pricing`,
   `Community`, `Discovery`.
+- **Marketing track** *(masroor branch — MKT project)*: two-dimensional
+  — at least one **track** label (`OSS` for `.org`, `EE` for `.com`)
+  plus at least one **content-area** label (`Landing`, `Hero`,
+  `Pricing`, `Blog`, `Docs`, `Nav`, `SEO`, `Brand`, `Campaign`).

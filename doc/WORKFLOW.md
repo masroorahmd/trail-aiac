@@ -91,7 +91,7 @@ in `host_vars/plane.yml` (or supply an inline list):
   engineering project where 9/10 personas execute.
 - **Business track** (`plane_bootstrap_labels_business`):
   `Strategy`, `Go-to-Market`, `Pricing`, `Community`, `Discovery`.
-  Designed for the founder/Venture-Advisor track where work is
+  Designed for the founder/Business-Analyst track where work is
   classified by business outcome rather than engineering surface.
 
 The Business Analyst applies one or more of the relevant set's labels
@@ -352,8 +352,10 @@ without the cold-start each subagent invocation otherwise causes.
 - **Release Manager** runs **outside** this Story-level workflow,
   triggered directly by USER (e.g. "tag a release", "draft changelog").
   Release Manager does not consume Stories or sub-work-items.
-- **Venture Advisor** operates on a private "business" track separate
-  from Story execution.
+- **General Manager** *(masroor branch)* runs on a separate `HQ`
+  Plane project for founder operations (Behörden, Notar, Recht,
+  Steuern, Staffing, Förderung, Compliance). Independent of the
+  Story workflow — no upstream/downstream persona handover.
 
 ## Why the human is the dispatcher
 

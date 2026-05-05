@@ -4,13 +4,13 @@
 # not need editing for a typical install. Per-deployment values live in
 # host_vars/<host>.yml.
 
-# The 10 framework personas. Identity (username, full_name, gender) is
+# The 11 framework personas. Identity (username, full_name, gender) is
 # framework-fixed; email is templated against plane_agent_email_domain so
 # the same persona list works across any deployment.
 agents:
-  - username: venture-advisor
-    email: "venture-advisor@{{ plane_agent_email_domain }}"
-    full_name: Venture Advisor
+  - username: general-manager
+    email: "general-manager@{{ plane_agent_email_domain }}"
+    full_name: General Manager
     gender: male
   - username: business-analyst
     email: "business-analyst@{{ plane_agent_email_domain }}"
@@ -48,3 +48,7 @@ agents:
     email: "release-manager@{{ plane_agent_email_domain }}"
     full_name: Release Manager
     gender: male
+  - username: marketing-manager
+    email: "marketing-manager@{{ plane_agent_email_domain }}"
+    full_name: Marketing Manager
+    gender: female
