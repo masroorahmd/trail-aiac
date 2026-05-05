@@ -28,7 +28,7 @@ tree.
 
 Tight summary so you don't have to re-derive it:
 
-- **What it is.** Ten Claude Code subagents (Venture Advisor, Business
+- **What it is.** Ten Claude Code subagents (General Manager, Business
   Analyst, Requirements Engineer, Software Architect, Security Reviewer,
   Backend Developer, UI Developer, Test Manager, Technical Writer,
   Release Manager) collaborating through a Plane workspace. The human
@@ -307,9 +307,12 @@ it. Required values:
 | `host_vars/plane.yml: plane_agent_email_domain` | `example.com` | each persona gets `<username>@<this>` |
 | **dev project name** | `Development` | the project the nine implementor personas work in (name shown in Plane UI) |
 | **dev project identifier** | `DEV` | work-item prefix Plane embeds in IDs (e.g. `DEV-1`); 2–5 uppercase letters |
-| **business project?** | yes/no — ask | second project, used only by the Venture Advisor for strategy/founder work; `no` skips it |
+| **business project?** | yes/no — ask | strategy/research notebook owned by the Business Analyst; `no` skips it |
 | **business project name** *(if yes)* | `Business` | second project's UI label |
 | **business project identifier** *(if yes)* | `BIZ` | second project's work-item prefix |
+| **hq project?** | yes/no — ask | founder operations track (Behörden, Notar, Recht, Steuern, Staffing, Förderung, Compliance) owned by the General Manager; `no` skips it |
+| **hq project name** *(if yes)* | `HQ` | UI label for the founder-ops project |
+| **hq project identifier** *(if yes)* | `HQ` | work-item prefix |
 | `host_vars/plane.yml: plane_caddy_tls_strategy` | `auto` | one of `auto / tls_files / internal / acme` — see `doc/PROVISIONING.md` |
 
 The two project entries become a list under `plane_projects:` in
@@ -438,17 +441,22 @@ wait for each answer; show defaults in brackets):
   Workspace display name [Framework]:
 ```
 
-**Batch B — Projects.** The framework's consumer config has two
-named slots: `dev` (the nine implementor personas work here) and
-`business` (Venture Advisor only). Ask:
+**Batch B — Projects.** The framework's consumer config has three
+named slots: `dev` (the nine implementor personas work here),
+`business` (Business Analyst's strategy/research notebook), and
+`hq` (General Manager's founder-operations track). Ask:
 
 ```
   Dev project name in Plane [Development]:
   Dev project identifier (the prefix in work-item IDs, e.g. DEV-1) [DEV]:
-  Do you also have a separate business project for the Venture Advisor? (yes/no) [yes]:
+  Do you also have a separate business project for the Business Analyst's strategy notebook? (yes/no) [yes]:
     [if yes]
     Business project name [Business]:
     Business project identifier [BIZ]:
+  Do you also have a separate HQ project for founder operations (General Manager)? (yes/no) [no]:
+    [if yes]
+    HQ project name [HQ]:
+    HQ project identifier [HQ]:
 ```
 
 Read back the resulting projects map to confirm before proceeding.
@@ -461,8 +469,8 @@ fillable template the user can paste back, e.g.:
 Paste the per-agent credentials as YAML (replace each <…> placeholder
 or delete that key if you'll fill it later via /credentials/…):
 
-venture-advisor:
-  email: <venture-advisor@yourdomain>
+general-manager:
+  email: <general-manager@yourdomain>
   token: <plane_api_…>
 business-analyst:
   email: …
@@ -505,8 +513,10 @@ The consumer needs two YAMLs filled in:
   - `plane.base-url` ← `https://<domain_plane>/` (without trailing slash)
   - `plane.workspace` ← workspace slug
   - `plane.projects.dev` ← work-item identifier (e.g. `FW`)
-  - `plane.projects.business` ← second project's identifier if you have one;
+  - `plane.projects.business` ← BIZ project's identifier if you have one;
     otherwise leave the same as `dev`
+  - `plane.projects.hq` ← HQ project's identifier if you have one;
+    otherwise omit the key
   - `agents.<persona>.email` ← `<persona>@<plane_agent_email_domain>`
     for each of the ten personas
 
@@ -525,7 +535,7 @@ files.
 The ten persona usernames (canonical, do not change):
 
 ```
-venture-advisor, business-analyst, requirements-engineer,
+general-manager, business-analyst, requirements-engineer,
 software-architect, security-reviewer, backend-developer,
 ui-developer, test-manager, technical-writer, release-manager
 ```
@@ -591,7 +601,7 @@ Use the framework
   claude
     > /kickoff   # one-time bootstrap of .claude/context/*.md
     > /ba "I want X"       # start your first Story
-  Other dispatchers: /va /re /sa /sr /bd /ud /tm /tw /rm
+  Other dispatchers: /gm /re /sa /sr /bd /ud /tm /tw /rm
   Workflow: doc/WORKFLOW.md   Personas: doc/PERSONAS.md
 ====================================================================
 ```

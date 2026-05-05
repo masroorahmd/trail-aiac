@@ -1,6 +1,6 @@
 # Product — agent context
 
-> Read by: Business Analyst (primary), Requirements Engineer, Venture Advisor,
+> Read by: Business Analyst (primary), Requirements Engineer,
 > Technical Writer. Maintained by: Business Analyst.
 >
 > Purpose: a single source of truth for *what we are building and for whom*.

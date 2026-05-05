@@ -57,11 +57,11 @@ def _verify_arg() -> bool | str:
 
 def _pick_token(creds: dict) -> tuple[str, str]:
     """Return (persona-name, PAT). Prefer personas with broad project
-    visibility — VA is scoped to the business track and 403s on the dev
-    project, so try BA first, then fall back to any other available."""
+    visibility — GM is scoped to the HQ project and 403s elsewhere, so
+    try BA first, then fall back to any other available."""
     plane = creds.get("plane") or {}
     tokens = plane.get("agent-tokens") or {}
-    # Preference order: broad-read personas first, VA last.
+    # Preference order: broad-read personas first, GM last (HQ-scoped).
     preferred = [
         "business-analyst",
         "requirements-engineer",
@@ -72,7 +72,7 @@ def _pick_token(creds: dict) -> tuple[str, str]:
         "security-reviewer",
         "release-manager",
         "technical-writer",
-        "venture-advisor",
+        "general-manager",
     ]
     for name in preferred:
         tok = tokens.get(name)
