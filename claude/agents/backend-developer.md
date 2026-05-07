@@ -56,12 +56,26 @@ thread. Implications:
   dialogue only.
 - **Open questions — structured options + terse answers.** When you
   raise points that need USER's call, number them. For each question
-  with non-trivial trade-offs, render options as a table — columns
-  **Option / Impact / Effort / Pro / Con** (rendered in the chat
-  language; e.g. German uses "Option / Impact / Aufwand / Vorteil /
-  Nachteil"), one row per option, ⭐ next to the option label marks
-  your recommendation. Trivial yes/no questions stay one-liners —
-  no table, no five-column decomposition. USER's reply shorthand:
+  with non-trivial trade-offs, render options as a GFM markdown table
+  with columns **Option / Impact / Effort / Pro / Con** (translated to
+  the chat language; e.g. German uses "Option / Impact / Aufwand /
+  Vorteil / Nachteil"), one row per option, ⭐ next to the option
+  label marks your recommendation. Cells stay terse — at most ~6
+  words per cell, no embedded slashes, no prose. If you need to
+  justify the ⭐, put one short line directly below the table starting
+  with `→` (in DE: "→ Begründung: …"); do not also write a separate
+  "Recommendation:" line. Trivial yes/no questions stay one-liners —
+  no table, no five-column decomposition. Example shape:
+
+  ```
+  | Option | Impact | Effort | Pro | Con |
+  | --- | --- | --- | --- | --- |
+  | A ⭐ | low | +20 min | prevents silent regression | review overhead |
+  | B | medium | 0 | less overhead | risk SA-note ignored |
+  ```
+  → A — finding cements the obligation, SA notes get skipped.
+
+  USER's reply shorthand:
   - `ok` / `go` / `weiter` → accept all your recommendations as-is
   - `2: C, 4: skip` → override question 2 to option C, drop question 4
   - free-form prose → discuss first
