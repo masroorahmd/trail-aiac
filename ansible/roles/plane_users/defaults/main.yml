@@ -1,0 +1,62 @@
+plane_users_api_base: "https://{{ domain_plane }}/api/v1"
+
+# Validate TLS only when caddy is using publicly trusted certs (acme mode).
+# `internal` (Caddy self-signed) and `files` (private PKI) skip validation
+# unless the controller's trust store knows the issuer.
+plane_users_validate_certs: "{{ caddy_tls_mode | default('acme') == 'acme' }}"
+
+# Workspace role granted to invited agents. Plane's ROLE enum:
+#   20 = Admin
+#   15 = Member  <-- default for agent identities
+#   5  = Guest
+# The inviting account (plane.admin_token's owner) must itself hold a role
+# >= the invited role. Workspace owners are Admin (20), so any role works.
+plane_users_role: 15
+
+# Controller-side output. Lists invitations created during this run, plus
+# any still-pending from earlier runs. Historically used as a checklist for
+# manual "Resend invitation" clicks in the UI; now mostly informational
+# since the role auto-dispatches emails via the Celery shim below.
+# Filename is suffixed with {{ inventory_hostname }} so multi-host
+# deployments don't overwrite each other.
+plane_users_invitation_output_dir: "{{ playbook_dir }}/out"
+plane_users_invitation_output_file: "{{ plane_users_invitation_output_dir }}/plane-agent-invitations-{{ inventory_hostname }}.yml"
+
+# Path to the plane stack on the server — used by the email-dispatch shim
+# to `docker compose exec` into the api container. Mirrors the `plane_dir`
+# default in the plane role; kept separate so we don't cross-role-include.
+plane_users_plane_dir: "{{ stacks_dir }}/plane"
+
+# Re-dispatch invitation emails for ALL pending invitations (not just the
+# ones created this run). Use via `-e plane_users_force_dispatch=true` if
+# a previous run's dispatch failed or an agent asks for a fresh email.
+# Has no effect on the invitation DB rows — purely re-fires Celery tasks.
+plane_users_force_dispatch: false
+
+# API-token minting. Each accepted agent gets one Plane APIToken row,
+# workspace-scoped, label fixed so re-runs are idempotent (find by
+# (user, workspace, label); reuse plaintext `token` value if present).
+plane_users_token_label: ansible-agent
+plane_users_token_output_file: "{{ plane_users_invitation_output_dir }}/plane-agent-tokens-{{ inventory_hostname }}.yml"
+
+# Per-agent profile settings applied via ORM (Plane has no admin REST
+# endpoint to write another user's profile). Start-of-week uses Plane's
+# Profile integer constants: 0=SUN, 1=MON, 2=TUE, …, 6=SAT.
+#
+# Timezone MUST be a value from Plane's curated list in
+# apps/api/plane/app/views/timezone/base.py — any other IANA id saves
+# fine to the DB but renders as an empty dropdown in the UI because
+# the frontend matches on `timezones.value` from that endpoint. CET is
+# represented as "Europe/Paris" there (no separate Europe/Berlin
+# entry, despite it being a distinct IANA zone); same UTC offset and
+# DST behavior, just a different identifier. We deliberately decouple
+# this from the server `timezone` (Europe/Berlin) because they're
+# different namespaces — Linux tzdata vs. Plane's app-level list.
+plane_users_agent_timezone: Europe/Paris
+plane_users_agent_start_of_week: 1
+
+# Avatar staging paths. Host-side dir is wiped after the role runs;
+# container-side dir is wiped after the upload step. Both are under
+# /tmp so a botched run leaves nothing persistent.
+plane_users_avatar_stage_dir: "/tmp/plane-agent-avatars"
+plane_users_avatar_container_dir: "/tmp/plane-agent-avatars"

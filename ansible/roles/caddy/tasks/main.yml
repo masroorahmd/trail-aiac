@@ -1,0 +1,47 @@
+# Resolve `auto` defaults from defaults/main.yml. The pre_tasks in
+# plane.yml leave `_caddy_probe` registered with the result of
+# `systemctl list-unit-files caddy.service` — if caddy.service was
+# absent before the run, pre_tasks apt-installed it, so a fresh
+# install means no operator-curated `(tls_files)` snippet exists in
+# the base Caddyfile and `internal` is the only TLS source that works
+# without further config.
+- name: Resolve plane_caddy_tls_strategy=auto
+  when: plane_caddy_tls_strategy == 'auto'
+  ansible.builtin.set_fact:
+    plane_caddy_tls_strategy: >-
+      {{ 'internal' if (
+           _caddy_probe is defined
+           and 'caddy.service' not in (_caddy_probe.stdout | default(''))
+         ) else 'tls_files' }}
+
+- name: Resolve plane_caddy_offer_http default
+  when: plane_caddy_offer_http is none
+  ansible.builtin.set_fact:
+    # Self-signed cert → enable HTTP so curl etc. avoid trust prompts.
+    # External / ACME paths assume the cert is browser-trusted, so the
+    # default HTTP→HTTPS redirect stays.
+    plane_caddy_offer_http: "{{ plane_caddy_tls_strategy == 'internal' }}"
+
+# Ensure the base Caddyfile imports our sites.d/ directory. Without
+# this, the plane.caddy snippet we drop below would be silently ignored.
+# Idempotent: lineinfile is a no-op if the import is already present
+# (a Caddyfile template owned by another ansible project on the host
+# typically already includes it; on a fresh apt-Caddy install we add
+# the line once at the end of the default Caddyfile).
+- name: Ensure base Caddyfile imports sites.d/
+  ansible.builtin.lineinfile:
+    path: "{{ caddy_dir }}/Caddyfile"
+    line: "import {{ caddy_dir }}/sites.d/*.caddy"
+    state: present
+    insertafter: EOF
+  notify: Reload caddy
+
+# Drop *only* this project's site-block snippet into Caddy's sites.d/.
+# Sibling files dropped by other ansible projects are deliberately
+# left alone — each project owns exactly its own file.
+- name: Render Plane site-block snippet
+  ansible.builtin.template:
+    src: plane.caddy.j2
+    dest: "{{ caddy_dir }}/sites.d/{{ plane_caddy_snippet_name }}"
+    mode: "0644"
+  notify: Reload caddy

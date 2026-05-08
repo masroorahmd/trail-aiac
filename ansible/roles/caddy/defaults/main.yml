@@ -1,0 +1,68 @@
+# This role does NOT install Caddy — it expects Caddy to already exist
+# on the host as an apt-installed, systemd-managed service (a
+# pre-condition the play's pre_tasks satisfy on apt-based hosts; see
+# plane.yml's top comment). All it does is drop one site-block file
+# into Caddy's sites.d/ directory and trigger `systemctl reload caddy`
+# so Plane is reachable through the existing edge.
+#
+# To front Plane with a different reverse-proxy (no Caddy at all), run
+# the playbook with `--skip-tags caddy` and wire up your own.
+
+# Caddy config root on the host. Default matches the apt-installed
+# Debian/Ubuntu Caddy package layout. The base Caddyfile must contain
+# `import /etc/caddy/sites.d/*.caddy`; the lineinfile in tasks/main.yml
+# ensures it does (idempotent — no-op when the import is already there,
+# adds it once at EOF on a fresh apt-Caddy).
+caddy_dir: /etc/caddy
+
+# Filename inside conf/sites.d/. One file per consuming project — never
+# enumerate or delete sibling files; each project owns exactly its own.
+plane_caddy_snippet_name: plane.caddy
+
+# Hostname Caddy should serve Plane under. Defaults to domain_plane so
+# the same value drives Plane's WEB_URL, the Caddy site block, and ACME
+# (where applicable) without restating it.
+plane_caddy_host: "{{ domain_plane }}"
+
+# Upstream the site block reverse-proxies to. apt-installed Caddy runs
+# on the host and has no docker-network access, so it must reach Plane
+# via the host-loopback port the proxy container publishes (set in the
+# `plane` role as plane_proxy_host_port, default 127.0.0.1:8081).
+plane_caddy_upstream: "{{ plane_proxy_host_port }}"
+
+# How the site block obtains its TLS certificate.
+#
+#   auto       — pick automatically based on host state. If Caddy was
+#                already installed when the play started, default to
+#                `tls_files` (assume the operator's Caddyfile defines
+#                a `(tls_files)` snippet, typically because another
+#                ansible project on the host wired one up). If pre_tasks
+#                had to apt-install Caddy fresh, default to `internal`
+#                (no `(tls_files)` snippet exists yet — Caddy's self-
+#                signed CA is the only zero-config option). Override
+#                per deployment if the heuristic is wrong.
+#   tls_files  — `import tls_files`; the snippet must be defined in
+#                /etc/caddy/Caddyfile by something else (e.g. another
+#                ansible project that owns base host config).
+#   internal   — `tls internal`; Caddy issues a self-signed cert from
+#                its own internal CA. First HTTP hit warns the browser
+#                (until you trust the local CA). Zero config.
+#   acme       — no TLS directive; Caddy's auto-https tries Let's
+#                Encrypt for any publicly-resolvable hostname with
+#                ports 80+443 reachable from the public internet. On a
+#                LAN/private host ACME challenges fail and Caddy falls
+#                back to internal — set strategy explicitly to
+#                `internal` to skip the failed ACME attempts.
+plane_caddy_tls_strategy: auto
+
+# Also expose Plane on plain HTTP next to the HTTPS site block. Caddy's
+# default is to redirect `http://<host>` to `https://<host>` — this
+# adds an explicit `http://<host>` block so curl etc. can hit Plane
+# without a TLS handshake (handy when the cert is internal/self-signed
+# and the client doesn't trust the issuing CA).
+#
+#   null/omitted — auto: enabled when tls_strategy resolves to
+#                  `internal`, disabled otherwise.
+#   true         — always serve HTTP alongside HTTPS.
+#   false        — HTTPS only (Caddy still redirects HTTP→HTTPS).
+plane_caddy_offer_http: ~

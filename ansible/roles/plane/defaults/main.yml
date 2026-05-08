@@ -1,0 +1,36 @@
+plane_dir: "{{ stacks_dir }}/plane"
+
+# Loopback port the proxy container publishes on the host. A reverse
+# proxy running on the *host* (not in a docker network) reaches Plane
+# at this address. The proxy container also stays attached to the
+# external `web` docker network with alias `plane-proxy`, so any
+# container-side reverse proxy keeps working — the host-loopback
+# publish is purely additive.
+#
+# Default 127.0.0.1:8081 — override per deployment if 8081 collides
+# with something else on your host.
+plane_proxy_host_port: "127.0.0.1:8081"
+
+# Pin: matches the vendored compose derived from
+# https://github.com/makeplane/plane/tree/v1.3.0/deployments/cli/community
+plane_release: "v1.3.0"
+
+# MinIO has no semver tags upstream — pin the current stable RELEASE.
+# Note: MinIO appears to have stopped publishing to Docker Hub after
+# September 2025; this is the newest tag that actually resolves there.
+plane_minio_image: "minio/minio:RELEASE.2025-09-07T16-13-09Z"
+
+# Data-services versions are also pinned in templates/compose.yaml.j2:
+#   postgres:15.7-alpine
+#   valkey/valkey:7.2.11-alpine
+#   rabbitmq:3.13.6-management-alpine
+
+# How long the role waits, after `docker compose up`, for the api
+# container to land an `Instance` row (i.e. api startup's
+# `register_instance` management command has run, which only happens
+# after the migrator finishes). On a fresh DB the migrator applies
+# 121 migrations sequentially — observed runtime ~8-10 minutes on a
+# small VM, so the budget is generous (180 × 10s = 30 min). Subsequent
+# runs return on the first probe.
+plane_api_ready_retries: 180
+plane_api_ready_delay: 10

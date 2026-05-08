@@ -1,0 +1,28 @@
+# Path to the plane stack on the host — used to docker-exec into the api
+# container for the bootstrap shell.
+plane_admin_plane_dir: "{{ stacks_dir }}/plane"
+
+# Vault path — both this role and plane_secrets merge into the same file.
+plane_secrets_vault_path: "{{ playbook_dir }}/vault/{{ vault_secrets_file }}"
+
+# Label stamped on the bootstrap APIToken row. Keeps it distinguishable
+# from agent tokens (which use label "ansible-agent" — see plane_users).
+plane_admin_token_label: ansible-bootstrap
+
+# Safety-net wait. The `plane` role already blocks on api readiness
+# (see plane_api_ready_retries there) before this role runs, so the
+# probe should succeed on the first attempt. The retries here cover
+# the narrow window where the api crashed and restarted between roles.
+plane_admin_api_ready_retries: 12
+plane_admin_api_ready_delay: 5
+
+# Plane InstanceConfiguration overrides — string key/value rows in the
+# license_instanceconfiguration table that this role reconciles after the
+# instance is set up. Defaults lock the instance down for a single-user-
+# plus-bots deployment: signup off (no random self-registration once the
+# admin is provisioned), magic-link off (no SMTP wired). Override per
+# deployment if you have other needs.
+plane_admin_instance_config:
+  ENABLE_SIGNUP: "0"
+  ENABLE_MAGIC_LINK_LOGIN: "0"
+  ENABLE_EMAIL_PASSWORD: "1"

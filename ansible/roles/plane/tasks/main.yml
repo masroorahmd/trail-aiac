@@ -1,0 +1,57 @@
+- name: Load plane vault secrets
+  ansible.builtin.include_vars: "{{ playbook_dir }}/vault/{{ vault_secrets_file }}"
+  no_log: true
+
+- name: Ensure plane stack directory exists
+  ansible.builtin.file:
+    path: "{{ plane_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Render plane compose.yaml
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ plane_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Render plane .env file
+  ansible.builtin.template:
+    src: plane.env.j2
+    dest: "{{ plane_dir }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Ensure plane stack is up
+  community.docker.docker_compose_v2:
+    project_src: "{{ plane_dir }}"
+    state: present
+    pull: missing
+
+# Block until Plane is actually serving — `docker_compose_v2` returns as
+# soon as containers are *created*, but the api container then sits in
+# its `wait_for_migrations` loop while the migrator applies migrations.
+# On a fresh DB that's ~8-10 minutes; meanwhile the web frontend can't
+# fetch /api/instances/ and shows the "Plane didn't start up correctly!"
+# banner to anyone who opens the URL too early. Probing the api ORM
+# from inside the container avoids confounding readiness with Caddy /
+# ACME flakes — same pattern the docker-exec tasks elsewhere use.
+#
+# Use `manage.py shell -c` rather than bare `python -c`: importing
+# plane.license.models from a fresh interpreter raises
+# `AppRegistryNotReady: Apps aren't loaded yet` because Django's app
+# registry never gets a chance to initialize. `manage.py shell` calls
+# django.setup() before evaluating the snippet. (Hiding stderr with
+# `2>/dev/null` previously made this look like a slow migrator instead
+# of a hard import error — kept stderr visible now.)
+- name: Wait for Plane api to land Instance row (migrations + register_instance complete)
+  ansible.builtin.shell: |
+    docker compose -f {{ plane_dir }}/compose.yaml exec -T api \
+      python manage.py shell -c "from plane.license.models import Instance; import sys; sys.exit(0 if Instance.objects.exists() else 1)"
+  register: _plane_api_ready
+  until: _plane_api_ready.rc == 0
+  retries: "{{ plane_api_ready_retries }}"
+  delay: "{{ plane_api_ready_delay }}"
+  changed_when: false
+  failed_when:
+    - _plane_api_ready.attempts | default(0) >= (plane_api_ready_retries | int)
+    - _plane_api_ready.rc != 0

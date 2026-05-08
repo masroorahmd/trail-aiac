@@ -1,0 +1,47 @@
+- name: Load plane vault secrets
+  ansible.builtin.include_vars: "{{ playbook_dir }}/vault/{{ vault_secrets_file }}"
+
+- name: Assert role inputs are defined
+  ansible.builtin.assert:
+    that:
+      - plane.admin_token is defined
+      - plane.admin_token | length > 0
+      - plane_workspace.slug is defined
+      - plane_projects is defined
+    fail_msg: >-
+      Missing required config. Needed: `plane.admin_token` in the vault
+      file (ansible/vault/{{ vault_secrets_file }}), `plane_workspace.slug`
+      in group_vars, and `plane_projects` list in group_vars.
+
+# ProjectMemberSerializer takes `member` as a User UUID, not an email —
+# fetch the workspace members once, build an email→UUID map, and re-use
+# it in every project.yml iteration. Non-workspace-member agents (e.g.
+# invite not accepted yet) are filtered naturally: their email won't be
+# in this list, so project.yml's member-add step skips them with a log.
+- name: List workspace members (for email→UUID resolution)
+  ansible.builtin.uri:
+    url: "{{ plane_projects_api_base }}/workspaces/{{ plane_workspace.slug }}/members/"
+    method: GET
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+    status_code: 200
+    validate_certs: "{{ plane_projects_validate_certs }}"
+  register: plane_workspace_members_lookup
+  delegate_to: localhost
+  become: false
+  check_mode: false
+
+- name: Build email→UUID fact for workspace members
+  ansible.builtin.set_fact:
+    plane_workspace_member_by_email: >-
+      {{ dict(plane_workspace_members_lookup.json
+              | map(attribute='email')
+              | map('lower')
+              | zip(plane_workspace_members_lookup.json | map(attribute='id'))) }}
+
+- name: Provision Plane projects
+  ansible.builtin.include_tasks: project.yml
+  loop: "{{ plane_projects }}"
+  loop_control:
+    loop_var: project
+    label: "{{ project.identifier }} — {{ project.name }}"

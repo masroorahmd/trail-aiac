@@ -1,0 +1,87 @@
+# Shared vault-merge helper.
+#
+# Inputs:
+#   vault_merge_keys — dict of top-level keys to merge into vault/secrets.yml.
+#                      e.g. { plane: { admin_token: "plane_api_…" } }
+#                      Existing keys at the same path are overwritten;
+#                      sibling keys are preserved.
+#
+# Behaviour:
+#   - If the encrypted vault file's decrypted content already matches
+#     the post-merge state, this is a no-op (no rewrite, no `changed`).
+#   - Otherwise: write the merged YAML to a temp file, encrypt with
+#     ansible-vault, atomically replace the destination, then delete
+#     the temp file.
+#
+# Used by:
+#   - roles/plane_secrets/tasks/main.yml (initial seed of plane.* secrets)
+#   - roles/plane_admin/tasks/main.yml   (write-back of plane.admin_token)
+
+- name: "[merge] Re-read existing vault content"
+  ansible.builtin.stat:
+    path: "{{ plane_secrets_vault_path }}"
+  register: _merge_vault_stat
+
+- name: "[merge] Load existing vault (auto-decrypts)"
+  when: _merge_vault_stat.stat.exists
+  ansible.builtin.include_vars:
+    file: "{{ plane_secrets_vault_path }}"
+    name: _merge_existing
+  no_log: true
+
+- name: "[merge] Initialize empty existing vault when file absent"
+  when: not _merge_vault_stat.stat.exists
+  ansible.builtin.set_fact:
+    _merge_existing: {}
+
+- name: "[merge] Compute target vault content (existing ⊕ inputs)"
+  ansible.builtin.set_fact:
+    _merge_target: "{{ _merge_existing | combine(vault_merge_keys, recursive=True) }}"
+  no_log: true
+
+- name: "[merge] Compare existing vs target"
+  ansible.builtin.set_fact:
+    _merge_drift: "{{ _merge_existing != _merge_target }}"
+  no_log: true
+
+- name: "[merge] Skip write when no drift"
+  when: not _merge_drift
+  ansible.builtin.debug:
+    msg: "Vault content unchanged — skipping write."
+
+# Render → write tempfile → encrypt → atomic mv → cleanup. The tempfile
+# carries plaintext briefly; mode 0600 plus its location under vault/
+# (gitignored) bound the exposure to the controller's filesystem.
+- name: "[merge] Write merged YAML to temp"
+  when: _merge_drift
+  ansible.builtin.copy:
+    content: "{{ _merge_target | to_nice_yaml(indent=2, sort_keys=false) }}"
+    dest: "{{ plane_secrets_vault_path }}.new"
+    mode: "0600"
+  no_log: true
+
+- name: "[merge] Encrypt the temp file"
+  # No --vault-password-file — ansible.cfg already wires it under
+  # `vault_password_file`, and passing both makes ansible-vault see two
+  # "default" vault-ids and refuse with "Specify the vault-id to encrypt
+  # with --encrypt-vault-id".
+  when: _merge_drift
+  ansible.builtin.command:
+    cmd: "ansible-vault encrypt {{ plane_secrets_vault_path }}.new"
+  changed_when: true
+  no_log: true
+
+- name: "[merge] Replace destination with encrypted temp"
+  when: _merge_drift
+  ansible.builtin.copy:
+    src: "{{ plane_secrets_vault_path }}.new"
+    dest: "{{ plane_secrets_vault_path }}"
+    mode: "0600"
+    remote_src: true
+  no_log: true
+
+- name: "[merge] Cleanup temp file"
+  when: _merge_drift
+  ansible.builtin.file:
+    path: "{{ plane_secrets_vault_path }}.new"
+    state: absent

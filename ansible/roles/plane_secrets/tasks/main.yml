@@ -1,0 +1,117 @@
+# plane_secrets — generate-once, encrypt-once.
+#
+# Runs as a controller-local play (hosts: localhost). Touches only files
+# under ansible/vault/ on the controller; the host learns nothing of the
+# vault password. Idempotent: re-runs that find every required key
+# present in the existing vault are a no-op.
+#
+# The vault file is loaded via include_vars *with* the vault password
+# file configured in ansible.cfg, so an existing encrypted file
+# decrypts transparently. A fresh run with no vault file at all
+# generates everything from scratch.
+
+- name: Assert vault password file is set up
+  # Path comes from ansible.cfg's `vault_password_file`. We expand `~`
+  # against the controller's $HOME so the stat works for the user actually
+  # running ansible.
+  ansible.builtin.stat:
+    path: "{{ plane_secrets_vault_pass_file | expanduser }}"
+  register: _vault_pass_stat
+
+- name: Fail if vault password file is missing
+  ansible.builtin.assert:
+    that: _vault_pass_stat.stat.exists
+    fail_msg: >-
+      Vault password file {{ plane_secrets_vault_pass_file }} not found.
+      Create it with a strong password (e.g. `mkdir -p ~/.config/ansible
+      && openssl rand -hex 24 > ~/.config/ansible/aac-coding-vault-pass && chmod
+      600 ~/.config/ansible/aac-coding-vault-pass`) before running. ansible.cfg
+      already points vault_password_file at this path.
+
+- name: Check whether vault file already exists
+  ansible.builtin.stat:
+    path: "{{ plane_secrets_vault_path }}"
+  register: _vault_stat
+
+# Auto-decrypts if the file is vault-encrypted, since vault_password_file
+# is set in ansible.cfg. Loaded into a private fact so we can introspect
+# without polluting the playbook namespace.
+- name: Load existing vault contents (if any)
+  when: _vault_stat.stat.exists
+  ansible.builtin.include_vars:
+    file: "{{ plane_secrets_vault_path }}"
+    name: _existing_vault
+  no_log: true
+
+- name: Initialize empty vault map when file does not exist
+  when: not _vault_stat.stat.exists
+  ansible.builtin.set_fact:
+    _existing_vault: { plane: {} }
+
+- name: Compute which required keys are missing
+  ansible.builtin.set_fact:
+    _missing_keys: >-
+      {{ plane_secrets_required_keys
+         | rejectattr('key', 'in', (_existing_vault.plane | default({})).keys() | list)
+         | list }}
+  no_log: true
+
+- name: Report missing keys
+  ansible.builtin.debug:
+    msg: >-
+      {{ _missing_keys | length }} secret(s) to generate:
+      {{ _missing_keys | map(attribute='key') | list }}
+
+# Short-circuit: nothing missing → no write, no encrypt, no `changed`.
+- name: Skip remaining tasks when vault is complete
+  when: _missing_keys | length == 0
+  ansible.builtin.meta: end_play
+
+# Cache dir for password-lookup files. Gitignored as part of vault/*.
+# The lookup persists each generated value here, so even if we somehow
+# clobber the encrypted vault file, we don't lose the secrets — re-run
+# regenerates the same vault from the cache.
+- name: Ensure secret cache directory exists
+  ansible.builtin.file:
+    path: "{{ playbook_dir }}/vault/.cache"
+    state: directory
+    mode: "0700"
+
+# ansible.builtin.password lookup: writes/reads a single line per file,
+# regenerates only when the file is empty/missing → naturally idempotent.
+# `chars` controls the alphabet; we stick to ascii_letters+digits to
+# avoid YAML quoting / shell interpolation surprises downstream.
+#
+# Two-step build because Ansible's set_fact + loop only writes the
+# variable *after* the whole loop completes — combining against
+# _existing_vault.plane inside the loop makes every iteration overwrite
+# the previous one, leaving only the last key in the result. Seed the
+# accumulator first, then fold each new key into it.
+- name: Seed merged secrets accumulator with existing keys
+  ansible.builtin.set_fact:
+    _merged_plane: "{{ _existing_vault.plane | default({}) }}"
+  no_log: true
+
+- name: Fold each freshly generated secret into the accumulator
+  ansible.builtin.set_fact:
+    _merged_plane: >-
+      {{ _merged_plane
+         | combine({ item.key: lookup(
+               'ansible.builtin.password',
+               playbook_dir ~ '/vault/.cache/' ~ item.key,
+               length=item.length,
+               chars=item.chars
+             ) }) }}
+  loop: "{{ _missing_keys }}"
+  loop_control:
+    label: "{{ item.key }}"
+  no_log: true
+
+# Hand the merged secrets to the shared merge helper. It writes the
+# file (encrypted) only when the in-memory state actually differs from
+# what's on disk — keeps `changed` honest.
+- name: Persist merged secrets to encrypted vault
+  ansible.builtin.include_tasks: merge.yml
+  vars:
+    vault_merge_keys:
+      plane: "{{ _merged_plane }}"

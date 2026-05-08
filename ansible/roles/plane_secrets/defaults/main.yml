@@ -1,0 +1,23 @@
+# Path to the per-deployment encrypted vault file. Both plane_secrets
+# (initial seed) and plane_admin (admin_token write-back) merge into this
+# same file via tasks/merge.yml.
+plane_secrets_vault_path: "{{ playbook_dir }}/vault/{{ vault_secrets_file }}"
+
+# Vault password file. Mirrors what `vault_password_file` in ansible.cfg
+# resolves to, so the assert at the top of tasks/main.yml can render a
+# helpful error message when it's missing. Override per-deployment if you
+# point ansible.cfg somewhere else.
+plane_secrets_vault_pass_file: "~/.config/ansible/aac-coding-vault-pass"
+
+# The keys plane_secrets seeds on first run. Each is generated only when
+# absent from the existing vault — re-runs never rotate. The two passwords
+# (postgres, rabbitmq) MUST stay stable across runs or the DB breaks on
+# second apply.
+plane_secrets_required_keys:
+  - { key: secret_key,             length: 64, chars: ['ascii_letters', 'digits'] }
+  - { key: live_server_secret_key, length: 64, chars: ['ascii_letters', 'digits'] }
+  - { key: postgres_password,      length: 32, chars: ['ascii_letters', 'digits'] }
+  - { key: rabbitmq_password,      length: 32, chars: ['ascii_letters', 'digits'] }
+  - { key: minio_access_key,       length: 20, chars: ['ascii_letters', 'digits'] }
+  - { key: minio_secret_key,       length: 40, chars: ['ascii_letters', 'digits'] }
+  - { key: admin_password,         length: 24, chars: ['ascii_letters', 'digits'] }

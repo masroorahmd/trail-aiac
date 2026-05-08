@@ -1,0 +1,20 @@
+# Ad-hoc Plane backup. Run on demand:
+#
+#     ansible-playbook backup.yml
+#
+# Captures Postgres + MinIO into a single tar.gz under
+# `ansible/out/plane-backup-<host>-<UTC-timestamp>.tar.gz`. Both
+# containers stay running. See doc/BACKUP.md for full mechanics,
+# restore procedure, and what is deliberately NOT in the bundle
+# (Redis/Valkey, RabbitMQ, Plane logs).
+#
+# This playbook is deliberately separate from `plane.yml` so a
+# provisioning run never accidentally produces a backup, and a
+# backup never accidentally re-renders compose / re-runs migrations.
+
+- name: Back up Plane (Postgres + MinIO) ad-hoc
+  hosts: plane_hosts
+  become: true
+  gather_facts: false
+  roles:
+    - { role: plane_backup, tags: [plane_backup, backup] }

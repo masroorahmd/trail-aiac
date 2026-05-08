@@ -1,0 +1,9 @@
+# `systemctl reload caddy` re-reads /etc/caddy/Caddyfile (which imports
+# our snippet) without dropping connections. The Debian Caddy unit's
+# ExecReload calls `caddy reload --force`, so a snippet-only edit that
+# leaves the top-level Caddyfile bytes unchanged still takes effect —
+# no extra `--force` plumbing needed on our side.
+- name: Reload caddy
+  ansible.builtin.systemd:
+    name: caddy
+    state: reloaded

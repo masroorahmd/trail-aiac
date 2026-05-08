@@ -1,0 +1,117 @@
+# plane_secrets runs on the controller before the host play. It writes
+# (and encrypts) ansible/vault/secrets.yml so the host play has every
+# secret it needs at template-render time.
+- name: Generate Plane vault secrets (controller-local)
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - { role: plane_secrets, tags: [plane_secrets, secrets] }
+
+# Host pre-conditions for the Plane stack:
+#   1. Docker engine + compose plugin.
+#   2. The external docker network named per `docker_network` (default
+#      `web`) — Plane's proxy joins it as plane-proxy.
+#   3. apt-installed, systemd-managed Caddy with a sites.d/ directory.
+#
+# pre_tasks below probe each one and install the missing packages via
+# apt when needed (`docker.io`/`docker-compose-v2` and/or `caddy`),
+# create the docker network, and ensure sites.d/ exists. They do NOT
+# touch the base Caddyfile beyond the sites.d-import line dropped by
+# the caddy role itself, and they assume an apt-based host (Debian /
+# Ubuntu / Raspberry Pi OS). On a host where another ansible project
+# has already provisioned all of these the probes succeed and the
+# install/create tasks all skip.
+- name: Provision Plane on the host
+  hosts: plane_hosts
+  become: true
+  pre_tasks:
+    - name: Probe whether `docker compose` is available
+      ansible.builtin.command: docker compose version
+      register: _docker_probe
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      tags: always
+
+    - name: Install docker engine + compose plugin (when missing)
+      when: _docker_probe.rc != 0
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+          # Needed by community.docker.docker_network and the compose
+          # module — apt-installing them here keeps the playbook
+          # self-sufficient on a fresh host.
+          - python3-docker
+          - python3-requests
+        state: present
+        update_cache: true
+      tags: always
+
+    - name: Ensure docker is enabled + running (when freshly installed)
+      when: _docker_probe.rc != 0
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+      tags: always
+
+    - name: Ensure docker `web` network exists
+      community.docker.docker_network:
+        name: "{{ docker_network }}"
+        state: present
+      tags: always
+
+    - name: Probe whether the `caddy` systemd unit is present
+      ansible.builtin.command: systemctl list-unit-files caddy.service
+      register: _caddy_probe
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      tags: always
+
+    - name: Install caddy (when missing)
+      when: "'caddy.service' not in _caddy_probe.stdout"
+      ansible.builtin.apt:
+        name: caddy
+        state: present
+        update_cache: true
+      tags: always
+
+    - name: Ensure caddy is enabled + running (when freshly installed)
+      when: "'caddy.service' not in _caddy_probe.stdout"
+      ansible.builtin.systemd:
+        name: caddy
+        enabled: true
+        state: started
+      tags: always
+
+    - name: Ensure {{ caddy_dir | default('/etc/caddy') }}/sites.d/ exists
+      ansible.builtin.file:
+        path: "{{ caddy_dir | default('/etc/caddy') }}/sites.d"
+        state: directory
+        mode: "0755"
+      tags: always
+
+  roles:
+    - { role: plane,           tags: [plane] }
+    # caddy must run BEFORE plane_admin et al., even though it's
+    # snippet-only — every API-call role below targets
+    # `https://{{ domain_plane }}` (the public hostname), which only
+    # resolves to a working backend once Caddy's plane.caddy site block
+    # is in place. With this order: plane brings the proxy container up
+    # on 127.0.0.1:{plane_proxy_host_port} → caddy drops the snippet and
+    # reloads → the public DNS is live → admin/users/projects/bootstrap
+    # can hit /api/v1/. Without it, Caddy answers 200 with an empty body
+    # for every request to a hostname it doesn't know, and the API roles
+    # silently see "successful" 200s with no JSON.
+    - { role: caddy,           tags: [caddy] }
+    # plane_admin must follow plane (api container must be up). It mints
+    # plane.admin_token and writes it back to vault — subsequent roles
+    # then have the token they need.
+    - { role: plane_admin,     tags: [plane_admin, admin] }
+    - { role: plane_users,     tags: [plane_users, users] }
+    - { role: plane_projects,  tags: [plane_projects, projects] }
+    # plane_bootstrap must follow plane_projects so projects exist to
+    # decorate with states / modules / labels.
+    - { role: plane_bootstrap, tags: [plane_bootstrap, bootstrap] }

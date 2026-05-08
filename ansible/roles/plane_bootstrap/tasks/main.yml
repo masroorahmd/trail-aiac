@@ -1,0 +1,27 @@
+# plane_bootstrap — per-project decoration: workflow states (verify +
+# create-if-missing), phase modules, story labels.
+#
+# Runs entirely against the public REST API using the bootstrap token
+# minted by plane_admin. Idempotent: GET-then-create-missing for each
+# resource type.
+
+- name: Load plane vault secrets
+  ansible.builtin.include_vars: "{{ playbook_dir }}/vault/{{ vault_secrets_file }}"
+  no_log: true
+
+- name: Assert role inputs are present
+  ansible.builtin.assert:
+    that:
+      - plane.admin_token is defined and (plane.admin_token | length > 0)
+      - plane_workspace.slug is defined
+      - plane_projects is defined
+    fail_msg: >-
+      Need vault `plane.admin_token` (minted by plane_admin),
+      `plane_workspace.slug`, and `plane_projects` list.
+
+- name: Decorate each project (states / modules / labels)
+  ansible.builtin.include_tasks: project.yml
+  loop: "{{ plane_projects }}"
+  loop_control:
+    loop_var: project
+    label: "{{ project.identifier }} — {{ project.name }}"

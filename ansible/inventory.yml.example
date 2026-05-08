@@ -1,0 +1,15 @@
+# Copy to inventory.yml (gitignored) and fill in your host's SSH details.
+# `ansible_host` may be an IP or DNS name; `ansible_user` is whoever has
+# passwordless sudo on first run (typically `root` on a fresh VM).
+#
+# Then create host_vars/<hostname>.yml from host_vars/plane_host.yml.example
+# — the hostname must match the inventory entry's name (here: `plane`).
+
+all:
+  children:
+    plane_hosts:
+      hosts:
+        plane:
+          ansible_host: example.com
+          ansible_user: root
+          ansible_python_interpreter: /usr/bin/python3

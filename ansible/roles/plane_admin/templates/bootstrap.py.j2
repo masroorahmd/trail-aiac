@@ -1,0 +1,146 @@
+"""
+plane_admin bootstrap — runs inside the api container via docker exec.
+
+Idempotent end-to-end: every step is get_or_create / filter+create or
+guarded by an `if not …` check. Re-runs against an already-bootstrapped
+instance produce no changes and re-emit the existing token.
+
+Mirrors apps/api/plane/license/api/views/admin.py InstanceAdminSignUpEndpoint
+(v1.3.0) for the User + Profile + InstanceAdmin + is_setup_done sequence.
+Adds the workspace + WorkspaceMember(role=20) + APIToken steps that the
+view doesn't perform (those normally happen in subsequent UI flows).
+"""
+import json
+import sys
+from uuid import uuid4
+from django.contrib.auth.hashers import make_password
+from django.utils import timezone
+from plane.db.models import (
+    User, Profile, Workspace, WorkspaceMember, APIToken,
+)
+from plane.license.models import Instance, InstanceAdmin, InstanceConfiguration
+
+EMAIL = {{ plane_admin.email | to_json }}
+PASSWORD = {{ plane.admin_password | to_json }}
+FULL_NAME = {{ plane_admin.full_name | to_json }}
+WORKSPACE_SLUG = {{ plane_workspace.slug | to_json }}
+WORKSPACE_NAME = {{ plane_workspace.name | to_json }}
+TOKEN_LABEL = {{ plane_admin_token_label | to_json }}
+INSTANCE_NAME = {{ (plane_workspace.name + " — Plane Community") | to_json }}
+INSTANCE_CONFIG = {{ plane_admin_instance_config | to_json }}
+
+events = []
+
+
+def emit(tag, msg):
+    """Single tagged-line emitter — controller-side parser greps for these."""
+    events.append(tag + ": " + msg)
+
+
+# 1. Instance row — created by api startup's register_instance command.
+#    If absent, the api container is still booting; bail with non-zero
+#    so the controller's retry/until loop catches it.
+instance = Instance.objects.first()
+if instance is None:
+    print("ERROR: Instance row missing — api container not finished booting")
+    sys.exit(2)
+
+# 2. User: create if absent, idempotent on re-run.
+first_name, _, last_name = FULL_NAME.partition(" ")
+user, user_created = User.objects.get_or_create(
+    email=EMAIL.lower(),
+    defaults={
+        "first_name": first_name,
+        "last_name": last_name,
+        # Plane uses uuid4 hex as username for created admins (the email
+        # is the actual login identifier).
+        "username": uuid4().hex,
+        "password": make_password(PASSWORD),
+        "is_password_autoset": False,
+        "is_active": True,
+        # Set true to skip the "verify your email" banner — there's no
+        # SMTP configured at bootstrap time, so the user couldn't verify
+        # via mail anyway.
+        "is_email_verified": True,
+        "last_active": timezone.now(),
+        "last_login_time": timezone.now(),
+        "token_updated_at": timezone.now(),
+    },
+)
+if user_created:
+    emit("user-created", EMAIL)
+else:
+    emit("user-exists", EMAIL)
+
+# 3. Profile — NOT auto-created by the User post_save signal in v1.3.0.
+profile, profile_created = Profile.objects.get_or_create(user=user)
+if profile_created:
+    emit("profile-created", EMAIL)
+
+# 4. InstanceAdmin link — `unique_together = (instance, user)`.
+admin_link, admin_created = InstanceAdmin.objects.get_or_create(
+    user=user, instance=instance, defaults={"role": 20},
+)
+if admin_created:
+    emit("instance-admin-created", EMAIL)
+
+# 5. Mark the instance "set up" so the UI stops redirecting to /onboarding/.
+if not instance.is_setup_done:
+    instance.is_setup_done = True
+    instance.instance_name = INSTANCE_NAME
+    instance.save(update_fields=["is_setup_done", "instance_name"])
+    emit("instance-marked-setup", INSTANCE_NAME)
+
+# 6. Workspace: create or fetch by slug (slug is unique workspace-wide).
+ws, ws_created = Workspace.objects.get_or_create(
+    slug=WORKSPACE_SLUG,
+    defaults={"name": WORKSPACE_NAME, "owner": user},
+)
+if ws_created:
+    emit("workspace-created", WORKSPACE_SLUG)
+
+# 7. Owner WorkspaceMember row (role 20 = Admin). Default role on
+#    WorkspaceMember.objects.create is 5 (Guest), so this is non-optional.
+ws_member, ws_member_created = WorkspaceMember.objects.get_or_create(
+    workspace=ws, member=user, defaults={"role": 20},
+)
+if ws_member_created:
+    emit("workspace-owner-member-created", WORKSPACE_SLUG)
+
+# 8. Bootstrap APIToken: filter (user, workspace, label); reuse if present,
+#    create if absent. user_type=0 (Human) — agent tokens (plane_users
+#    role) deliberately use user_type=1 (Bot); don't conflate the two.
+token = APIToken.objects.filter(
+    user=user, workspace=ws, label=TOKEN_LABEL,
+).first()
+if token is None:
+    token = APIToken.objects.create(
+        user=user,
+        workspace=ws,
+        label=TOKEN_LABEL,
+        user_type=0,
+        description="Plane workspace bootstrap token, managed by ansible plane_admin role.",
+    )
+    emit("token-minted", TOKEN_LABEL)
+else:
+    emit("token-reused", TOKEN_LABEL)
+
+# 9. InstanceConfiguration overrides. Plane seeds these rows on first
+#    api boot (see api/plane/license/management/commands/configure_instance.py),
+#    so a get-then-update is enough — we never insert. Only PATCH when the
+#    on-disk value drifts from the desired value, so re-runs are no-ops.
+for key, desired in INSTANCE_CONFIG.items():
+    desired_str = str(desired)
+    cfg = InstanceConfiguration.objects.filter(key=key).first()
+    if cfg is None:
+        emit("instance-config-missing", key)
+        continue
+    if cfg.value != desired_str:
+        cfg.value = desired_str
+        cfg.save(update_fields=["value"])
+        emit("instance-config-updated", key + "=" + desired_str)
+
+# Marker-bracketed JSON blob — controller parses this out of stdout.
+print("===PLANE_ADMIN_RESULT===")
+print(json.dumps({"token": token.token, "events": events}))
+print("===END===")

@@ -1,0 +1,158 @@
+# Ad-hoc Plane backup. Captures the two stateful services — Postgres
+# and MinIO — into a single tar.gz on the controller. Both containers
+# stay running; the dump and the volume tar are best-effort consistent,
+# which is acceptable for a personal homelab. For coordinated point-in-
+# time recovery, stop the api/worker/beat containers around the dump.
+#
+# Output bundle on the controller:
+#
+#   ansible/out/plane-backup-<host>-<YYYYMMDDTHHMMSSZ>.tar.gz
+#     └─ plane-backup-<host>-<YYYYMMDDTHHMMSSZ>/
+#        ├─ postgres.dump   # pg_dump -F c plane (custom format, restorable via pg_restore)
+#        └─ minio.tar       # tar of the MinIO `uploads` volume contents (preserves uid/gid)
+#
+# Restore sketch (against a fresh stack):
+#   tar xzf plane-backup-<...>.tar.gz
+#   docker compose -f /opt/stacks/plane/compose.yaml exec -T plane-db \
+#       pg_restore -U plane -d plane --clean --if-exists < .../postgres.dump
+#   docker compose -f /opt/stacks/plane/compose.yaml exec -T plane-minio \
+#       tar -C /export -xf - < .../minio.tar
+
+- name: Compute backup timestamp (UTC, ISO basic short)
+  ansible.builtin.set_fact:
+    plane_backup_timestamp: "{{ now(utc=true, fmt='%Y%m%dT%H%M%SZ') }}"
+    plane_backup_basename: "plane-backup-{{ inventory_hostname }}-{{ now(utc=true, fmt='%Y%m%dT%H%M%SZ') }}"
+
+- name: Ensure Plane compose file exists on the host
+  ansible.builtin.stat:
+    path: "{{ plane_backup_compose_file }}"
+  register: _compose_stat
+
+- name: Fail early when Plane is not installed on this host
+  ansible.builtin.fail:
+    msg: >-
+      No compose file at {{ plane_backup_compose_file }}. Provision Plane
+      first (`ansible-playbook plane.yml`) or override
+      `plane_backup_dir` if Plane lives elsewhere.
+  when: not _compose_stat.stat.exists
+
+- name: Probe that both backup target services are running
+  ansible.builtin.command: >-
+    docker compose -f {{ plane_backup_compose_file }} ps --status running
+    --services
+  register: _running_services
+  changed_when: false
+
+- name: Fail when plane-db or plane-minio is not running
+  ansible.builtin.fail:
+    msg: >-
+      Required service `{{ item }}` is not in the running set
+      ({{ _running_services.stdout_lines | join(', ') }}).
+      Bring the stack up first: `docker compose -f
+      {{ plane_backup_compose_file }} up -d`.
+  when: item not in _running_services.stdout_lines
+  loop:
+    - "{{ plane_backup_db_service }}"
+    - "{{ plane_backup_minio_service }}"
+
+- name: Ensure remote scratch directory exists
+  ansible.builtin.file:
+    path: "{{ plane_backup_remote_workdir }}/{{ plane_backup_basename }}"
+    state: directory
+    mode: "0700"
+
+# pg_dump runs inside plane-db. The container has PGHOST=plane-db in
+# its env (compose-level x-db-env), so pg_dump would otherwise pick
+# that up and connect over TCP — where the postgres image enforces
+# scram-sha-256. Force the local Unix socket via `-h /var/run/postgresql`;
+# that path is `trust`-authenticated by default in the postgres image,
+# so no password handling is needed. Custom format (-F c) compresses
+# internally and supports selective `pg_restore`.
+- name: Dump Postgres (pg_dump -F c)
+  ansible.builtin.shell: |
+    set -o pipefail
+    docker compose -f {{ plane_backup_compose_file }} exec -T \
+      {{ plane_backup_db_service }} \
+      pg_dump -h /var/run/postgresql \
+        -U {{ plane_backup_db_user }} -F c {{ plane_backup_db_name }} \
+      > {{ plane_backup_remote_workdir }}/{{ plane_backup_basename }}/postgres.dump
+  args:
+    executable: /bin/bash
+  changed_when: true
+
+# The MinIO image (minio/minio:RELEASE.*) is built on UBI-minimal and
+# ships without `tar`, so we cannot exec tar inside it. Instead, run a
+# short-lived sidecar container that inherits MinIO's volumes via
+# `--volumes-from` and brings its own tar. This still avoids guessing
+# the host-side volume path (compose-prefix vs project-prefix) — the
+# data dir mount is inherited from the running plane-minio container.
+# Uid/gid are preserved — restore into a fresh container reproduces the
+# permissions MinIO originally wrote.
+- name: Resolve plane-minio container id
+  ansible.builtin.command: >-
+    docker compose -f {{ plane_backup_compose_file }} ps -q
+    {{ plane_backup_minio_service }}
+  register: _minio_cid
+  changed_when: false
+
+- name: Tar the MinIO uploads volume (via sidecar)
+  ansible.builtin.shell: |
+    set -o pipefail
+    docker run --rm --volumes-from {{ _minio_cid.stdout }} \
+      {{ plane_backup_sidecar_image }} \
+      tar -C {{ plane_backup_minio_data_dir }} -cf - . \
+      > {{ plane_backup_remote_workdir }}/{{ plane_backup_basename }}/minio.tar
+  args:
+    executable: /bin/bash
+  changed_when: true
+
+- name: Bundle the dump + minio tar into a single tar.gz
+  ansible.builtin.command: >-
+    tar -C {{ plane_backup_remote_workdir }} -czf
+    {{ plane_backup_remote_workdir }}/{{ plane_backup_basename }}.tar.gz
+    {{ plane_backup_basename }}/
+  changed_when: true
+
+- name: Stat the remote bundle (for size reporting)
+  ansible.builtin.stat:
+    path: "{{ plane_backup_remote_workdir }}/{{ plane_backup_basename }}.tar.gz"
+  register: _remote_bundle
+
+- name: Ensure controller out/ exists
+  ansible.builtin.file:
+    path: "{{ plane_backup_out_dir }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  become: false
+
+- name: Fetch bundle to controller out/
+  ansible.builtin.fetch:
+    src: "{{ plane_backup_remote_workdir }}/{{ plane_backup_basename }}.tar.gz"
+    dest: "{{ plane_backup_out_dir }}/{{ plane_backup_basename }}.tar.gz"
+    flat: true
+
+- name: Tighten bundle permissions on controller (mode 0600)
+  ansible.builtin.file:
+    path: "{{ plane_backup_out_dir }}/{{ plane_backup_basename }}.tar.gz"
+    mode: "0600"
+  delegate_to: localhost
+  become: false
+
+- name: Remove remote scratch directory
+  ansible.builtin.file:
+    path: "{{ plane_backup_remote_workdir }}/{{ plane_backup_basename }}"
+    state: absent
+  when: not plane_backup_keep_remote
+
+- name: Remove remote bundle copy
+  ansible.builtin.file:
+    path: "{{ plane_backup_remote_workdir }}/{{ plane_backup_basename }}.tar.gz"
+    state: absent
+  when: not plane_backup_keep_remote
+
+- name: Report bundle written
+  ansible.builtin.debug:
+    msg: >-
+      Wrote {{ plane_backup_out_dir }}/{{ plane_backup_basename }}.tar.gz
+      ({{ (_remote_bundle.stat.size / 1024 / 1024) | round(2) }} MiB)

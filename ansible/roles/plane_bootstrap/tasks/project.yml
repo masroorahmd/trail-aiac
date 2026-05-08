@@ -1,0 +1,226 @@
+# Per-project bootstrap. Resolves project UUID by identifier, then
+# reconciles states / modules / labels with the framework's defaults.
+
+- name: "[{{ project.identifier }}] Resolve project UUID by identifier"
+  ansible.builtin.uri:
+    url: "{{ plane_bootstrap_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/"
+    method: GET
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+    status_code: 200
+    validate_certs: "{{ plane_bootstrap_validate_certs }}"
+  register: _bs_projects_lookup
+  delegate_to: localhost
+  become: false
+  check_mode: false
+
+- name: "[{{ project.identifier }}] Capture project id"
+  ansible.builtin.set_fact:
+    _bs_project_id: >-
+      {{ ((_bs_projects_lookup.json.results
+            if (_bs_projects_lookup.json is mapping and 'results' in _bs_projects_lookup.json)
+            else _bs_projects_lookup.json)
+          | selectattr('identifier', 'equalto', project.identifier)
+          | map(attribute='id')
+          | first) }}
+
+# ─────────────────────────────────────────────────────────────────────
+# States: GET existing → create any missing from plane_bootstrap_states.
+# ─────────────────────────────────────────────────────────────────────
+
+- name: "[{{ project.identifier }}] List existing states"
+  ansible.builtin.uri:
+    url: "{{ plane_bootstrap_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ _bs_project_id }}/states/"
+    method: GET
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+    status_code: 200
+    validate_certs: "{{ plane_bootstrap_validate_certs }}"
+  register: _bs_states_lookup
+  delegate_to: localhost
+  become: false
+  check_mode: false
+
+- name: "[{{ project.identifier }}] Compute missing states"
+  ansible.builtin.set_fact:
+    _bs_existing_state_names: >-
+      {{ ((_bs_states_lookup.json.results
+            if (_bs_states_lookup.json is mapping and 'results' in _bs_states_lookup.json)
+            else _bs_states_lookup.json)
+          | map(attribute='name') | list) }}
+    _bs_states_to_create: >-
+      {{ plane_bootstrap_states
+         | rejectattr('name', 'in',
+             (_bs_states_lookup.json.results
+              if (_bs_states_lookup.json is mapping and 'results' in _bs_states_lookup.json)
+              else _bs_states_lookup.json) | map(attribute='name') | list)
+         | list }}
+
+- name: "[{{ project.identifier }}] Create missing states"
+  ansible.builtin.uri:
+    url: "{{ plane_bootstrap_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ _bs_project_id }}/states/"
+    method: POST
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+      Content-Type: application/json
+    body_format: json
+    body:
+      name: "{{ item.name }}"
+      group: "{{ item.group }}"
+      color: "{{ item.color }}"
+    status_code: [200, 201]
+    validate_certs: "{{ plane_bootstrap_validate_certs }}"
+  loop: "{{ _bs_states_to_create }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: localhost
+  become: false
+
+# ─────────────────────────────────────────────────────────────────────
+# Modules: GET existing → create any missing.
+#
+# Per-project override: if `project.modules` is defined (even as []),
+# it wins over the framework-default plane_bootstrap_modules list. Use
+# `modules: []` on a project that should have none — e.g. the Business
+# track, where Stories don't decompose into the four phase modules
+# (frontend / backend / testing / documentation) the Dev track uses.
+#
+# This task does not delete drift: removing a module from the override
+# leaves the existing module row alone (avoids surprising data loss if
+# a project has work-items linked to a module the user later untyped).
+# To shrink a project's module set, delete the modules from the Plane
+# UI (Project Settings → Modules) or via the official MCP server.
+# ─────────────────────────────────────────────────────────────────────
+
+- name: "[{{ project.identifier }}] Resolve modules list (per-project override or framework default)"
+  ansible.builtin.set_fact:
+    _bs_modules_for_project: "{{ project.modules | default(plane_bootstrap_modules) }}"
+
+- name: "[{{ project.identifier }}] List existing modules"
+  ansible.builtin.uri:
+    url: "{{ plane_bootstrap_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ _bs_project_id }}/modules/"
+    method: GET
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+    status_code: 200
+    validate_certs: "{{ plane_bootstrap_validate_certs }}"
+  register: _bs_modules_lookup
+  delegate_to: localhost
+  become: false
+  check_mode: false
+
+- name: "[{{ project.identifier }}] Compute missing modules"
+  ansible.builtin.set_fact:
+    _bs_modules_to_create: >-
+      {{ _bs_modules_for_project
+         | reject('in',
+             (_bs_modules_lookup.json.results
+              if (_bs_modules_lookup.json is mapping and 'results' in _bs_modules_lookup.json)
+              else _bs_modules_lookup.json) | map(attribute='name') | list)
+         | list }}
+
+- name: "[{{ project.identifier }}] Create missing modules"
+  ansible.builtin.uri:
+    url: "{{ plane_bootstrap_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ _bs_project_id }}/modules/"
+    method: POST
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+      Content-Type: application/json
+    body_format: json
+    body:
+      name: "{{ item }}"
+    status_code: [200, 201]
+    validate_certs: "{{ plane_bootstrap_validate_certs }}"
+  loop: "{{ _bs_modules_to_create }}"
+  loop_control:
+    label: "{{ item }}"
+  delegate_to: localhost
+  become: false
+
+# ─────────────────────────────────────────────────────────────────────
+# Labels: GET existing → create any missing. Per-project override on
+# `project.labels` (list of {name,color}) replaces the framework default.
+# ─────────────────────────────────────────────────────────────────────
+
+- name: "[{{ project.identifier }}] Resolve labels list (per-project override or framework default)"
+  ansible.builtin.set_fact:
+    _bs_labels_desired: "{{ project.labels | default(plane_bootstrap_labels_dev) }}"
+
+- name: "[{{ project.identifier }}] List existing labels"
+  ansible.builtin.uri:
+    url: "{{ plane_bootstrap_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ _bs_project_id }}/labels/"
+    method: GET
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+    status_code: 200
+    validate_certs: "{{ plane_bootstrap_validate_certs }}"
+  register: _bs_labels_lookup
+  delegate_to: localhost
+  become: false
+  check_mode: false
+
+- name: "[{{ project.identifier }}] Compute missing labels"
+  ansible.builtin.set_fact:
+    _bs_labels_to_create: >-
+      {{ _bs_labels_desired
+         | rejectattr('name', 'in',
+             (_bs_labels_lookup.json.results
+              if (_bs_labels_lookup.json is mapping and 'results' in _bs_labels_lookup.json)
+              else _bs_labels_lookup.json) | map(attribute='name') | list)
+         | list }}
+
+- name: "[{{ project.identifier }}] Create missing labels"
+  # Plane's API_KEY_RATE_LIMIT defaults to 60/min. A first-run bootstrap
+  # easily blasts through that: 12 labels × N projects + members + states
+  # + modules calls in well under a minute, and the tail of the labels
+  # loop comes back as `200 {"error_code": 5900, "error_message":
+  # "RATE_LIMIT_EXCEEDED"}`. The `pause: 1` keeps steady-state below the
+  # 60/min ceiling; `retries`+`delay` ride out the bucket if we hit it
+  # anyway; `failed_when: false` keeps the task in the until loop instead
+  # of failing on the first 5900 (Plane returns HTTP 200 on rate-limit,
+  # so we have to inspect the JSON body to detect it).
+  ansible.builtin.uri:
+    url: "{{ plane_bootstrap_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ _bs_project_id }}/labels/"
+    method: POST
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+      Content-Type: application/json
+    body_format: json
+    body:
+      name: "{{ item.name }}"
+      color: "{{ item.color }}"
+    status_code: [200, 201, 429]
+    validate_certs: "{{ plane_bootstrap_validate_certs }}"
+  loop: "{{ _bs_labels_to_create }}"
+  loop_control:
+    label: "{{ item.name }}"
+    pause: 1
+  register: _bs_label_create_result
+  retries: 6
+  delay: 12
+  until: >-
+    _bs_label_create_result.status in [200, 201]
+    and (_bs_label_create_result.json.error_code | default(0)) != 5900
+  failed_when: false
+  delegate_to: localhost
+  become: false
+
+# Hard-fail if any item exhausted retries — `failed_when: false` above
+# would otherwise let a stuck rate-limit pass silently.
+- name: "[{{ project.identifier }}] Assert all label creates succeeded"
+  ansible.builtin.assert:
+    that: >-
+      (item.status in [200, 201])
+      and (item.json.error_code | default(0)) != 5900
+    fail_msg: "Label '{{ item.item.name }}' failed: status={{ item.status }} body={{ item.json | default('') }}"
+  loop: "{{ _bs_label_create_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name | default('?') }}"
+  when: _bs_label_create_result.results is defined
+
+- name: "[{{ project.identifier }}] Summary"
+  ansible.builtin.debug:
+    msg:
+      - "States: {{ _bs_existing_state_names | length }} existing, {{ _bs_states_to_create | length }} created."
+      - "Modules: {{ _bs_modules_to_create | length }} created."
+      - "Labels: {{ _bs_labels_to_create | length }} created."

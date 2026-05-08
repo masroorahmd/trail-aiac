@@ -1,0 +1,26 @@
+plane_projects_api_base: "https://{{ domain_plane }}/api/v1"
+
+# Validate TLS only when caddy is using publicly trusted certs (acme mode).
+plane_projects_validate_certs: "{{ caddy_tls_mode | default('acme') == 'acme' }}"
+
+# Default project-level role for agents. Same scale as workspace:
+#   20 = Admin, 15 = Member, 5 = Guest. The admin-token owner becomes the
+# project's first Admin automatically on create (handled server-side).
+plane_projects_member_role: 15
+
+# Default project timezone. MUST come from Plane's curated list at
+# apps/api/plane/app/views/timezone/base.py — see comment in
+# roles/plane_users/defaults/main.yml for why this isn't the server
+# `timezone` var. "Europe/Paris" is Plane's CET entry (no Berlin
+# entry; same UTC+1/+2 offset). Override per-entry with `timezone:`.
+plane_projects_default_timezone: Europe/Paris
+
+# Framework feature toggles applied to every project (and reconciled on
+# re-runs). Plane v1.3.0 ships `module_view` and `issue_views_view`
+# disabled by default — the framework workflow uses both. Override
+# per-project with `features:` on a plane_projects entry.
+plane_projects_features:
+  module_view: true
+  issue_views_view: true
+  cycle_view: false
+  intake_view: false

@@ -1,0 +1,56 @@
+# Secrets — never commit (safety net; framework's own claude/ no
+# longer holds real config or credentials after the install-script
+# refactor — those live in <consumer>/.claude/. These patterns catch
+# accidental drops anywhere in the tree).
+credentials.yaml
+*.credentials.yaml
+plane-agent-tokens*.yml
+plane-agent-tokens*.yaml
+plane-agent-ui-creds*.yml
+plane-agent-ui-creds*.yaml
+
+# Framework's own .claude/ holds Claude Code state for THIS repo's
+# dev sessions only — local, user-specific.
+.claude/*.local.yaml
+.claude/*.local.json
+.claude/scheduled_tasks.lock
+
+# Scratch / drop zone for secret transfers from other hosts
+tmp/
+
+# WSL / Windows cruft
+*:Zone.Identifier
+.DS_Store
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# Python / Node caches (if tooling emerges later)
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# MCP server: integration test config (gitignored, deployment-specific)
+claude/mcp/.env.test
+# .venv inside the framework's mcp/ — created locally for dev/test
+claude/mcp/.venv/
+
+# Ansible: per-deployment inventory + host_vars + secrets. Only the
+# committed *.example/ templates ship in this framework repo. The
+# real files live locally (and on the controller) and never enter git.
+ansible/inventory.yml
+ansible/host_vars/*
+!ansible/host_vars/*.example
+!ansible/host_vars/*.example.yml
+ansible/vault/*
+!ansible/vault/*.example
+!ansible/vault/*.example.yml
+ansible/out/

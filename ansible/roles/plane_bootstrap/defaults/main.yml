@@ -1,0 +1,61 @@
+plane_bootstrap_api_base: "https://{{ domain_plane }}/api/v1"
+plane_bootstrap_validate_certs: "{{ caddy_tls_mode | default('acme') == 'acme' }}"
+
+# Workflow states the framework expects on every project. Plane creates
+# Backlog/Todo/In Progress/Done/Cancelled by default on project create;
+# `In Review` may need to be created — this role makes the full set
+# explicit (create-if-missing). Order matters for UX but not for the
+# create call (Plane orders by `sequence`, which it auto-assigns).
+plane_bootstrap_states:
+  - { name: "Backlog",     group: "backlog",   color: "#A3A3A3" }
+  - { name: "Todo",        group: "unstarted", color: "#3F76FF" }
+  - { name: "In Progress", group: "started",   color: "#FFB454" }
+  - { name: "In Review",   group: "started",   color: "#A26EFD" }
+  - { name: "Done",        group: "completed", color: "#3E9B4F" }
+
+# Phase modules created on every project. Each agent's
+# sub-work-items live in exactly one of these — see doc/WORKFLOW.md.
+plane_bootstrap_modules:
+  - frontend
+  - backend
+  - testing
+  - documentation
+
+# Story-level taxonomy labels (CLAUDE.md → "Story labels"). Created at
+# project level; used to classify parent Stories by product area.
+# Two framework-shipped sets — one per track:
+#
+#   plane_bootstrap_labels_dev       → engineering taxonomy. Use on the
+#                                      Development project (where 9/10
+#                                      personas execute).
+#   plane_bootstrap_labels_business  → founder-track taxonomy. Use on
+#                                      the Business project (Venture
+#                                      Advisor + Business Analyst).
+#
+# Pick one per `plane_projects` entry by setting
+# `labels: "{{ plane_bootstrap_labels_dev }}"` (or `_business`). A
+# project may also pass an inline `[{name,color}, ...]` list to bring
+# its own taxonomy. The role does not delete labels — switching sets
+# on a populated project requires manual cleanup in Plane's UI first.
+# Default fallback (when `labels:` is omitted) is `_dev`.
+
+plane_bootstrap_labels_dev:
+  - { name: "Housekeeping",   color: "#9CA3AF" }
+  - { name: "Security",       color: "#DC2626" }
+  - { name: "UI",             color: "#8B5CF6" }
+  - { name: "Foundation",     color: "#0EA5E9" }
+  - { name: "Lifecycle",      color: "#10B981" }
+  - { name: "Services",       color: "#F59E0B" }
+  - { name: "Operations",     color: "#EF4444" }
+  - { name: "Integrations",   color: "#6366F1" }
+  - { name: "Enterprise",     color: "#1F2937" }
+  - { name: "Distribution",   color: "#14B8A6" }
+  - { name: "Notifications",  color: "#F97316" }
+  - { name: "Configuration",  color: "#64748B" }
+
+plane_bootstrap_labels_business:
+  - { name: "Strategy",       color: "#2563EB" }
+  - { name: "Go-to-Market",   color: "#DB2777" }
+  - { name: "Pricing",        color: "#16A34A" }
+  - { name: "Community",      color: "#A855F7" }
+  - { name: "Discovery",      color: "#F59E0B" }

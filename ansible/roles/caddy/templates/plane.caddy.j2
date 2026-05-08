@@ -1,0 +1,36 @@
+# Managed by the `caddy` ansible role shipped with the Trail framework.
+# Other projects own other files in /etc/caddy/sites.d/ — never edit by hand.
+#
+# Upstream is the host-loopback port the Plane `proxy` container publishes
+# (see plane_proxy_host_port in roles/plane/defaults/main.yml). apt-Caddy
+# runs on the host outside any docker network, so the container alias
+# `plane-proxy:80` is unreachable from here — only the loopback publish is.
+#
+# TLS strategy: {{ plane_caddy_tls_strategy }}{% if plane_caddy_offer_http | bool %} (plain HTTP also exposed){% endif %}.
+
+{% if plane_caddy_offer_http | bool %}
+http://{{ plane_caddy_host }} {
+    reverse_proxy {{ plane_caddy_upstream }}
+}
+
+{% endif %}
+{{ plane_caddy_host }} {
+{% if plane_caddy_tls_strategy == 'tls_files' %}
+    # `import tls_files` resolves to a snippet defined elsewhere in the
+    # base Caddyfile — typically by another ansible project on the host
+    # that has wired up a private-PKI or operator-managed cert.
+    import tls_files
+{% elif plane_caddy_tls_strategy == 'internal' %}
+    # Caddy issues a self-signed cert from its internal CA. Browsers
+    # warn on first hit until you trust /etc/ssl/certs/caddy-root.crt
+    # (or whatever Caddy stored under /var/lib/caddy/.local/share/caddy).
+    tls internal
+{% elif plane_caddy_tls_strategy == 'acme' %}
+    # No tls directive — Caddy's auto-https tries ACME (Let's Encrypt)
+    # for a publicly-resolvable hostname with ports 80+443 reachable
+    # from the internet. On a LAN host ACME fails and Caddy falls
+    # back to internal — set plane_caddy_tls_strategy explicitly to
+    # `internal` if you'd rather skip the failed ACME attempts.
+{% endif %}
+    reverse_proxy {{ plane_caddy_upstream }}
+}

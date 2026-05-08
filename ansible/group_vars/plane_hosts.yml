@@ -1,0 +1,50 @@
+# Framework defaults for any host in the `plane_hosts` group.
+# These are NOT deployment-specific — they encode the framework's wiring
+# choices (the 10-persona agent list, plane-proxy alias, etc.) and should
+# not need editing for a typical install. Per-deployment values live in
+# host_vars/<host>.yml.
+
+# The 10 framework personas. Identity (username, full_name, gender) is
+# framework-fixed; email is templated against plane_agent_email_domain so
+# the same persona list works across any deployment.
+agents:
+  - username: venture-advisor
+    email: "venture-advisor@{{ plane_agent_email_domain }}"
+    full_name: Venture Advisor
+    gender: male
+  - username: business-analyst
+    email: "business-analyst@{{ plane_agent_email_domain }}"
+    full_name: Business Analyst
+    gender: male
+  - username: requirements-engineer
+    email: "requirements-engineer@{{ plane_agent_email_domain }}"
+    full_name: Requirements Engineer
+    gender: male
+  - username: software-architect
+    email: "software-architect@{{ plane_agent_email_domain }}"
+    full_name: Software Architect
+    gender: male
+  - username: security-reviewer
+    email: "security-reviewer@{{ plane_agent_email_domain }}"
+    full_name: Security Reviewer
+    gender: male
+  - username: backend-developer
+    email: "backend-developer@{{ plane_agent_email_domain }}"
+    full_name: Backend Developer
+    gender: male
+  - username: ui-developer
+    email: "ui-developer@{{ plane_agent_email_domain }}"
+    full_name: UI Developer
+    gender: male
+  - username: test-manager
+    email: "test-manager@{{ plane_agent_email_domain }}"
+    full_name: Test Manager
+    gender: female
+  - username: technical-writer
+    email: "technical-writer@{{ plane_agent_email_domain }}"
+    full_name: Technical Writer
+    gender: female
+  - username: release-manager
+    email: "release-manager@{{ plane_agent_email_domain }}"
+    full_name: Release Manager
+    gender: male

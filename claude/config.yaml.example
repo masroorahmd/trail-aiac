@@ -1,0 +1,88 @@
+# Project configuration template for the Trail framework.
+# Copy this file to `config.yaml` and fill in your values. `config.yaml` is
+# gitignored; only this `.example` stub is safe to commit.
+# Secrets live in credentials.yaml (also gitignored).
+
+framework:
+  version: 0.1.0
+
+# Language each persona uses when chatting with USER. The framework's
+# *artefacts* — code, commits, Plane bodies + comments, files under
+# `.claude/context/` and `.claude/agent-memory/`, the project's own
+# source tree — are always in English (the framework targets an
+# international audience). Only the USER↔persona dialogue is variable.
+# Use a natural-language name in English, e.g. `English`, `German`,
+# `French`, `Japanese`. Default: English.
+chat_language: English
+
+# Plane ticket system configuration. Any Plane deployment works — cloud or
+# self-hosted. Tokens per agent go into credentials.yaml.
+#
+# `projects.{business,dev}` are the Plane project IDENTIFIERS — the short
+# prefix Plane embeds in work-item IDs (e.g. `DEV-1`, `BIZ-7`). Visible
+# in the Plane UI under Project Settings → General → Identifier. The
+# Ansible turn-key install (see ansible/README.md) creates exactly these
+# two projects with these identifiers.
+plane:
+  base-url: https://plane.example.com    # your Plane URL, no trailing slash
+  workspace: example                      # workspace slug (URL fragment, lowercase)
+  projects:
+    business: BIZ                         # Startup Advisor's private project
+    dev:      DEV                         # main development project (every other persona)
+
+# Agent identities. The `email` field is each agent's Plane workspace login.
+# Replace `example.com` with your own domain (or use whatever email addresses
+# your Plane users were registered with). Display names and avatars can be
+# customised; keep the top-level agent keys (the "username") intact since
+# they are referenced across the framework.
+agents:
+  venture-advisor:
+    full-name: Venture Advisor
+    email: venture-advisor@example.com
+    gender: male
+    avatar: avatars/venture-advisor.png
+  business-analyst:
+    full-name: Business Analyst
+    email: business-analyst@example.com
+    gender: male
+    avatar: avatars/business-analyst.png
+  requirements-engineer:
+    full-name: Requirements Engineer
+    email: requirements-engineer@example.com
+    gender: male
+    avatar: avatars/requirements-engineer.png
+  software-architect:
+    full-name: Software Architect
+    email: software-architect@example.com
+    gender: male
+    avatar: avatars/software-architect.png
+  security-reviewer:
+    full-name: Security Reviewer
+    email: security-reviewer@example.com
+    gender: male
+    avatar: avatars/security-reviewer.png
+  backend-developer:
+    full-name: Backend Developer
+    email: backend-developer@example.com
+    gender: male
+    avatar: avatars/backend-developer.png
+  ui-developer:
+    full-name: UI Developer
+    email: ui-developer@example.com
+    gender: male
+    avatar: avatars/ui-developer.png
+  test-manager:
+    full-name: Test Manager
+    email: test-manager@example.com
+    gender: female
+    avatar: avatars/test-manager.png
+  technical-writer:
+    full-name: Technical Writer
+    email: technical-writer@example.com
+    gender: female
+    avatar: avatars/technical-writer.png
+  release-manager:
+    full-name: Release Manager
+    email: release-manager@example.com
+    gender: male
+    avatar: avatars/release-manager.png

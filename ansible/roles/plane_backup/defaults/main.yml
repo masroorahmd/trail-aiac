@@ -1,0 +1,30 @@
+# Where the Plane compose stack lives on the host. Defaulted to the
+# same path the `plane` role provisions to; override per-host only if
+# Plane has been moved.
+plane_backup_dir: "{{ plane_dir | default(stacks_dir + '/plane') }}"
+plane_backup_compose_file: "{{ plane_backup_dir }}/compose.yaml"
+
+# Compose service names + paths inside the containers. These match the
+# vendored compose.yaml.j2 in roles/plane and should not need editing.
+plane_backup_db_service: plane-db
+plane_backup_db_name: plane
+plane_backup_db_user: plane
+plane_backup_minio_service: plane-minio
+plane_backup_minio_data_dir: /export
+
+# Sidecar image used to tar (and untar, on restore) the MinIO `uploads`
+# volume. The MinIO image itself does not ship `tar`, so we run a tiny
+# helper container with `--volumes-from plane-minio` and tar from there.
+# Alpine's busybox tar preserves numeric uid/gid by default, which is
+# what we need to round-trip MinIO's on-disk permissions on restore.
+plane_backup_sidecar_image: alpine:3
+
+# Scratch directory on the Plane host. The role builds the bundle here,
+# fetches it to the controller, then cleans up — unless
+# `plane_backup_keep_remote` is set true (useful for debugging).
+plane_backup_remote_workdir: /tmp/plane-backup
+plane_backup_keep_remote: false
+
+# Where the bundle lands on the controller. `out/` is gitignored and
+# already used for other per-host artefacts (mode 0600).
+plane_backup_out_dir: "{{ playbook_dir }}/out"

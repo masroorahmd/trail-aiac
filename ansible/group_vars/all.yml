@@ -1,0 +1,5 @@
+timezone: Europe/Berlin
+stacks_dir: /opt/stacks
+docker_network: web
+
+vault_secrets_file: secrets.yml

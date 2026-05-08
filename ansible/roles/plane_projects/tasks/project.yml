@@ -1,0 +1,186 @@
+# Idempotency is by `identifier` (the 2-5-letter project prefix, e.g.
+# DEV), not `name` — Plane enforces uniqueness on identifier per
+# workspace and it's what agents will embed in work-item references.
+- name: "[{{ project.identifier }}] List projects in workspace"
+  ansible.builtin.uri:
+    url: "{{ plane_projects_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/"
+    method: GET
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+    status_code: 200
+    validate_certs: "{{ plane_projects_validate_certs }}"
+  register: plane_projects_lookup
+  delegate_to: localhost
+  become: false
+  check_mode: false
+
+# Projects list is paginated (`results` key at the top level); fall back
+# to treating .json as the list directly if the shape ever changes.
+- name: "[{{ project.identifier }}] Find project by identifier"
+  ansible.builtin.set_fact:
+    plane_project_match: >-
+      {{
+        (plane_projects_lookup.json.results
+         if (plane_projects_lookup.json is mapping and 'results' in plane_projects_lookup.json)
+         else plane_projects_lookup.json)
+        | selectattr('identifier', 'equalto', project.identifier)
+        | list
+      }}
+
+- name: "[{{ project.identifier }}] Resolve effective feature toggles (defaults ⊕ per-project)"
+  ansible.builtin.set_fact:
+    plane_project_features: "{{ plane_projects_features | combine(project.features | default({})) }}"
+
+- name: "[{{ project.identifier }}] Create project (if missing)"
+  when: plane_project_match | length == 0
+  ansible.builtin.uri:
+    url: "{{ plane_projects_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/"
+    method: POST
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+      Content-Type: application/json
+    body_format: json
+    body: >-
+      {{
+        {
+          'name':        project.name,
+          'identifier':  project.identifier,
+          'description': project.description | default(''),
+          'timezone':    project.timezone | default(plane_projects_default_timezone),
+        } | combine(plane_project_features)
+      }}
+    status_code: [200, 201]
+    validate_certs: "{{ plane_projects_validate_certs }}"
+  register: plane_project_created
+  delegate_to: localhost
+  become: false
+
+# In --check mode the Create-project POST is skipped, so
+# `plane_project_created.json` is absent when the project is missing.
+# Emit an empty id in that one case and short-circuit the member steps
+# so dry-runs against a not-yet-existing project still succeed.
+- name: "[{{ project.identifier }}] Capture project id"
+  ansible.builtin.set_fact:
+    plane_project_id: >-
+      {{
+        plane_project_match[0].id
+        if (plane_project_match | length > 0)
+        else (plane_project_created.json.id
+              if (plane_project_created.json is defined)
+              else '')
+      }}
+
+- name: "[{{ project.identifier }}] Skip remaining tasks if project id is empty (check-mode on a missing project)"
+  when: (plane_project_id | string) | length == 0
+  ansible.builtin.debug:
+    msg: "Project {{ project.identifier }} does not exist and --check skipped the create — remaining tasks are skipped."
+
+# Drift reconciliation for existing projects: PATCH name / identifier /
+# description / timezone if any differ from group_vars, AND always send
+# the desired feature toggles. Plane returns 200 even when the patch is
+# a no-op, so the cost of always-sending features is one harmless
+# request per existing project per run; KISS beats clever drift math.
+#
+# Not handled here (deliberate, because destructive): changing an
+# agent's project role after-the-fact, or removing agents who dropped
+# out of the `agents` list. Both need a human eyeball — edit in the UI.
+- name: "[{{ project.identifier }}] Reconcile project (drifted fields + desired features)"
+  when: plane_project_match | length > 0
+  vars:
+    _desired_timezone: "{{ project.timezone | default(plane_projects_default_timezone) }}"
+    _desired_description: "{{ project.description | default('') }}"
+    _existing: "{{ plane_project_match[0] }}"
+    _drift: >-
+      {{
+        ({} if _existing.name         == project.name         else {'name':        project.name})
+        | combine(
+          {} if _existing.identifier  == project.identifier   else {'identifier':  project.identifier})
+        | combine(
+          {} if _existing.description == _desired_description else {'description': _desired_description})
+        | combine(
+          {} if _existing.timezone    == _desired_timezone    else {'timezone':    _desired_timezone})
+        | combine(plane_project_features)
+      }}
+  ansible.builtin.uri:
+    url: "{{ plane_projects_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ plane_project_id }}/"
+    method: PATCH
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+      Content-Type: application/json
+    body_format: json
+    body: "{{ _drift }}"
+    status_code: 200
+    validate_certs: "{{ plane_projects_validate_certs }}"
+  delegate_to: localhost
+  become: false
+
+# Project-member GET returns User objects (id, email, …), NOT ProjectMember
+# rows — adequate for "is this email already a member?" but means we can't
+# tell role from the listing. For idempotency (add-if-missing) that's fine.
+- name: "[{{ project.identifier }}] List current project members"
+  when: (plane_project_id | string) | length > 0
+  ansible.builtin.uri:
+    url: "{{ plane_projects_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ plane_project_id }}/members/"
+    method: GET
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+    status_code: 200
+    validate_certs: "{{ plane_projects_validate_certs }}"
+  register: plane_project_members_lookup
+  delegate_to: localhost
+  become: false
+  check_mode: false
+
+- name: "[{{ project.identifier }}] Compute agents to add as project members"
+  when: (plane_project_id | string) | length > 0
+  vars:
+    # Per-project allowlist: if `members:` is present on the project
+    # entry, restrict to those usernames. Otherwise every agent in the
+    # framework's `agents` list is eligible.
+    _eligible_agents: >-
+      {{ (agents | selectattr('username', 'in', project.members) | list)
+         if (project.members is defined)
+         else agents }}
+  ansible.builtin.set_fact:
+    plane_project_members_present: >-
+      {{ plane_project_members_lookup.json | map(attribute='email') | map('lower') | list }}
+    plane_project_agents_to_add: >-
+      {{ _eligible_agents
+         | rejectattr('email', 'in',
+             plane_project_members_lookup.json | map(attribute='email') | map('lower') | list)
+         | list }}
+
+# Agents whose email has no UUID in the workspace-member map haven't
+# accepted the invite yet — ProjectMemberSerializer.validate_member
+# would 400 on them. Log + skip; they'll be picked up next run.
+- name: "[{{ project.identifier }}] Warn about agents missing from workspace"
+  when:
+    - (plane_project_id | string) | length > 0
+    - (item.email | lower) not in plane_workspace_member_by_email
+  ansible.builtin.debug:
+    msg: "Skipping {{ item.username }} — not yet an active workspace member."
+  loop: "{{ plane_project_agents_to_add }}"
+  loop_control:
+    label: "{{ item.email }}"
+
+- name: "[{{ project.identifier }}] Add agents as project members"
+  when:
+    - (plane_project_id | string) | length > 0
+    - (item.email | lower) in plane_workspace_member_by_email
+  ansible.builtin.uri:
+    url: "{{ plane_projects_api_base }}/workspaces/{{ plane_workspace.slug }}/projects/{{ plane_project_id }}/members/"
+    method: POST
+    headers:
+      X-Api-Key: "{{ plane.admin_token }}"
+      Content-Type: application/json
+    body_format: json
+    body:
+      member: "{{ plane_workspace_member_by_email[item.email | lower] }}"
+      role: "{{ plane_projects_member_role | int }}"
+    status_code: [200, 201]
+    validate_certs: "{{ plane_projects_validate_certs }}"
+  loop: "{{ plane_project_agents_to_add }}"
+  loop_control:
+    label: "{{ item.email }}"
+  delegate_to: localhost
+  become: false
