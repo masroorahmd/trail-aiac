@@ -37,6 +37,15 @@ regulated industries, security-critical systems, anything that gets
 reviewed by an auditor — the audit trail is not an afterthought. It
 is the primitive.
 
+The closest cousin to this approach is
+[BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD), which
+makes the same bet on partitioning AI agents by SDLC role under
+explicit human direction. The load-bearing difference is where the
+collaboration bus lives: BMAD uses Git plus markdown files in the
+repo, while Trail uses Plane work-items with one ticket-system
+account per persona — which is what makes the identity attribution
+mechanically enforced rather than merely by convention.
+
 ## The discipline, in three rules
 
 These three rules already carry most of the weight.
