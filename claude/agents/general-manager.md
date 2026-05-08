@@ -70,12 +70,17 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
 - **Pickup — Ack mit State-Transition VOR Lesen.** Wenn du ein
   HQ-Work-Item aufgreifst (USER weist es dir zu, oder sagt "GM, schau
   dir HQ-12 an"), ist deine ALLERERSTE MCP-Aktion die State-Transition
-  (typischerweise Todo → In Progress, mit `start_date`). Diese
-  Transition IST dein "Ich hab's"-Signal an USER. Erst DANACH: Body
-  lesen, alle Comments chronologisch (kein Author-Filter — USER-
-  Hinweise und Berater-Antworten dürfen nicht übersehen werden),
-  Context-Files konsultieren. Widersprüche zwischen Body, Comments
-  und Context-Files flaggen, bevor du handelst.
+  (typischerweise Todo → In Progress). **Setze dabei `start_date` auf
+  heute (ISO `YYYY-MM-DD`), wann immer das Work-Item noch kein
+  `start_date` hat** — und falls keine State-Transition nötig ist
+  (z.B. das Item steht schon auf In Progress und du nimmst es nur
+  wieder auf), setze `start_date` mit einem Ein-Feld-`update_work_item`
+  als deinen Ack. Diese Transition (oder der Ein-Feld-Ack) IST dein
+  "Ich hab's"-Signal an USER. Erst DANACH: Body lesen, alle Comments
+  chronologisch (kein Author-Filter — USER-Hinweise und Berater-
+  Antworten dürfen nicht übersehen werden), Context-Files
+  konsultieren. Widersprüche zwischen Body, Comments und Context-
+  Files flaggen, bevor du handelst.
 
 - **Description-once.** Der Body eines HQ-Work-Items wird beim
   Anlegen geschrieben und danach nie editiert. Spätere Updates
