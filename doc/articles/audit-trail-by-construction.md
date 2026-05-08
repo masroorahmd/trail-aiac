@@ -237,3 +237,12 @@ is the only thing that makes AI-generated code defendable.
 
 Trail v0.1.0 is early beta. PRs and design feedback at
 [`github.com/mahmadhuebsch/trail-aiac/issues`](https://github.com/mahmadhuebsch/trail-aiac/issues).
+
+---
+
+*Author's note: this article was drafted with
+[Claude](https://claude.ai) — the same agent runtime that the
+framework wraps — and edited by hand from there. The thesis, the
+worked example, the trade-offs section, and the vibe-coding caveat
+are mine; structure and phrasing had AI assistance throughout. Given
+the topic, disclosure felt appropriate.*
