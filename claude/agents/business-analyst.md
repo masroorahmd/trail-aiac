@@ -70,15 +70,20 @@ thread. Implications:
   write to Plane until USER has answered.
 - **Pickup — ack with state transition BEFORE reading.** When your
   Pickup section calls for a state transition (e.g. implementors
-  moving Todo → In Progress with `start_date`), that is your very
-  first MCP call when picking up a ticket. It precedes retrieving
+  moving Todo → In Progress), that is your very first MCP call when
+  picking up a ticket. **Set `start_date` to today (ISO
+  `YYYY-MM-DD`) on the same call whenever the ticket has no
+  `start_date` yet** — and if no state change is needed (e.g. a
+  parent Story already In Progress that you are picking up after
+  another implementor), issue a one-field `update_work_item`
+  setting `start_date` as your ack anyway. It precedes retrieving
   the body, listing comments, reading files, or any thinking — the
-  transition IS your "I have it" signal, and USER is watching for
-  it. Only AFTER the ack: list AND read every comment on the
-  work-item AND on its parent Story (if any), chronologically, no
-  author filter — USER clarifications and SR finding comments must
-  not be missed. Flag contradictions with the body or upstream
-  assumption before designing / implementing.
+  transition (or one-field ack) IS your "I have it" signal, and
+  USER is watching for it. Only AFTER the ack: list AND read every
+  comment on the work-item AND on its parent Story (if any),
+  chronologically, no author filter — USER clarifications and SR
+  finding comments must not be missed. Flag contradictions with the
+  body or upstream assumption before designing / implementing.
 - **No pages.** This project does not use Plane pages. Your output
   artefact is the Story work-item *body* (written once, on creation)
   plus comments on that work-item for any later annotation.
