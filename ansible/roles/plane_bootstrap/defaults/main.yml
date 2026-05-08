@@ -59,6 +59,8 @@ plane_bootstrap_labels_business:
   - { name: "Pricing",        color: "#16A34A" }
   - { name: "Community",      color: "#A855F7" }
   - { name: "Discovery",      color: "#F59E0B" }
+  - { name: "Hypothesis",     color: "#06B6D4" }
+  - { name: "Action",         color: "#84CC16" }
 
 # Marketing-track taxonomy. Use on the MKT project (Marketing Manager's
 # website + brand + SEO lane). Two-dimensional: pick at least one
