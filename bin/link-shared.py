@@ -65,8 +65,9 @@ CONTEXT_FILES = [
 ]
 
 # Every persona's memory is shared so cross-repo lessons carry through
-# (UI-Developer's Astro learnings on the OSS site help on the EE site,
-# BA's strategic decisions on certhaven propagate to www.certhaven.org).
+# (UI-Developer's frontend-stack learnings on one consumer help on the
+# next, BA's strategic decisions propagate across all consumer repos
+# in the same group).
 PERSONAS = [
     "general-manager",
     "business-analyst",
