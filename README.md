@@ -50,6 +50,43 @@ autonomously; they execute the discipline above, so it does not
 slip under deadline pressure. Intent and accountability stay with
 the human.
 
+What the discipline produces in practice is a single, append-only
+chain of stable IDs — from the requirement that motivated the work
+down to the test that proves it:
+
+```mermaid
+flowchart TB
+    subgraph Story["📋 Story body — BA writes once"]
+        SC1["<b>SC-1</b><br/>Customer receives an order confirmation"]
+    end
+
+    subgraph ACCmt["💬 AC comment on the Story — RE"]
+        direction LR
+        AC11["<b>AC-1.1</b><br/>Email arrives within 60s"]
+        AC12["<b>AC-1.2</b><br/>Order has a unique, stable number"]
+        EC11a["<b>EC-1.1.a</b><br/>Payment provider timeout → retry 3×"]
+    end
+
+    subgraph TestCode["🧪 Test code in the repo — BD / TM"]
+        direction LR
+        T1["test_confirmation_arrives()<br/>// AC-1.1"]
+        T2["test_order_number_unique()<br/>// AC-1.2"]
+        T3["test_payment_retry_on_timeout()<br/>// EC-1.1.a"]
+    end
+
+    SC1 ==> AC11
+    SC1 ==> AC12
+    AC11 ==> EC11a
+    AC11 -.-> T1
+    AC12 -.-> T2
+    EC11a -.-> T3
+```
+
+A `grep` for `AC-1.1` traces a single criterion from BA intent down
+to the line of code that proves it. The chain works in both
+directions — intent → code (forward) or code → why (backward) —
+and stays legible without anyone having to interpret it.
+
 ## The team
 
 | | Agent | Trait | Role |
