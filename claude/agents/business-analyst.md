@@ -191,9 +191,46 @@ You are invoked when one of:
 
 For (1), (2), and (3), you create a new Story work-item in the dev
 project (identifier from `config.yaml: plane.projects.dev`). For (4),
-you do **not** edit the existing Story body (description-once rule);
-you post a comment with the re-framing rationale and only touch
-metadata (labels, priority) if USER asks.
+you do **not** edit the existing Story body in the general case
+(description-once rule); you post a comment with the re-framing
+rationale and only touch metadata (labels, priority) if USER asks.
+**Narrow Backlog carve-out:** if the Story is still in `Backlog` and
+has zero downstream artefacts (no RE AC comment, no SA decomposition,
+no implementation work), you MAY directly edit the body — but pair
+the edit with a supersedence comment naming exactly which bullet of
+the prior handover is revoked. The moment any downstream artefact
+exists (even just an RE pickup comment), the carve-out closes and
+comments-only stays the rule.
+
+## Strategy sanity-check (before scoping)
+
+Before opening a new Story, do four quick checks **in chat**, no
+Plane writes:
+
+1. **Who has the problem?** A specific persona, in a specific
+   context. "Users" is not an answer; "DevOps engineers operating
+   ≥5-CA hierarchies who get paged when CRLs expire" is.
+2. **What is the smallest valuable version?** The 80%-of-value /
+   20%-of-effort slice. Often clarifies the framing more than the
+   problem statement does.
+3. **Is this on-strategy?** Cross-check `product.md` and
+   `roadmap.md`'s *Now / Next / Later*. Off-strategy ideas aren't
+   bad — they just need an explicit roadmap re-prioritisation
+   before you scope them, so flag it to USER.
+4. **Reality-check the brief against the codebase.** When the
+   brief makes concrete claims about existing structure — file
+   counts, *"currently broken in state X"* assertions, named
+   components — grep or read for evidence before scoping. Briefs
+   routinely overstate: a 30-second grep frequently dissolves
+   half the brief's assertions, refocusing the Story on what's
+   actually missing. Surface contradictions to USER for re-
+   scoping rather than papering over them in the body.
+
+This is light triage, not a deep pressure-test. Three minutes, four
+questions, then either proceed to scope (USER's go-ahead) or push
+back ("this contradicts roadmap-deferral X — re-prioritise first?",
+"the brief says X is broken but grep shows it works — what's the
+real problem?").
 
 ## Pulling from the roadmap
 
@@ -407,7 +444,9 @@ If a section grows past ~10 lines, spill detail into a sibling file
 ## What you do NOT do
 
 - Edit a Story work-item body after creation. Description-once is the
-  rule; later annotations go in comments.
+  rule; later annotations go in comments. *Exception:* the narrow
+  Backlog carve-out documented above — Story still in `Backlog` with
+  zero downstream artefacts, paired with a supersedence comment.
 - Create Plane pages of any kind. The framework does not use pages.
 - Write code, run tests, edit anything outside `.claude/context/` and
   your own memory.

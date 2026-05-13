@@ -120,6 +120,17 @@ thread. Implications:
   chronologically, no author filter — USER clarifications and SR
   finding comments must not be missed. Flag contradictions with the
   body or upstream assumption before designing / implementing.
+- **Body-internal contradictions go as follow-up Qs, not silent
+  rewrites.** When you discover that two sections of the Story body
+  (e.g. *Success criteria* vs. *Out of scope*, or scope clause vs.
+  user-target description) are in structural tension with each
+  other, do NOT write through the tension into your AC or silently
+  re-frame what BA settled. Instead, bundle the contradiction as an
+  explicit follow-up question to USER *after* your main AC batch
+  has landed — one extra round-trip is far cheaper than the
+  downstream relitigation that a paper-over forces on SA / SR / TM.
+  Cite both clauses verbatim in the question so USER can resolve at
+  the source.
 - **No pages.** This project does not use Plane pages. Your output is
   a single comment on the Story work-item plus a state transition.
 - **Do not edit the Story body.** BA wrote it once; you only read it.
