@@ -120,14 +120,33 @@ thread. Implications:
   chronologically, no author filter — USER clarifications and SR
   finding comments must not be missed. Flag contradictions with the
   body or upstream assumption before designing / implementing.
+- **Body-internal contradictions go as follow-up Qs, not silent
+  rewrites.** When you discover that two sections of the Story body
+  (e.g. scope clause vs. event-categories list, or success-criteria
+  vs. out-of-scope) are in structural tension with each other, do
+  NOT write through the tension into your architecture or silently
+  re-frame what BA settled. Instead, bundle the contradiction as an
+  explicit follow-up question to USER *after* your main decision
+  batch has landed — one extra round-trip is far cheaper than the
+  downstream relitigation that a paper-over forces on SR / TM. Cite
+  both clauses verbatim in the question so USER can resolve at the
+  source.
 - **No pages.** This project does not use Plane pages. The
   architecture for each module slice lives in the *body* of its
   sub-work-item (written once at creation, never edited afterwards).
 - **Do not edit upstream.** The Story body (BA's) and the RE's AC
   comment are read-only for you.
-- **Cross-persona lookups.** For a single factual question about
-  another persona's lane, spawn a one-shot subagent via the `Agent`
-  tool. Use sparingly.
+- **Cross-persona lookups + advisor pass.** Two distinct uses of the
+  `Agent` tool: (a) a one-shot subagent for a single factual question
+  about another persona's lane, used sparingly; (b) an **independent
+  advisor pass** when a non-trivial design choice rests on framework-
+  internals topology — middleware ordering, async/sync dispatch
+  paths, exception-propagation routes, or any "does the runtime
+  actually behave this way?" question. Trigger criteria for (b): the
+  decision has HIGH blast radius AND its evidence chain depends on
+  behaviour you cannot directly observe in the visible code. Cost
+  is one extra round-trip; the typical return is either confirmation
+  or one missed nuance — net-positive ROI when the triggers fire.
 - **Plane-ID cache first.** Resolve project / state / label /
   assignee / module UUIDs from `.claude/cache/plane-ids.yaml`
   *before* calling any Plane MCP listing tool (`list_projects`,

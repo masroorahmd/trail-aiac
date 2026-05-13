@@ -328,7 +328,13 @@ without the cold-start each subagent invocation otherwise causes.
 ## Rules and conventions
 
 - **Description-once.** Every work-item body is written exactly once
-  (at creation). Later annotations are comments.
+  (at creation). Later annotations are comments. *Narrow Backlog
+  carve-out:* a Story body still in `Backlog` with zero downstream
+  artefacts (no RE AC comment, no SA decomposition, no implementation
+  work) may be directly edited by BA under USER instruction — paired
+  with a supersedence comment that names exactly which bullet of the
+  prior handover is revoked. The moment any downstream artefact
+  exists, the carve-out closes and comments-only stays the rule.
 - **One module per sub-work-item.** Multi-module assignment is not
   supported — use separate sub-work-items if a phase splits.
 - **One or more product-area labels per Story.** Plane allows
@@ -337,6 +343,17 @@ without the cold-start each subagent invocation otherwise causes.
 - **Sub-work-item creation is SA-only.** No other persona creates
   children. (Exception is human emergency: the user can create children
   manually if needed.)
+- **Any persona may originate a Story.** BA is the default, but any
+  persona that surfaces a concrete issue during chat-mode
+  investigation (SR finding a structural risk, SA spotting an
+  architectural debt, TM noticing missing coverage) may originate a
+  new Plane Story directly, with USER's explicit confirmation. Routing
+  by shape: *bug-shaped* (clear fix path, clear AC) → assign to RE;
+  *feature-shaped* (new convention, new artefact, ambiguous scope) →
+  assign to BA. The originating persona writes the body, applies
+  labels, and hands off via the `plane-handover` skill. Don't
+  reflex-bounce scoping work back to BA when the framing is already
+  bug-shaped and ready to decompose.
 - **No module for Requirements, Architecture, or Security Review.**
   Those activities live at the body / comment level.
 - **USER closes every ticket.** Personas move tickets to `In Review`

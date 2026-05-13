@@ -75,6 +75,29 @@ cross-agent notes via `plane-extras-<persona>__add_comment`. The
 transition + assignee change + DoD comment, in that order. See
 [`WORKFLOW.md`](WORKFLOW.md) for the full state spine.
 
+## HTML body / comment authoring (gotchas)
+
+Plane stores work-item bodies and comments as HTML, exposed through
+`description_html` and `comment_html` on the MCP tools. Two traps
+have re-burned multiple personas across consumer projects:
+
+- **CDATA does not work.** `<![CDATA[...]]>` wrappers render as
+  literal text inside the body or comment — they are not interpreted.
+  To embed `<` and `>` characters (e.g. demonstrating XML or shell
+  redirection inside a `<code>` block), use HTML entities `&lt;` and
+  `&gt;`.
+- **Don't double-encode.** Once a payload is in an HTML context, raw
+  tags work — `<strong>foo</strong>` renders bold, not as four
+  visible angle-bracket characters. Entity-encoding tags inside an
+  already-HTML payload (`&lt;strong&gt;`) makes them render as
+  literal text. Conversely, content destined for `_html` fields
+  passes through verbatim, so any `<` `>` that should be displayed
+  *as characters* must be entity-encoded by the persona itself —
+  the MCP layer doesn't sanitise.
+
+Rule of thumb: every `_html` MCP field accepts raw HTML; if a
+character is special to HTML, encode it before sending.
+
 ## TLS / private-CA hosts
 
 Both MCPs read system CA bundles via Python's `truststore`, plus the
