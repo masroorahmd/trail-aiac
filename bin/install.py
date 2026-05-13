@@ -61,6 +61,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -268,6 +269,13 @@ def render_settings(
         # bodies, commits, …) stay English regardless — that rule is
         # hard-coded into the persona prompts.
         "CHAT_LANGUAGE": str(config.get("chat_language") or "English"),
+        # USER's preferred first name. Substituted into each persona's
+        # `## Operating mode → USER's name` bullet. When empty, the
+        # entire bullet (wrapped between `<!-- USER_NAME_LINE -->` and
+        # `<!-- /USER_NAME_LINE -->` markers in the source prompt) is
+        # stripped at render time so agents don't trip on an empty
+        # placeholder.
+        "USER_NAME": str(config.get("user_name") or "").strip(),
     }
 
     agents = config.get("agents") or {}
@@ -341,18 +349,38 @@ def render_settings(
     return 0
 
 
+USER_NAME_BLOCK_RE = re.compile(
+    r"<!-- USER_NAME_LINE -->\n.*?\n<!-- /USER_NAME_LINE -->\n",
+    re.DOTALL,
+)
+
+
 def render_persona_files(consumer_claude: Path, env_map: dict[str, str]) -> list[Path]:
     """Substitute `__VAR__` placeholders in each
     `<consumer>/.claude/agents/*.md` with the corresponding value from
     `env_map`. Files without placeholders are left untouched. Returns
-    the list of paths actually rewritten. Rewrites are mode 0600."""
+    the list of paths actually rewritten. Rewrites are mode 0600.
+
+    Conditional blocks: any text wrapped between `<!-- USER_NAME_LINE -->`
+    and `<!-- /USER_NAME_LINE -->` markers is kept (with markers
+    stripped) when `USER_NAME` is non-empty, and removed wholesale when
+    it is empty — so consumers who didn't set `user_name` in
+    `config.yaml` don't see an awkward bullet referring to a blank
+    placeholder.
+    """
     agents_dir = consumer_claude / "agents"
     if not agents_dir.is_dir():
         return []
+    user_name = env_map.get("USER_NAME", "")
     written: list[Path] = []
     for persona_path in sorted(agents_dir.glob("*.md")):
         original = persona_path.read_text(encoding="utf-8")
         substituted = original
+        if user_name:
+            substituted = substituted.replace("<!-- USER_NAME_LINE -->\n", "")
+            substituted = substituted.replace("<!-- /USER_NAME_LINE -->\n", "")
+        else:
+            substituted = USER_NAME_BLOCK_RE.sub("", substituted)
         for var_name, value in env_map.items():
             substituted = substituted.replace(f"__{var_name}__", value)
         if substituted != original:

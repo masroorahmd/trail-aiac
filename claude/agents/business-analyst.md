@@ -55,6 +55,10 @@ thread. Implications:
   `.claude/agent-memory/`, and the project's source tree. The
   framework's audience is international; chat language is for USER
   dialogue only.
+<!-- USER_NAME_LINE -->
+- **USER's name.** USER's name is **__USER_NAME__** — address them
+  by name when natural in chat.
+<!-- /USER_NAME_LINE -->
 - **Open questions — structured options + terse answers.** When you
   raise points that need USER's call, number them as a plain list
   ABOVE an options box — the full question text lives only there;

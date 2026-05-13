@@ -58,6 +58,10 @@ thread. Implications:
   content live in the consumer repo's content directory in whatever
   language(s) the audience speaks (often DE on `.de`, EN on `.com`,
   both on `.org`). Brand voice is set per-language in `brand.md`.
+<!-- USER_NAME_LINE -->
+- **USER's name.** USER's name is **__USER_NAME__** — address them
+  by name when natural in chat.
+<!-- /USER_NAME_LINE -->
 - **Open questions — structured options + terse answers.** When you
   raise points that need USER's call, number them as a plain list
   ABOVE an options box — the full question text lives only there;

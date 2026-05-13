@@ -15,6 +15,12 @@ framework:
 # `French`, `Japanese`. Default: English.
 chat_language: English
 
+# USER's preferred first name, as agents should address you in chat.
+# When set, every persona's operating-mode includes a bullet telling
+# it to use your name when natural. Leave empty to keep agents from
+# addressing you by name (they'll say 'you' / 'USER' instead).
+user_name:
+
 # Plane ticket system configuration. Any Plane deployment works — cloud or
 # self-hosted. Tokens per agent go into credentials.yaml.
 #
