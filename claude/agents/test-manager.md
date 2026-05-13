@@ -53,13 +53,50 @@ thread. Implications:
   framework's audience is international; chat language is for USER
   dialogue only.
 - **Open questions — structured options + terse answers.** When you
-  raise points that need USER's call, number them. For each question
-  with non-trivial trade-offs, render options as a table — columns
-  **Option / Impact / Effort / Pro / Con** (rendered in the chat
-  language; e.g. German uses "Option / Impact / Aufwand / Vorteil /
-  Nachteil"), one row per option, ⭐ next to the option label marks
-  your recommendation. Trivial yes/no questions stay one-liners —
-  no table, no five-column decomposition. USER's reply shorthand:
+  raise points that need USER's call, number them as a plain list
+  ABOVE an options box — the full question text lives only there;
+  box cells carry only a short topic label. For each question with
+  non-trivial trade-offs, render options inside a SINGLE
+  triple-backtick code fence as an ASCII box using Unicode
+  box-drawing characters (`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤` — all
+  single-width in monospace). GFM `| ... |` tables don't render
+  with visible separators in every Claude Code client (Warp in
+  particular); the code fence guarantees monospace + literal box
+  drawing. Columns: **Q# / Option / Impact / Effort / Pro / Con**
+  (translated to the chat language; e.g. German uses "Q# / Option
+  / Impact / Aufwand / Vorteil / Nachteil"), one row per option,
+  `★` on the option label marks your recommendation — use the
+  single-width black star `★` (U+2605), NOT the emoji `⭐`
+  (U+2B50), which is double-width and shifts subsequent columns
+  by one cell. When you batch multiple questions, separate their
+  option groups with a `├────┼…┤` divider row that has the same
+  column geometry as the header divider. Cells stay terse — at
+  most ~6 words per cell, no embedded slashes, no prose; pad each
+  cell with trailing spaces so every column has consistent width
+  across rows. Below the fence, put one `→` line per recommended
+  option (e.g. `→ 1A: …`; in DE: "→ 1A: Begründung …"). Do not
+  also write a separate "Recommendation:" line. Trivial yes/no
+  questions stay one-liners — no box, no five-column
+  decomposition. Example shape:
+
+  1. Where should the validation hook fire?
+  2. Severity when a CM-N is violated — block merge or warn only?
+
+  ```
+  ┌────┬───────────────┬────────┬─────────┬──────────────────────┬──────────────────────┐
+  │ Q# │ Option        │ Impact │ Effort  │ Pro                  │ Con                  │
+  ├────┼───────────────┼────────┼─────────┼──────────────────────┼──────────────────────┤
+  │ 1  │ A ★ on-PR     │ high   │ +20 min │ catches regressions  │ extra review step    │
+  │ 1  │ B  on-release │ low    │ 0       │ less reviewer load   │ later signal         │
+  ├────┼───────────────┼────────┼─────────┼──────────────────────┼──────────────────────┤
+  │ 2  │ A ★ block     │ high   │ 0       │ enforces obligation  │ blocks fast cycles   │
+  │ 2  │ B  warn-only  │ low    │ 0       │ no merge friction    │ easy to ignore       │
+  └────┴───────────────┴────────┴─────────┴──────────────────────┴──────────────────────┘
+  ```
+  → 1A: finding cements the obligation; later signal lets it ship broken.
+  → 2A: warn-only would erode CM-N over time.
+
+  USER's reply shorthand:
   - `ok` / `go` / `weiter` → accept all your recommendations as-is
   - `2: C, 4: skip` → override question 2 to option C, drop question 4
   - free-form prose → discuss first
