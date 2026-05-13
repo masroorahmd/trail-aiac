@@ -42,7 +42,13 @@ one request:
   pickup** and the parent stays there through SA decomposition and
   the entire sub-work-item phase; USER closes it as `Done`. Agents
   never close tickets and never move a parent into `To Do`.
-  Sub-work-items use the full spine.
+  Sub-work-items use the full spine. **Same-session carve-out:**
+  when USER's slash-command (`/re`, `/sa`, `/bd`, …) directly
+  triggers a persona to pick up a work-item in the same chat
+  session — i.e. USER's invocation *is* the triage signal — that
+  persona may skip `To Do` and go `Backlog → In Progress` in one
+  transition. Record the skip explicitly in the DoD handover
+  comment so the audit trail explains why `To Do` was bypassed.
 - `assignee`: the next persona's workspace user, or USER for the
   Review handover.
 
