@@ -57,11 +57,49 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   *"poste den Status-Comment"*. Bis dahin: nichts in Plane schreiben.
 
 - **Offene Fragen — strukturierte Optionen, knappe Antworten.** Wenn
-  du Punkte aufwirfst, die USER entscheiden muss, nummeriere sie. Bei
-  nicht-trivialen Trade-offs rendere Optionen als Tabelle — Spalten
-  **Option / Impact / Aufwand / Vorteil / Nachteil**, eine Zeile pro
-  Option, ⭐ vor der Option markiert deine Empfehlung. Triviale
-  Ja/Nein-Fragen bleiben Einzeiler. USER's Antwort-Shorthand:
+  du Punkte aufwirfst, die USER entscheiden muss, nummeriere sie als
+  einfache Liste ÜBER der Optionen-Box — der volle Fragetext lebt
+  nur dort; die Box-Zellen tragen nur ein kurzes Thema-Label. Bei
+  nicht-trivialen Trade-offs rendere die Optionen in EINEM
+  Triple-Backtick-Code-Fence als ASCII-Box mit Unicode-Box-Drawing-
+  Zeichen (`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤` — alle single-width in
+  Monospace). GFM `| ... |`-Tabellen rendern in manchen Claude-
+  Code-Clients (insbesondere Warp) ohne sichtbare Trennlinien; der
+  Code-Fence garantiert Monospace + literale Box-Zeichen. Spalten:
+  **Q# / Option / Impact / Aufwand / Vorteil / Nachteil**, eine
+  Zeile pro Option, `★` vor dem Option-Label markiert deine
+  Empfehlung — nimm den single-width Black Star `★` (U+2605),
+  NICHT das Emoji `⭐` (U+2B50), das double-width ist und alle
+  folgenden Spalten um eine Cell verschiebt. Bei mehreren Fragen
+  trenne die Optionen-Gruppen mit einer `├────┼…┤`-Zeile mit
+  derselben Spalten-Geometrie wie der Header-Trenner. Zellen knapp
+  — max. ~6 Wörter pro Zelle, keine Slashes in der Zelle, keine
+  Fließtext-Sätze; jede Zelle mit Trail-Spaces auf konsistente
+  Spalten-Breite padden. Unter dem Fence eine `→`-Zeile pro
+  empfohlener Option (z.B. "→ 1A: Begründung …"). Keine separate
+  "Empfehlung:"-Zeile dazu. Triviale Ja/Nein-Fragen bleiben
+  Einzeiler. Beispielform:
+
+  1. Erinnerungs-Mechanik wählen — wie soll USER an liegende
+     Aufgaben erinnert werden?
+  2. Doku-Format für Behörden-Korrespondenz — wo halten wir
+     Aktenzeichen und Fristen fest?
+
+  ```
+  ┌────┬───────────────┬────────┬─────────┬──────────────────────┬──────────────────────┐
+  │ Q# │ Option        │ Impact │ Aufwand │ Vorteil              │ Nachteil             │
+  ├────┼───────────────┼────────┼─────────┼──────────────────────┼──────────────────────┤
+  │ 1  │ A ★ Plane-Sub │ hoch   │ +10 min │ alles im Ticket-Sys  │ Plane-Notif schwach  │
+  │ 1  │ B  Kalender   │ mittel │ 0       │ proaktiver Push      │ extra Kanal          │
+  ├────┼───────────────┼────────┼─────────┼──────────────────────┼──────────────────────┤
+  │ 2  │ A ★ Comments  │ hoch   │ 0       │ Thread pro Vorgang   │ kein Volltext-Search │
+  │ 2  │ B  pro Amt    │ mittel │ +5 min  │ ein Ort pro Stelle   │ Granularität weg     │
+  └────┴───────────────┴────────┴─────────┴──────────────────────┴──────────────────────┘
+  ```
+  → 1A: Plane bleibt single source of truth.
+  → 2A: Thread-Verlauf passt zur Behörden-Korrespondenz.
+
+  USER's Antwort-Shorthand:
   - `ok` / `weiter` / `go` → akzeptiere alle Empfehlungen as-is
   - `2: B, 4: skip` → Frage 2 → Option B, Frage 4 streichen
   - Fließtext → diskutiere weiter
