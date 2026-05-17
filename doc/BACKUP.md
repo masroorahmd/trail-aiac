@@ -1,17 +1,24 @@
 # Plane backup (Ansible)
 
-Ad-hoc backup of a running Plane v1.3.0 stack. Captures the two
-stateful services — Postgres and MinIO — into a single tar.gz on the
-controller. Both containers stay running. Designed for the homelab /
-single-host case; not a substitute for a managed-service backup
-strategy.
+Backup of a running Plane v1.3.0 stack. Captures the two stateful
+services — Postgres and MinIO — into a single tar.gz. Both containers
+stay running. Designed for the homelab / single-host case; not a
+substitute for a managed-service backup strategy.
+
+Two delivery paths, same mechanics:
+
+| Path | Trigger | Where the bundle lands | When to use |
+|---|---|---|---|
+| **Ad-hoc** (`ansible/backup.yml`) | Manual: `ansible-playbook backup.yml` from the controller | `ansible/out/` on the controller | Before a risky migration; when you want a bundle on your laptop to inspect or take with you. |
+| **Recurring** (`ansible/backup-cron.yml`) | Cron on the Plane host, daily | Wherever `plane_backup_cron_target_dir` points — typically an external mount (NFS / CIFS / S3-fuse) | The continuous safety net. Install once per host. |
 
 ```bash
 cd ansible/
-ansible-playbook backup.yml
+ansible-playbook backup.yml          # ad-hoc, one-shot
+ansible-playbook backup-cron.yml     # install the recurring schedule
 ```
 
-The bundle lands in `ansible/out/` (gitignored, mode 0600):
+The ad-hoc bundle lands in `ansible/out/` (gitignored, mode 0600):
 
 ```
 plane-backup-<inventory_hostname>-<UTC-timestamp>.tar.gz
@@ -136,23 +143,69 @@ fine for the standard provisioning. Override only when:
 | `plane_backup_keep_remote` | `false` | Debugging — keeps the host-side bundle in place after fetch so you can inspect / re-fetch. |
 | `plane_backup_out_dir` | `{{ playbook_dir }}/out` | You want bundles somewhere other than `ansible/out/`. |
 
-## Scheduling (out of scope for this playbook)
+## Recurring backups (`ansible/backup-cron.yml`)
 
-The playbook is ad-hoc by design; it does not install a cron job. If
-you want recurring backups, wire the same command into systemd
-timers, cron, or a CI runner — whatever you already use for
-controller-side automation. A typical line:
+The recurring path runs cron **on the Plane host itself**, not on the
+controller — so the backup keeps firing when your laptop is closed.
+The `plane_backup_cron` role renders three files on the host:
 
-```cron
-# Every Sunday at 02:30 UTC, keep four weeks of backups.
-30 2 * * 0  cd /home/<you>/projects/homelab/trail-aiac/ansible && \
-            ansible-playbook backup.yml >> /var/log/plane-backup.log 2>&1
-30 3 * * 0  find /home/<you>/projects/homelab/trail-aiac/ansible/out \
-            -name 'plane-backup-*.tar.gz' -mtime +28 -delete
+| File | Purpose |
+|---|---|
+| `/usr/local/sbin/plane-backup.sh` | Self-contained shell script. Same dump mechanics as the ad-hoc playbook (pg_dump over the Postgres Unix socket + alpine sidecar tar of the MinIO volume), plus a single-instance `flock` guard, a `mountpoint -q` pre-flight when targeting an external share, and atomic-rename publishing (no half-written `.tar.gz` ever appears under its final name). |
+| `/etc/cron.d/plane-backup` | The schedule. Runs as `root` (docker compose requires it) and pipes stdout/stderr to the logfile. Cron honours `/etc/localtime`. |
+| `/etc/logrotate.d/plane-backup` | Weekly rotation, eight weeks kept, compressed. |
+
+Bundle naming and content are identical to the ad-hoc path —
+`plane-backup-<inventory_hostname>-<UTC>.tar.gz` containing
+`postgres.dump` + `minio.tar` — so a restore procedure written for one
+works for the other.
+
+Configure the target in `host_vars/<host>.yml`:
+
+```yaml
+# Send bundles to an already-mounted external share, fail loudly when
+# the share is offline. The mount itself is provisioned out-of-band.
+plane_backup_cron_target_dir: /mnt/backups/plane
+plane_backup_cron_mount_root: /mnt/backups
+plane_backup_cron_retention_days: 28
+plane_backup_cron_hour: "2"
+plane_backup_cron_minute: "30"
+```
+
+The framework default (`/var/backups/plane`, no mount check) is
+deliberately weak — landing backups on the same disk as the workload
+is a homelab anti-pattern. Override it.
+
+Install once per host:
+
+```bash
+ansible-playbook backup-cron.yml
+```
+
+Inspect the live schedule and the most recent runs:
+
+```bash
+ssh plane-host 'cat /etc/cron.d/plane-backup'
+ssh plane-host 'tail -50 /var/log/plane-backup.log'
+ssh plane-host 'ls -lh $(awk -F= "/target_dir/ {print \$2}" /usr/local/sbin/plane-backup.sh | head -1)'
 ```
 
 The bundles do not encrypt themselves. Pipe through `age`, `gpg`, or
-your preferred at-rest encryption before shipping them off-host.
+your preferred at-rest encryption before shipping them off-site (or
+extend the script to do so before the atomic-rename step).
+
+### Removing the schedule
+
+The role has no `state: absent` knob. To uninstall by hand:
+
+```bash
+ssh plane-host 'sudo rm -f /etc/cron.d/plane-backup \
+                          /etc/logrotate.d/plane-backup \
+                          /usr/local/sbin/plane-backup.sh \
+                          /var/log/plane-backup.log'
+```
+
+Existing bundles at `plane_backup_cron_target_dir` are not touched.
 
 ## Troubleshooting
 

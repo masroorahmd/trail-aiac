@@ -1,0 +1,61 @@
+# Recurring on-host Plane backup, scheduled via /etc/cron.d. Renders a
+# self-contained shell script that does the same two steps as the
+# ad-hoc `plane_backup` role (pg_dump over the Postgres Unix socket +
+# tar of the MinIO `uploads` volume via an alpine sidecar) and lands
+# the bundle at `plane_backup_cron_target_dir`. See doc/BACKUP.md for
+# the ad-hoc vs. recurring trade-off and full mechanics.
+
+# Where the Plane compose stack lives on the host. Default matches the
+# `plane` role; override per-host only if Plane was moved.
+plane_backup_cron_dir: "{{ plane_dir | default(stacks_dir + '/plane') }}"
+plane_backup_cron_compose_file: "{{ plane_backup_cron_dir }}/compose.yaml"
+
+# Compose service names + dump targets. Match the vendored compose.
+plane_backup_cron_db_service: plane-db
+plane_backup_cron_db_name: plane
+plane_backup_cron_db_user: plane
+plane_backup_cron_minio_service: plane-minio
+plane_backup_cron_minio_data_dir: /export
+
+# Sidecar image used to tar the MinIO volume. The MinIO image is built
+# on UBI-minimal and ships without `tar`, so a sidecar inherits the
+# volume via `--volumes-from plane-minio` and tars from there. Alpine's
+# busybox tar preserves numeric uid/gid by default.
+plane_backup_cron_sidecar_image: alpine:3
+
+# Backup target on the host. The framework default lands the bundle on
+# the local disk, which is fine for tinkering but defeats the purpose
+# on real hardware — a host failure takes the backups with it. For a
+# durable setup, override in host_vars to a path on an already-mounted
+# external share (NFS / CIFS / S3-fuse / …) and set
+# `plane_backup_cron_mount_root` to the mount path so the script
+# refuses to run when the share is unavailable.
+plane_backup_cron_target_dir: /var/backups/plane
+
+# When set to a non-empty path, the script aborts unless that path is
+# an actual mountpoint (`mountpoint -q`). Set this when
+# `plane_backup_cron_target_dir` lives on an external share — without
+# the check the bundle would silently land on the local filesystem
+# under what *looks* like the mount path (an empty stub directory),
+# eventually filling the root disk. Leave empty for local targets.
+plane_backup_cron_mount_root: ""
+
+# Retention: drop bundles older than N days. Scoped to
+# `plane_backup_cron_target_dir` and the `plane-backup-*.tar.gz` name
+# pattern, so sibling backup trees on the same share are untouched.
+plane_backup_cron_retention_days: 28
+
+# Cron schedule. Cron honours the host's local time (`/etc/localtime`);
+# the `base` role in the homelab repo sets this to Europe/Berlin.
+plane_backup_cron_minute: "30"
+plane_backup_cron_hour: "2"
+plane_backup_cron_dom: "*"
+plane_backup_cron_month: "*"
+plane_backup_cron_dow: "*"
+
+# Where the role drops the on-host artefacts. These are conventional
+# Linux locations and rarely need overriding.
+plane_backup_cron_script_path: /usr/local/sbin/plane-backup.sh
+plane_backup_cron_log_path: /var/log/plane-backup.log
+plane_backup_cron_cron_file: /etc/cron.d/plane-backup
+plane_backup_cron_logrotate_file: /etc/logrotate.d/plane-backup
