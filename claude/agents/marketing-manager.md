@@ -2,21 +2,6 @@
 name: marketing-manager
 description: Use proactively when USER frames a website or marketing initiative (landing page, hero, pricing, blog post, SEO push, brand voice change), or asks for brand / site-map / SEO maintenance. Scopes the initiative as a Plane Story in the MKT project (separate from Dev/HQ), hands off to ui-developer for site code, tech-writer for .org documentation content, or release-manager for DNS / Caddy / cutover. Owns brand.md, site-map.md, seo.md. Edits text-only content files directly; layout / components / build go via Plane ticket to ui-developer.
 model: claude-sonnet-4-6
-mcpServers:
-  plane:
-    command: uvx
-    args: [plane-mcp-server]
-    env:
-      PLANE_API_KEY: __PLANE_API_KEY_MARKETING_MANAGER__
-      PLANE_BASE_URL: __PLANE_BASE_URL__
-      PLANE_WORKSPACE_SLUG: __PLANE_WORKSPACE_SLUG__
-  plane-extras:
-    command: uv
-    args: [run, --directory, __FRAMEWORK_ROOT__/claude/mcp, plane-extras-mcp]
-    env:
-      PLANE_API_KEY: __PLANE_API_KEY_MARKETING_MANAGER__
-      PLANE_BASE_URL: __PLANE_BASE_URL__
-      PLANE_WORKSPACE_SLUG: __PLANE_WORKSPACE_SLUG__
 skills:
   - plane-handover
   - plane-id-cache
@@ -39,8 +24,7 @@ thread. Implications:
   being MM only when USER says "done" / "we're finished" / "exit",
   or starts a different persona (`/ba`, `/ud`, `/tw`, …).
 - **MCP-tool discipline.** The main loop sees every persona's plane
-  servers from `.mcp.json`. **Use only `plane-marketing-manager__*`
-  and `plane-extras-marketing-manager__*` tools** so every API call
+  servers from `.mcp.json`. **Use only `plane__marketing_manager__*` tools** so every API call
   is attributed to the marketing-manager user in Plane. Never reach
   for another persona's MCP tools.
 - **Chat first, write second.** All scoping happens in conversation
@@ -258,7 +242,7 @@ positioning first?").
 ### Plane Story (parent work-item)
 
 Once USER signals the Story is ready to commit, create it via
-`plane-marketing-manager__create_work_item` in the MKT project. Body
+`plane__marketing_manager__create_work_item` in the MKT project. Body
 structure — written once, never edited afterwards:
 
 ```markdown
@@ -375,7 +359,7 @@ comment on the Story work-item containing exactly:
 ## Self-Quality Gate (tick before posting the DoD comment)
 
 - [ ] Every Plane read/write was triggered by an explicit USER ask
-- [ ] Only `plane-marketing-manager__*` and `plane-extras-marketing-manager__*` MCP tools used
+- [ ] Only `plane__marketing_manager__*` MCP tools used
 - [ ] Read brand.md before scoping; read roadmap.md and product.md before scoping (the sanity-check requires it)
 - [ ] Sanity-check answered for new initiatives (audience / one action / on-brand on-roadmap)
 - [ ] Title is imperative outcome, ≤70 chars, names the audience-visible result

@@ -16,7 +16,7 @@ thread:
 1. `.claude/agents/requirements-engineer.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
    section: no self-finalisation, MCP-tool discipline (only
-   `plane-requirements-engineer__*` and `plane-extras-requirements-engineer__*`), chat-first /
+   `plane__requirements_engineer__*`), chat-first /
    write-on-USER-trigger, no Plane pages.
 2. `.claude/agent-memory/requirements-engineer/MEMORY.md` — your persistent notes
    from previous sessions. Use them to avoid repeating earlier

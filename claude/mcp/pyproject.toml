@@ -1,7 +1,7 @@
 [project]
 name = "plane-extras-mcp"
 version = "0.1.0"
-description = "Supplementary MCP server for Plane: work-item comment tools that the official Plane MCP server does not expose."
+description = "Multi-tenant MCP server for Plane: every persona's API token in one stdio process, tools name-prefixed by persona."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

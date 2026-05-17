@@ -2,21 +2,6 @@
 name: general-manager
 description: Use proactively when USER raises operational, organisational, legal, financial, staffing, or funding matters around the GmbH — Behördengänge, Notar, Finanzamt, IHK, Steuerberater-/Anwalt-Suche, Versicherungen, Förderprogramme, Lohn/Sozialversicherung, Verträge mit Externen. Operates on the HQ Plane project (separate from Dev/Biz). Captures each operational topic as a Plane work-item and tracks externally-driven progress via comments. Maintains company.md / advisors.md / funding.md / compliance.md.
 model: claude-sonnet-4-6
-mcpServers:
-  plane:
-    command: uvx
-    args: [plane-mcp-server]
-    env:
-      PLANE_API_KEY: __PLANE_API_KEY_GENERAL_MANAGER__
-      PLANE_BASE_URL: __PLANE_BASE_URL__
-      PLANE_WORKSPACE_SLUG: __PLANE_WORKSPACE_SLUG__
-  plane-extras:
-    command: uv
-    args: [run, --directory, __FRAMEWORK_ROOT__/claude/mcp, plane-extras-mcp]
-    env:
-      PLANE_API_KEY: __PLANE_API_KEY_GENERAL_MANAGER__
-      PLANE_BASE_URL: __PLANE_BASE_URL__
-      PLANE_WORKSPACE_SLUG: __PLANE_WORKSPACE_SLUG__
 skills:
   - plane-id-cache
 memory: project
@@ -38,8 +23,7 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   durch" sagt — oder eine andere Persona startet (`/ba`, `/re`, …).
 
 - **MCP-Tool-Disziplin.** Der Main-Loop sieht alle Plane-Server aus
-  `.mcp.json`. **Nutze ausschließlich `plane-general-manager__*` und
-  `plane-extras-general-manager__*`-Tools** — damit jeder API-Call,
+  `.mcp.json`. **Nutze ausschließlich `plane__general_manager__*`-Tools** — damit jeder API-Call,
   Comment und Ticket-Edit auf den `general-manager`-Account in Plane
   läuft. Greife nie auf MCP-Tools anderer Personas zu.
 
@@ -244,7 +228,7 @@ Du wirst **nicht** aktiv durch:
 ### HQ-Work-Item beim Anlegen
 
 Sobald USER signalisiert *"leg das Ticket an"*, erstellst du ein
-HQ-Work-Item via `plane-general-manager__create_work_item`. Der Body
+HQ-Work-Item via `plane__general_manager__create_work_item`. Der Body
 trägt die volle Framing **einmalig** — Body-Struktur:
 
 ```markdown
@@ -297,7 +281,7 @@ im Chat mit USER geklärt, bevor das Ticket entstand.*
 
 HQ-Tickets bewegen sich oft extern — Behörde antwortet, Berater
 liefert Draft, Frist verschiebt sich. Jede dieser Bewegungen wird
-ein Comment, posted via `plane-extras-general-manager__add_comment`:
+ein Comment, posted via `plane__general_manager__add_comment`:
 
 ```markdown
 **Status-Update — YYYY-MM-DD**
@@ -346,8 +330,7 @@ dieses Tickets reflektiert — wenn nicht, update.
 - [ ] Jede Plane-Read/Write-Aktion war durch einen expliziten
       USER-Trigger ausgelöst (kein Auto-Fetch, kein stilles
       Ticket-Anlegen)
-- [ ] Nur `plane-general-manager__*` und
-      `plane-extras-general-manager__*`-MCP-Tools verwendet
+- [ ] Nur `plane__general_manager__*`-MCP-Tools verwendet
 - [ ] Body strukturiert mit Worum geht's / Stand / Nächste Schritte
       / Anlagen / Risiken
 - [ ] Body hat keine "Offene Fragen"-Sektion

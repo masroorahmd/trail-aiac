@@ -126,10 +126,15 @@ class PlaneClient:
         )
 
     async def _pat_request(
-        self, method: str, path: str, *, json: Any = None
+        self,
+        method: str,
+        path: str,
+        *,
+        json: Any = None,
+        params: dict[str, Any] | None = None,
     ) -> Any:
         response = await self.pat_client.request(
-            method, self._pat_url(path), json=json
+            method, self._pat_url(path), json=json, params=params
         )
         if response.status_code >= 400:
             raise PlaneError(response.status_code, response.text)
@@ -149,6 +154,171 @@ class PlaneClient:
             "GET", f"work-items/{work_item_ref}/"
         )
         return result["id"]
+
+    # ----- projects + workspace members -----
+
+    async def list_projects(self) -> list[dict[str, Any]]:
+        """List all projects in the workspace."""
+        return self._unwrap_list(await self._pat_request("GET", "projects/"))
+
+    async def list_workspace_members(self) -> list[dict[str, Any]]:
+        """List members of the workspace (used for assignee/author lookups)."""
+        return self._unwrap_list(await self._pat_request("GET", "members/"))
+
+    # ----- per-project metadata -----
+
+    async def list_states(self, project_id: str) -> list[dict[str, Any]]:
+        """List workflow states defined on a project."""
+        return self._unwrap_list(
+            await self._pat_request("GET", f"projects/{project_id}/states/")
+        )
+
+    async def list_labels(self, project_id: str) -> list[dict[str, Any]]:
+        """List labels defined on a project."""
+        return self._unwrap_list(
+            await self._pat_request("GET", f"projects/{project_id}/labels/")
+        )
+
+    async def list_modules(self, project_id: str) -> list[dict[str, Any]]:
+        """List modules defined on a project."""
+        return self._unwrap_list(
+            await self._pat_request("GET", f"projects/{project_id}/modules/")
+        )
+
+    # ----- work items -----
+
+    async def list_work_items(
+        self,
+        project_id: str,
+        *,
+        state: str | None = None,
+        assignees: str | None = None,
+        labels: str | None = None,
+        priority: str | None = None,
+        per_page: int | None = None,
+        cursor: str | None = None,
+        expand: str | None = None,
+        order_by: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List work items in a project. Filters are passed as query
+        params; multi-value filters (assignees, labels) are
+        comma-separated UUID lists, matching Plane's REST surface.
+        """
+        params: dict[str, Any] = {
+            k: v
+            for k, v in {
+                "state": state,
+                "assignees": assignees,
+                "labels": labels,
+                "priority": priority,
+                "per_page": per_page,
+                "cursor": cursor,
+                "expand": expand,
+                "order_by": order_by,
+            }.items()
+            if v is not None
+        }
+        return self._unwrap_list(
+            await self._pat_request(
+                "GET",
+                f"projects/{project_id}/work-items/",
+                params=params or None,
+            )
+        )
+
+    async def retrieve_work_item(
+        self, project_id: str, work_item_ref: str
+    ) -> dict[str, Any]:
+        """Retrieve a single work item (full body + relations).
+        ``work_item_ref`` accepts UUID or human identifier (e.g. ``INT-1``).
+        """
+        wid = await self.resolve_work_item(work_item_ref)
+        return await self._pat_request(
+            "GET", f"projects/{project_id}/work-items/{wid}/"
+        )
+
+    async def create_work_item(
+        self,
+        project_id: str,
+        *,
+        name: str,
+        description_html: str | None = None,
+        state: str | None = None,
+        assignees: list[str] | None = None,
+        labels: list[str] | None = None,
+        priority: str | None = None,
+        parent: str | None = None,
+        start_date: str | None = None,
+        target_date: str | None = None,
+        estimate_point: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a work item in a project. ``parent`` accepts UUID or
+        identifier; resolved to UUID before the request.
+        """
+        body = await self._work_item_payload(
+            parent=parent,
+            name=name,
+            description_html=description_html,
+            state=state,
+            assignees=assignees,
+            labels=labels,
+            priority=priority,
+            start_date=start_date,
+            target_date=target_date,
+            estimate_point=estimate_point,
+        )
+        return await self._pat_request(
+            "POST",
+            f"projects/{project_id}/work-items/",
+            json=body,
+        )
+
+    async def update_work_item(
+        self,
+        project_id: str,
+        work_item_ref: str,
+        *,
+        name: str | None = None,
+        description_html: str | None = None,
+        state: str | None = None,
+        assignees: list[str] | None = None,
+        labels: list[str] | None = None,
+        priority: str | None = None,
+        parent: str | None = None,
+        start_date: str | None = None,
+        target_date: str | None = None,
+        estimate_point: str | None = None,
+    ) -> dict[str, Any]:
+        """Patch a work item. Only non-None fields are sent so callers
+        can transition state without nulling other fields.
+        ``work_item_ref`` accepts UUID or identifier.
+        """
+        wid = await self.resolve_work_item(work_item_ref)
+        body = await self._work_item_payload(
+            parent=parent,
+            name=name,
+            description_html=description_html,
+            state=state,
+            assignees=assignees,
+            labels=labels,
+            priority=priority,
+            start_date=start_date,
+            target_date=target_date,
+            estimate_point=estimate_point,
+        )
+        return await self._pat_request(
+            "PATCH",
+            f"projects/{project_id}/work-items/{wid}/",
+            json=body,
+        )
+
+    async def _work_item_payload(
+        self, *, parent: str | None, **fields: Any
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {k: v for k, v in fields.items() if v is not None}
+        if parent is not None:
+            body["parent"] = await self.resolve_work_item(parent)
+        return body
 
     async def add_comment(
         self,

@@ -2,21 +2,6 @@
 name: technical-writer
 description: Use proactively when USER dispatches a sub-work-item with `module = documentation` to you (assignee = technical-writer, state = Todo), or when the user says "TW, document DEV-N". Reads the sub-work-item's body (SA's documentation slice), the parent Story body, RE's AC comment, the implementors' Implementation notes comments, and SR's findings. Edits user-facing or developer-facing documentation in the project repo, posts an Implementation notes comment, then sets the sub-work-item to `In Review` for USER. Maintains documentation.md.
 model: claude-sonnet-4-6
-mcpServers:
-  plane:
-    command: uvx
-    args: [plane-mcp-server]
-    env:
-      PLANE_API_KEY: __PLANE_API_KEY_TECHNICAL_WRITER__
-      PLANE_BASE_URL: __PLANE_BASE_URL__
-      PLANE_WORKSPACE_SLUG: __PLANE_WORKSPACE_SLUG__
-  plane-extras:
-    command: uv
-    args: [run, --directory, __FRAMEWORK_ROOT__/claude/mcp, plane-extras-mcp]
-    env:
-      PLANE_API_KEY: __PLANE_API_KEY_TECHNICAL_WRITER__
-      PLANE_BASE_URL: __PLANE_BASE_URL__
-      PLANE_WORKSPACE_SLUG: __PLANE_WORKSPACE_SLUG__
 skills:
   - plane-handover
   - plane-id-cache
@@ -38,8 +23,7 @@ thread. Implications:
   numbered status checkpoint, or a clear hand-back to USER. You stop
   being TW only when USER says "done" / "we're finished" / "exit",
   or starts a different persona.
-- **MCP-tool discipline.** **Use only `plane-technical-writer__*`
-  and `plane-extras-technical-writer__*` tools** so every API call
+- **MCP-tool discipline.** **Use only `plane__technical_writer__*` tools** so every API call
   is attributed to the technical-writer user in Plane. Never reach
   for another persona's MCP tools.
 - **Chat first, write second.** Doc strategy reasoning happens in
@@ -199,7 +183,7 @@ Implementation notes instead, scoped to this Story), `stack.md`,
    structure.
 
 2. **One Implementation notes comment** on the sub-work-item, posted
-   via `plane-extras-technical-writer__add_comment`:
+   via `plane__technical_writer__add_comment`:
 
    ```markdown
    **Implementation notes (technical-writer)**
@@ -278,7 +262,7 @@ combined into a single comment if you prefer.
 ## Self-Quality Gate (tick before posting the DoD comment)
 
 - [ ] Every Plane read/write was triggered by an explicit USER ask
-- [ ] Only `plane-technical-writer__*` and `plane-extras-technical-writer__*` MCP tools used
+- [ ] Only `plane__technical_writer__*` MCP tools used
 - [ ] Read at least one existing doc in the same area before drafting (style match)
 - [ ] Every user-visible AC scenario has a covering example
 - [ ] Glossary terms used consistently — no synonyms introduced

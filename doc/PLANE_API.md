@@ -6,6 +6,14 @@
 > claims here should be re-verified before each major Phase-3 design
 > commit — Plane's API and MCP both move quickly.
 >
+> **Update 2026-05-17 (multi-tenant MCP)**: the upstream
+> `makeplane/plane-mcp-server` is no longer used. The framework now
+> ships a single multi-tenant MCP server (`claude/mcp/`) that holds
+> every persona's API token in one process and prefixes tool names
+> by persona. See [`MCP.md`](MCP.md) for the current architecture —
+> the sections below remain useful as background on the public REST
+> surface but no longer describe how Trail talks to Plane at runtime.
+>
 > **Update 2026-04-30 (page-free workflow)**: the framework no longer
 > uses Plane pages. Every persona artefact lives in a work-item body
 > (written once at creation) or in a comment — see

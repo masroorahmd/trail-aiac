@@ -54,7 +54,7 @@ one request:
 
 ### 2. DoD handover comment
 
-Call the supplementary MCP (`plane-extras-mcp`) `add_comment` tool on
+Call the `plane` MCP server's `<persona_snake>__add_comment` tool on
 the same work item, posting a comment shaped exactly like:
 
 ```markdown
@@ -108,7 +108,8 @@ Date must be ISO (YYYY-MM-DD), not relative.
 - It does **not** close tickets. Per the workflow model, agents never
   set state to `Done` — neither parent nor sub-work-items. USER
   closes.
-- It does **not** create work-items. Use the official Plane MCP
-  `create_work_item` for that. Note that this framework does not use
-  Plane pages — every artefact lives either in a work-item body
-  (written once at creation) or in a comment.
+- It does **not** create work-items. Use your own
+  `plane__<persona_snake>__create_work_item` for that. Note that
+  this framework does not use Plane pages — every artefact lives
+  either in a work-item body (written once at creation) or in a
+  comment.

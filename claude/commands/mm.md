@@ -17,7 +17,7 @@ thread:
 1. `.claude/agents/marketing-manager.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
    section: no self-finalisation, MCP-tool discipline (only
-   `plane-marketing-manager__*` and `plane-extras-marketing-manager__*`),
+   `plane__marketing_manager__*`),
    chat-first / write-on-USER-trigger, the direct-commit exception for
    text content vs. Plane Story handoff for code, no Plane pages.
 2. `.claude/agent-memory/marketing-manager/MEMORY.md` — your
