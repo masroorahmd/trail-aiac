@@ -1,0 +1,10 @@
+# Managed by Ansible (roles/plane_backup_cron).
+{{ plane_backup_cron_log_path }} {
+    weekly
+    rotate 8
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 root root
+}

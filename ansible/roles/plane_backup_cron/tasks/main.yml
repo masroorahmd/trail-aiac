@@ -1,0 +1,55 @@
+# Installs the recurring on-host Plane backup: a script in
+# /usr/local/sbin, a /etc/cron.d entry, and a logrotate config. The
+# script runs as root (docker compose on this host requires it) and
+# writes the bundle to `plane_backup_cron_target_dir`. Idempotent —
+# re-running only rewrites the templates if vars changed.
+#
+# The role does NOT create or manage the target directory's *parent*
+# mount. When `plane_backup_cron_mount_root` is set, the script
+# refuses to run unless that path is a real mountpoint — i.e. the
+# mount itself must already be provisioned out-of-band (e.g. by the
+# homelab repo's `nas_mounts` role for the CIFS-on-Synology case).
+
+- name: Ensure the backup target directory exists
+  ansible.builtin.file:
+    path: "{{ plane_backup_cron_target_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Render the backup script
+  ansible.builtin.template:
+    src: plane-backup.sh.j2
+    dest: "{{ plane_backup_cron_script_path }}"
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Install /etc/cron.d entry
+  ansible.builtin.template:
+    src: plane-backup.cron.j2
+    dest: "{{ plane_backup_cron_cron_file }}"
+    owner: root
+    group: root
+    # cron.d refuses to read files that are group/world-writable, and
+    # warns about anything that isn't 0644.
+    mode: "0644"
+
+- name: Install logrotate config
+  ansible.builtin.template:
+    src: plane-backup.logrotate.j2
+    dest: "{{ plane_backup_cron_logrotate_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Touch logfile so logrotate finds it on first run
+  ansible.builtin.file:
+    path: "{{ plane_backup_cron_log_path }}"
+    state: touch
+    owner: root
+    group: root
+    mode: "0640"
+    modification_time: preserve
+    access_time: preserve

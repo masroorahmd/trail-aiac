@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# Managed by Ansible (roles/plane_backup_cron). Edit the template, not
+# this file — local changes will be overwritten on the next play.
+#
+# Recurring Plane backup. Dumps Postgres and tars the MinIO uploads
+# volume into a single tar.gz at the configured target, then prunes
+# bundles older than {{ plane_backup_cron_retention_days }} days. Invoked
+# from /etc/cron.d/plane-backup at {{ '%02d' | format(plane_backup_cron_hour | int) }}:{{ '%02d' | format(plane_backup_cron_minute | int) }} local time.
+#
+# Same dump mechanics as the ad-hoc controller-side playbook
+# (ansible/backup.yml) — see doc/BACKUP.md for the consistency model
+# and what is deliberately NOT in the bundle (Redis, RabbitMQ, logs,
+# compose config).
+
+set -euo pipefail
+
+COMPOSE_FILE={{ plane_backup_cron_compose_file | quote }}
+DB_SERVICE={{ plane_backup_cron_db_service | quote }}
+DB_USER={{ plane_backup_cron_db_user | quote }}
+DB_NAME={{ plane_backup_cron_db_name | quote }}
+MINIO_SERVICE={{ plane_backup_cron_minio_service | quote }}
+MINIO_DATA_DIR={{ plane_backup_cron_minio_data_dir | quote }}
+SIDECAR_IMAGE={{ plane_backup_cron_sidecar_image | quote }}
+TARGET_DIR={{ plane_backup_cron_target_dir | quote }}
+MOUNT_ROOT={{ plane_backup_cron_mount_root | quote }}
+RETENTION_DAYS={{ plane_backup_cron_retention_days }}
+BASENAME_PREFIX={{ ('plane-backup-' + inventory_hostname) | quote }}
+LOCK_FILE=/var/lock/plane-backup.lock
+
+log() {
+    printf '%s %s\n' "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" "$*"
+}
+
+# Single-instance guard. flock -n returns 1 if another invocation is
+# still running — better than two concurrent pg_dumps fighting.
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    log "another plane-backup is already running; exiting"
+    exit 0
+fi
+
+log "starting plane-backup"
+
+# When the target lives on an external mount, refuse to run unless
+# the mount is actually attached. Without this, the bundle would
+# silently land on the local FS under what *looks* like the mount
+# path and gradually fill the root disk.
+if [[ -n "$MOUNT_ROOT" ]]; then
+    if ! mountpoint -q "$MOUNT_ROOT"; then
+        log "FATAL: $MOUNT_ROOT is not a mountpoint — external share unavailable?"
+        exit 2
+    fi
+fi
+
+if [[ ! -f "$COMPOSE_FILE" ]]; then
+    log "FATAL: $COMPOSE_FILE missing — Plane not installed on this host?"
+    exit 3
+fi
+
+running="$(docker compose -f "$COMPOSE_FILE" ps --status running --services)"
+for svc in "$DB_SERVICE" "$MINIO_SERVICE"; do
+    if ! grep -qx "$svc" <<<"$running"; then
+        log "FATAL: required service $svc not running (have: $(tr '\n' ',' <<<"$running"))"
+        exit 4
+    fi
+done
+
+mkdir -p "$TARGET_DIR"
+chmod 0700 "$TARGET_DIR"
+
+TS="$(date --utc +%Y%m%dT%H%M%SZ)"
+BASENAME="${BASENAME_PREFIX}-${TS}"
+SCRATCH="$(mktemp -d /tmp/plane-backup.XXXXXX)"
+
+# PARTIAL is cleared on successful publish; if the script dies between
+# tar and the rename, the trap removes the half-written bundle so the
+# next run doesn't trip over its own leftovers.
+PARTIAL=""
+trap 'rm -rf "$SCRATCH"; [[ -n "$PARTIAL" ]] && rm -f "$PARTIAL"; true' EXIT
+
+WORK="$SCRATCH/$BASENAME"
+mkdir -p "$WORK"
+
+# pg_dump via the in-container Unix socket. The container env has
+# PGHOST=plane-db (compose-level x-db-env), so pg_dump would otherwise
+# connect over TCP where scram-sha-256 is enforced. The local socket
+# is trust-authenticated, so no password handling needed. Custom
+# format (-F c) is internally compressed and supports selective
+# pg_restore.
+log "dumping Postgres ($DB_NAME)"
+docker compose -f "$COMPOSE_FILE" exec -T "$DB_SERVICE" \
+    pg_dump -h /var/run/postgresql -U "$DB_USER" -F c "$DB_NAME" \
+    > "$WORK/postgres.dump"
+
+# MinIO: image ships without `tar`, so use a sidecar that inherits
+# the data volume via --volumes-from. Preserves uid/gid for a clean
+# round-trip on restore.
+log "tarring MinIO volume"
+minio_cid="$(docker compose -f "$COMPOSE_FILE" ps -q "$MINIO_SERVICE")"
+
+# busybox tar in the alpine sidecar exits 1 on "file changed as we
+# read it" (concurrent upload during the snapshot). That is a warning,
+# not a failure — the bundle is still valid for everything that
+# wasn't actively being written. Treat rc=1 as a warning and continue;
+# anything >=2 is a real error.
+set +e
+docker run --rm --volumes-from "$minio_cid" "$SIDECAR_IMAGE" \
+    tar -C "$MINIO_DATA_DIR" -cf - . \
+    > "$WORK/minio.tar"
+rc=$?
+set -e
+if (( rc >= 2 )); then
+    log "FATAL: MinIO tar failed with rc=$rc"
+    exit "$rc"
+fi
+if (( rc == 1 )); then
+    log "WARN: MinIO tar reported file-changed-as-read (concurrent upload?); bundle is still valid"
+fi
+
+log "compressing bundle"
+PARTIAL="$TARGET_DIR/$BASENAME.tar.gz.partial"
+tar -C "$SCRATCH" -czf "$PARTIAL" "$BASENAME/"
+
+# Atomic publish: rename only after the tarball is complete, so a
+# half-written bundle never appears under its final name.
+mv "$PARTIAL" "$TARGET_DIR/$BASENAME.tar.gz"
+PARTIAL=""
+chmod 0600 "$TARGET_DIR/$BASENAME.tar.gz" || true
+
+size_mib="$(du -m "$TARGET_DIR/$BASENAME.tar.gz" | cut -f1)"
+log "wrote $TARGET_DIR/$BASENAME.tar.gz (${size_mib} MiB)"
+
+# Retention: walk only this directory (no recursion) and match the
+# bundle name pattern so sibling trees on the same share aren't
+# touched. List first, then delete — keeps the log audit trail clean.
+log "pruning bundles older than $RETENTION_DAYS days"
+# NOTE: bash's array-length expansion (dollar-brace-hash-name) would
+# collide with Jinja2's comment-tag opener during template rendering.
+# So we use a manual counter — same effect, no escape needed.
+pruned=0
+mapfile -t to_prune < <(find "$TARGET_DIR" -maxdepth 1 -type f \
+    -name 'plane-backup-*.tar.gz' \
+    -mtime "+$RETENTION_DAYS")
+for f in "${to_prune[@]:-}"; do
+    [[ -z "$f" ]] && continue
+    rm -f -- "$f"
+    log "  removed $f"
+    pruned=$((pruned + 1))
+done
+log "pruned $pruned bundle(s)"
+
+log "plane-backup done"
