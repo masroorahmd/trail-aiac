@@ -53,14 +53,15 @@ Every `claude/agents/<persona>.md` follows the same template:
 - **Persona one-liner** + tone/character note.
 - **Operating mode** block (read first): main-loop role, no
   self-finalisation, MCP-tool discipline (only the persona's own
-  `plane-<name>__*` and `plane-extras-<name>__*` tools), chat-first /
+  `plane__<persona_snake>__*` tools), chat-first /
   write-on-USER-trigger, no Plane pages.
 - **Hard-coded context-read list** (which `.claude/context/*.md`
   files this persona reads). Each persona names its allowlist
   explicitly.
-- **`mcpServers:`** in frontmatter, scoped to this persona's own
-  `plane-<persona>` and `plane-extras-<persona>` server entries.
-  Tokens are inlined at install time (see [`MCP.md`](MCP.md) for why).
+- The single multi-tenant `plane` MCP server (one process for the
+  whole session) registers every tool once per persona, prefixed by
+  the persona's snake-case username. Each persona's prompt restricts
+  it to its own prefix (see [`MCP.md`](MCP.md)).
 - **Trigger conditions** (`description:` line).
 - **Pickup** — what the persona does on entry: read the work-item
   body, the AC comment (if any), the implementor comments (where

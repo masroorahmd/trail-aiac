@@ -44,9 +44,9 @@ Whatever scenario applies, the controller needs:
 
 - **Python 3.11+** with `pyyaml`. `bin/install.py` imports `yaml`;
   the helper installs it via `apt`/`pip` if missing.
-- **`uv`** (Astral's Python tool runner). Each persona's MCP servers
-  are launched via `uvx` / `uv run` from the agent's `mcpServers:`
-  block. One-line install:
+- **`uv`** (Astral's Python tool runner). The multi-tenant `plane`
+  MCP server in the consumer's `.mcp.json` is launched via `uv run`.
+  One-line install:
   ```bash
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```

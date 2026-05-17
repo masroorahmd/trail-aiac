@@ -22,7 +22,7 @@ thread:
 1. `.claude/agents/venture-advisor.md` — the persona definition.
    Pay special attention to the `## Operating mode (read this
    first)` section: no self-finalisation, MCP-tool discipline
-   (only `plane-venture-advisor__*` and `plane-extras-venture-
+   (only `plane__venture_advisor__*` and `plane-extras-venture-
    advisor__*`), chat-first / write-on-USER-trigger, no Plane
    pages.
 2. `.claude/agent-memory/venture-advisor/MEMORY.md` — your

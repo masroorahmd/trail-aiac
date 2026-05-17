@@ -16,7 +16,7 @@ thread:
 1. `.claude/agents/ui-developer.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
    section: no self-finalisation, MCP-tool discipline (only
-   `plane-ui-developer__*` and `plane-extras-ui-developer__*`), chat-first /
+   `plane__ui_developer__*`), chat-first /
    write-on-USER-trigger, no Plane pages.
 2. `.claude/agent-memory/ui-developer/MEMORY.md` — your persistent notes
    from previous sessions. Use them to avoid repeating earlier

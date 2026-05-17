@@ -22,21 +22,22 @@ One-shot, idempotent. Two stages, run in sequence:
          by skills and ad-hoc scripts that read these from the
          process env.
 
-       - `<consumer>/.mcp.json` (mode 0600, gitignored) — 10 ×
-         `plane-<persona>` + 10 × `plane-extras-<persona>` server
-         entries with credentials inlined. Reaches the main Claude
-         Code session only (subagents do NOT inherit `.mcp.json` in
-         CC 2.1.119); kept anyway because `claude mcp list` against
-         it is a useful diagnostic and main-loop ad-hoc Plane work
-         sometimes wants it.
+       - `<consumer>/.mcp.json` (mode 0600, gitignored) — one
+         `plane` server entry. A single stdio process holds every
+         persona's API token in its env block and registers every
+         tool N×, prefixed by the persona's snake-case username
+         (e.g. `business_analyst__list_states`). Replaces the
+         pre-refactor 22-entry explosion (one upstream
+         `plane-mcp-server` + one `plane-extras-mcp` per persona),
+         which cost ~2 GB of RSS per Claude session.
 
        - `<consumer>/.claude/agents/*.md` (mode 0600) — re-templated
-         in place: every `__VAR__` placeholder in the persona's
-         `mcpServers:` block is replaced with the real value. This
-         is the only path that gives subagents per-persona MCP
-         scope in CC 2.1.119; the `${VAR}` substitution route in
-         frontmatter is broken upstream
-         (anthropics/claude-code#1254).
+         in place: every `__VAR__` placeholder (`__CHAT_LANGUAGE__`,
+         `__USER_NAME__`, …) is replaced with the real value, and the
+         conditional USER_NAME bullet is stripped when no name was
+         supplied. The persona files do not carry per-persona MCP
+         tokens any more — those live exclusively in `.mcp.json`'s
+         single `plane` entry.
 
      The first run after a fresh install typically only does stage 1
      (config + creds were just seeded as empty stubs). After the user
@@ -138,7 +139,7 @@ def ensure_gitignore_entries(
         return []
     block = (
         "\n# Trail framework — these hold inlined Plane API\n"
-        "# tokens / UI passwords / per-persona MCP server config; never commit.\n"
+        "# tokens / UI passwords / multi-tenant MCP wiring; never commit.\n"
         + "\n".join(to_append) + "\n"
     )
     if existing and not existing.endswith("\n"):
@@ -300,30 +301,27 @@ def render_settings(
             print(f"  - {m}", file=sys.stderr)
         return 1
 
-    plane_extras_dir = framework_root / "claude" / "mcp"
-    mcp_servers: dict = {}
+    plane_mcp_dir = framework_root / "claude" / "mcp"
+    # Single multi-tenant MCP server entry. The server reads
+    # PLANE_API_KEY_<PERSONA_PREFIX> from its env block at startup,
+    # registers every tool N×, prefixed by persona snake. Per-persona
+    # tokens MUST be inlined here because stdio MCP servers do not
+    # inherit the consumer's settings.local.json env automatically.
+    plane_env: dict[str, str] = {
+        "PLANE_BASE_URL": base_url,
+        "PLANE_WORKSPACE_SLUG": workspace,
+    }
     for username in agents:
         prefix = persona_env_prefix(username)
-        api_token = env[f"PLANE_API_KEY_{prefix}"]
+        plane_env[f"PLANE_API_KEY_{prefix}"] = env[f"PLANE_API_KEY_{prefix}"]
 
-        mcp_servers[f"plane-{username}"] = {
-            "command": "uvx",
-            "args": ["plane-mcp-server"],
-            "env": {
-                "PLANE_API_KEY": api_token,
-                "PLANE_BASE_URL": base_url,
-                "PLANE_WORKSPACE_SLUG": workspace,
-            },
-        }
-        mcp_servers[f"plane-extras-{username}"] = {
+    mcp_servers: dict = {
+        "plane": {
             "command": "uv",
-            "args": ["run", "--directory", str(plane_extras_dir), "plane-extras-mcp"],
-            "env": {
-                "PLANE_API_KEY": api_token,
-                "PLANE_BASE_URL": base_url,
-                "PLANE_WORKSPACE_SLUG": workspace,
-            },
+            "args": ["run", "--directory", str(plane_mcp_dir), "plane-extras-mcp"],
+            "env": plane_env,
         }
+    }
 
     settings_local_path = consumer_claude / "settings.local.json"
     mcp_json_path = consumer_root / ".mcp.json"

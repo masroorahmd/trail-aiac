@@ -16,7 +16,7 @@ thread:
 1. `.claude/agents/release-manager.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
    section: no self-finalisation, MCP-tool discipline (only
-   `plane-release-manager__*` and `plane-extras-release-manager__*`), chat-first /
+   `plane__release_manager__*`), chat-first /
    write-on-USER-trigger, no Plane pages.
 2. `.claude/agent-memory/release-manager/MEMORY.md` — your persistent notes
    from previous sessions. Use them to avoid repeating earlier

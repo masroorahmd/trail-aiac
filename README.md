@@ -249,7 +249,7 @@ work so the persona's MCP-tool discipline does not constrain you.
 | [`doc/PROVISIONING.md`](doc/PROVISIONING.md) | Ansible playbook details: host pre-conditions, TLS strategies, idempotency, secret rotation, tear-down. |
 | [`doc/PERSONAS.md`](doc/PERSONAS.md) | The ten agents — what each one reads, writes, when to invoke. |
 | [`doc/WORKFLOW.md`](doc/WORKFLOW.md) | Story lifecycle, state spine, handover protocol over Plane tickets. |
-| [`doc/MCP.md`](doc/MCP.md) | Per-persona MCP scoping; supplementary `plane-extras-mcp` design (work-item comments). |
+| [`doc/MCP.md`](doc/MCP.md) | Per-persona MCP scoping; multi-tenant `plane` server with tool-name prefix routing. |
 | [`doc/PLANE_API.md`](doc/PLANE_API.md) | Background on Plane's public + internal APIs and what each surface offers. |
 | [`doc/BACKUP.md`](doc/BACKUP.md) | Ad-hoc Plane backup playbook (Postgres + MinIO). |
 | [`doc/COMPARISON.md`](doc/COMPARISON.md) | How this framework compares to BMAD-METHOD — collaboration bus, identity, ID convention, what we did and didn't borrow. |

@@ -1,24 +1,37 @@
 # MCP integration
 
-Two MCP servers reach Plane: the official upstream and a small
-supplementary one shipped with this framework. Both are launched
-once per persona via the consumer's `.mcp.json`, each carrying its
-own API token, so every comment and state change in Plane is
-attributed to the agent that performed it.
+One multi-tenant MCP server reaches Plane on behalf of every persona.
+It launches once per Claude Code session via the consumer's
+`.mcp.json`, holds every persona's API token inside its own env
+block, and registers every tool N× — once per persona, prefixed by
+the persona's snake-case username. The persona prompt picks the
+right prefix; the server picks the right token. Every comment and
+state change therefore still lands in Plane attributed to the agent
+that performed it.
 
-## Servers in play
+## Server in play
 
 | Server | Where from | Used for | Auth |
 |---|---|---|---|
-| `plane-mcp-server` | `makeplane/plane-mcp-server` (PyPI, `uvx plane-mcp-server`) | Projects, work items (incl. body, assignee, state transitions), cycles, modules, initiatives. ~55 tools. | `X-API-Key` against `/api/v1/` |
-| `plane-extras-mcp` | `claude/mcp/` in this repo (Python + FastMCP) | Work-item comments (add, list) and identifier→UUID resolution. 2 tools. | `X-API-Key` against `/api/v1/` |
+| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset), states / labels / modules, workspace members, comments. Tool names are prefixed by persona: `business_analyst__list_states`, `release_manager__add_comment`, … | `X-API-Key` against `/api/v1/` |
 
-> Earlier versions of `plane-extras-mcp` also exposed page CRUD via
-> Plane's internal app API (session-cookie auth), because Plane v1.3.0
-> does not expose pages on the public REST surface. The framework no
-> longer uses Plane pages — every persona artefact lives in a work-
-> item *body* (written once at creation) or in a *comment* — so the
-> page tools and the session-cookie auth path were removed.
+> Earlier versions ran two servers per persona — upstream
+> `makeplane/plane-mcp-server` (via `uvx`) plus a supplementary
+> `plane-extras-mcp` for the comments gap. With ten personas that
+> meant ~22 stdio processes per Claude session and ~2 GB of RSS.
+> The current single-process server folds in the upstream subset
+> the persona prompts actually call and drops the upstream
+> dependency. The internal package is still named
+> `plane-extras-mcp` for historical reasons — it is no longer
+> "extras".
+
+> An even earlier version of the supplementary server also exposed
+> page CRUD via Plane's internal app API (session-cookie auth),
+> because Plane v1.3.0 does not expose pages on the public REST
+> surface. The framework no longer uses Plane pages — every persona
+> artefact lives in a work-item *body* (written once at creation) or
+> in a *comment* — so the page tools and the session-cookie auth
+> path were removed.
 
 ## How personas write artefacts
 
@@ -42,18 +55,23 @@ annotations and handovers travel as comments.
 
 ## Per-persona MCP scope
 
-Each persona acts in Plane with its own API token. In the consumer's
-`.mcp.json` (rendered by `bin/install.py` from the inputs in
-`config.yaml` + `credentials.yaml`) there is one entry per persona
-per server — `plane-venture-advisor`, `plane-extras-venture-advisor`,
-`plane-business-analyst`, etc. — twenty entries in total for a
-ten-persona deployment.
+Each persona acts in Plane with its own API token, but those tokens
+live inside a single `plane` MCP entry in the consumer's `.mcp.json`
+(rendered by `bin/install.py` from the inputs in `config.yaml` +
+`credentials.yaml`). The entry's `env:` block carries one
+`PLANE_API_KEY_<PERSONA_PREFIX>` per declared persona; the server
+reads them at startup, builds a `{persona → PlaneClient}` map, and
+registers every tool N× with the persona's snake-case username as a
+prefix — `business_analyst__list_states`,
+`release_manager__add_comment`, and so on. Each registered tool is
+a closure over its persona's client, so the call lands in Plane
+under the right token regardless of which slash command invoked it.
 
 When a slash command (`/va`, `/ba`, …) puts the main loop into a
-persona's role, the main loop sees all twenty servers. The persona
-prompt explicitly constrains it: *"use only `plane-<name>__*` and
-`plane-extras-<name>__*` tools so every API call is attributed to
-the <name> user in Plane."* Identity separation is therefore
+persona's role, the main loop sees every persona's tools. The
+persona prompt explicitly constrains it: *"use only
+`plane__<persona_snake>__*` tools so every API call is attributed to
+the &lt;persona&gt; user in Plane."* Identity separation is therefore
 prompt-discipline rather than a hard MCP-scope barrier.
 
 > A previous design used Claude Code subagents with per-subagent
@@ -62,18 +80,19 @@ prompt-discipline rather than a hard MCP-scope barrier.
 > subagents start cold on every invocation and lose conversational
 > context between turns, which broke the multi-turn discussion
 > phases each persona depends on. The trade is real: a persona can
-> in principle reach for another persona's MCP server. Persona
+> in principle reach for another persona's tool prefix. Persona
 > prompts close that gap with explicit "use only your own"
 > instructions.
 
 ## Handover semantics
 
-A persona walks a work-item forward via the official Plane MCP's
-`update_work_item` (state transition + assignee change) and writes
-cross-agent notes via `plane-extras-<persona>__add_comment`. The
-`plane-handover` skill encodes the consistent pattern: state
-transition + assignee change + DoD comment, in that order. See
-[`WORKFLOW.md`](WORKFLOW.md) for the full state spine.
+A persona walks a work-item forward via its own
+`plane__<persona_snake>__update_work_item` (state transition +
+assignee change) and writes cross-agent notes via
+`plane__<persona_snake>__add_comment`. The `plane-handover` skill
+encodes the consistent pattern: state transition + assignee change +
+DoD comment, in that order. See [`WORKFLOW.md`](WORKFLOW.md) for the
+full state spine.
 
 ## HTML body / comment authoring (gotchas)
 
@@ -100,7 +119,7 @@ character is special to HTML, encode it before sending.
 
 ## TLS / private-CA hosts
 
-Both MCPs read system CA bundles via Python's `truststore`, plus the
+The MCP reads system CA bundles via Python's `truststore`, plus the
 optional `PLANE_CA_BUNDLE` env var (path to a CA cert file). For
 homelab installs behind a private PKI Caddy, see the
 *Private-CA Plane* note in [`INSTALLATION.md`](INSTALLATION.md).

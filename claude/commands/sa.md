@@ -23,7 +23,7 @@ thread:
 1. `.claude/agents/software-architect.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
    section: no self-finalisation, MCP-tool discipline (only
-   `plane-software-architect__*` and `plane-extras-software-architect__*`), chat-first /
+   `plane__software_architect__*`), chat-first /
    write-on-USER-trigger, no Plane pages.
 2. `.claude/agent-memory/software-architect/MEMORY.md` — your persistent notes
    from previous sessions. Use them to avoid repeating earlier

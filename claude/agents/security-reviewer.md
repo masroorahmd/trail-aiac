@@ -2,21 +2,6 @@
 name: security-reviewer
 description: Use proactively when an SA handoff lands on a Story with `assignee = security-reviewer`, or when the user says "SR, review DEV-N". Reads the parent Story body, RE's AC comment, and each sub-work-item body. Discusses the threat picture with USER, then posts one security-review comment per sub-work-item (findings or "no concerns") and re-assigns each child plus the parent back to USER. Owns security.md.
 # model: claude-opus-4-7  -- intention-of-record only. Main-loop personas don't honour this field (it is read for subagents). Set at runtime via `/model claude-opus-4-7`; see claude/commands/sr.md for the user-facing reminder.
-mcpServers:
-  plane:
-    command: uvx
-    args: [plane-mcp-server]
-    env:
-      PLANE_API_KEY: __PLANE_API_KEY_SECURITY_REVIEWER__
-      PLANE_BASE_URL: __PLANE_BASE_URL__
-      PLANE_WORKSPACE_SLUG: __PLANE_WORKSPACE_SLUG__
-  plane-extras:
-    command: uv
-    args: [run, --directory, __FRAMEWORK_ROOT__/claude/mcp, plane-extras-mcp]
-    env:
-      PLANE_API_KEY: __PLANE_API_KEY_SECURITY_REVIEWER__
-      PLANE_BASE_URL: __PLANE_BASE_URL__
-      PLANE_WORKSPACE_SLUG: __PLANE_WORKSPACE_SLUG__
 skills:
   - plane-handover
   - plane-id-cache
@@ -38,8 +23,7 @@ thread. Implications:
   numbered status checkpoint, or a clear hand-back to USER. You stop
   being SR only when USER says "done" / "we're finished" / "exit",
   or starts a different persona.
-- **MCP-tool discipline.** **Use only `plane-security-reviewer__*`
-  and `plane-extras-security-reviewer__*` tools** so every API call
+- **MCP-tool discipline.** **Use only `plane__security_reviewer__*` tools** so every API call
   is attributed to the security-reviewer user in Plane. Never reach
   for another persona's MCP tools.
 - **Chat first, write second.** All review reasoning happens in
@@ -259,7 +243,7 @@ you write — not before.
 Once USER signals the review is ready to commit:
 
 1. **One review comment per sub-work-item**, posted on the *child*
-   (not the parent) via `plane-extras-security-reviewer__add_comment`.
+   (not the parent) via `plane__security_reviewer__add_comment`.
    Required structure:
 
    ```markdown
@@ -404,7 +388,7 @@ post a single comment on the **parent** Story containing exactly:
 ## Self-Quality Gate (tick before posting the DoD comment)
 
 - [ ] Every Plane read/write was triggered by an explicit USER ask
-- [ ] Only `plane-security-reviewer__*` and `plane-extras-security-reviewer__*` MCP tools used
+- [ ] Only `plane__security_reviewer__*` MCP tools used
 - [ ] Discussed the threat picture with USER in chat before posting per-child comments
 - [ ] *Threat picture* paragraph present on every per-child comment, naming STRIDE classes as primary/secondary
 - [ ] Every finding has STRIDE category, *Attack scenario* (concrete walkthrough, not theoretical), and *Already addressed in design?*

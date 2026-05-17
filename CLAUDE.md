@@ -38,8 +38,10 @@ trail-aiac/
 │   ├── commands/                  slash-command dispatchers
 │   │                              (/va, /ba, /re, /sa, /sr, /bd,
 │   │                              /ud, /tm, /tw, /rm, /kickoff)
-│   ├── mcp/                       plane-extras-mcp (Python + FastMCP):
-│   │                              work-item comments against Plane
+│   ├── mcp/                       multi-tenant Plane MCP server
+│   │                              (Python + FastMCP). One process,
+│   │                              one tool set × N personas, persona
+│   │                              prefix on every tool name.
 │   ├── workflows/                 canonical persona-paths for recurring
 │   │                              kinds of work (greenfield-feature,
 │   │                              bug-fix, security-finding). Reading
@@ -70,10 +72,11 @@ trail-aiac/
 ├── bin/install.py                 single-shot installer; idempotent.
 │                                  Stage 1: copy + seed. Stage 2 (when
 │                                  config + credentials are populated):
-│                                  render settings.local.json, .mcp.json,
+│                                  render settings.local.json, .mcp.json
+│                                  (one `plane` entry whose env carries
+│                                  every persona's PLANE_API_KEY_*),
 │                                  and re-template the consumer's
-│                                  agents/*.md with inlined per-persona
-│                                  Plane tokens (mode 0600).
+│                                  agents/*.md placeholders (mode 0600).
 │
 ├── doc/                           public docs — see index below
 ├── avatars/                       10 persona PNGs + generator source
@@ -103,9 +106,10 @@ trail-aiac/
   the consumer's `.claude/{config,credentials}.yaml`, and assistant
   memory.
 - **Ticket system is Plane** (cloud or self-hosted). JIRA/Confluence
-  ruled out over Atlassian's AI/usage terms. MCP via Plane's official
-  server plus our supplementary `claude/mcp/` for the comment-tools
-  gap.
+  ruled out over Atlassian's AI/usage terms. MCP via a single
+  multi-tenant server in `claude/mcp/` that holds every persona's
+  Plane token and routes calls by tool-name prefix
+  (`business_analyst__list_states`, `release_manager__add_comment`, …).
 - **No Plane pages.** Every persona artefact lives either in a
   work-item *body* (written once at creation) or in a *comment*.
   Plane v1.3.0's pages sit on the internal app API behind a
@@ -123,9 +127,11 @@ trail-aiac/
   `/<persona>` slash command puts the main loop into the persona's
   role for this and any follow-up turns, until USER says "done" /
   "exit" or starts a different `/<persona>`. Identity separation in
-  Plane is preserved by per-persona API tokens in `.mcp.json`; the
-  persona's prompt explicitly constrains it to only its own
-  `plane-<name>__*` and `plane-extras-<name>__*` MCP tools.
+  Plane is preserved by per-persona API tokens — all collected in the
+  single `plane` MCP server's env block in `.mcp.json` — and routed
+  inside the server by the persona-prefixed tool name. The persona's
+  prompt explicitly constrains it to only its own
+  `plane__<persona_snake>__*` tools.
 
 ## Where to find the details
 
@@ -135,7 +141,7 @@ trail-aiac/
 | Plane provisioning via Ansible (host pre-conditions, TLS, idempotency, secret rotation, tear-down) | [`doc/PROVISIONING.md`](doc/PROVISIONING.md) |
 | The ten personas — what each one reads, writes, and when to invoke | [`doc/PERSONAS.md`](doc/PERSONAS.md) |
 | Story lifecycle, state spine, handover protocol over Plane tickets | [`doc/WORKFLOW.md`](doc/WORKFLOW.md) |
-| MCP scoping, supplementary `plane-extras-mcp` design, page-naming convention | [`doc/MCP.md`](doc/MCP.md) |
+| MCP scoping, the multi-tenant `plane` server design, tool-name prefix convention | [`doc/MCP.md`](doc/MCP.md) |
 | Plane public + internal API surface | [`doc/PLANE_API.md`](doc/PLANE_API.md) |
 | Comparison vs. BMAD-METHOD (collaboration bus, identity, ID convention, what we did and didn't borrow) | [`doc/COMPARISON.md`](doc/COMPARISON.md) |
 
