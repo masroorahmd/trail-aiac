@@ -160,9 +160,10 @@ the hard way; that's why we shipped the convention.
 In BMAD, the agent persona is a prompt frame; the bus author of
 every artefact is the human user (or whatever account commits to
 git). We push identity all the way down: every persona has its own
-Plane account with its own API token, and the `mcpServers:`
-frontmatter in each agent prompt restricts that agent to
-`plane-<persona>__*` and `plane-extras-<persona>__*` MCP tools.
+Plane account with its own API token, and the persona prompt
+restricts that agent to its own `plane__<persona_snake>__*` tools
+on the multi-tenant `plane` MCP server, which routes the call to
+the matching token internally.
 
 Practical consequence: open the Plane board, look at a comment
 chain, and you can tell at a glance whether SA decomposed the

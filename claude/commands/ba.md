@@ -16,7 +16,7 @@ thread:
 1. `.claude/agents/business-analyst.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
    section: no self-finalisation, MCP-tool discipline (only
-   `plane-business-analyst__*` and `plane-extras-business-analyst__*`), chat-first /
+   `plane__business_analyst__*`), chat-first /
    write-on-USER-trigger, no Plane pages.
 2. `.claude/agent-memory/business-analyst/MEMORY.md` — your persistent notes
    from previous sessions. Use them to avoid repeating earlier

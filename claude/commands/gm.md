@@ -16,7 +16,7 @@ thread:
 1. `.claude/agents/general-manager.md` — die Persona-Definition.
    Achte besonders auf den Abschnitt `## Operating Mode (zuerst
    lesen)`: kein Self-Finalize, MCP-Tool-Disziplin (nur
-   `plane-general-manager__*` und `plane-extras-general-manager__*`),
+   `plane__general_manager__*`),
    Chat-first / Write-on-USER-Trigger, Sprache durchgehend Deutsch,
    keine Plane-Pages.
 2. `.claude/agent-memory/general-manager/MEMORY.md` — deine
