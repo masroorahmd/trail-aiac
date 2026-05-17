@@ -1,0 +1,18 @@
+# Install the recurring on-host Plane backup. Renders a script +
+# /etc/cron.d entry + logrotate config on the Plane host; the bundle
+# then lands wherever `plane_backup_cron_target_dir` points (default:
+# /var/backups/plane on the local disk — override in host_vars to an
+# external mount for a durable setup). See doc/BACKUP.md for the
+# trade-off between this recurring path and the ad-hoc backup.yml.
+#
+# Idempotent — re-running only rewrites the on-host artefacts when
+# the role's vars changed. To remove the schedule, delete the three
+# files this role installs (cron.d, logrotate.d, the script) and the
+# log file by hand.
+
+- name: Install recurring Plane backup on the host
+  hosts: plane_hosts
+  become: true
+  gather_facts: false
+  roles:
+    - { role: plane_backup_cron, tags: [plane_backup_cron, backup] }

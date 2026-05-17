@@ -79,3 +79,25 @@ plane_projects:
 # framework, so the addresses don't need to receive mail.
 plane_agent_email_domain: example.com
 
+# Recurring on-host backup (optional). Install via:
+#
+#     ansible-playbook backup-cron.yml
+#
+# By default the role lands bundles at /var/backups/plane on the local
+# disk, which is fine for tinkering but not safe — a host failure
+# takes the backups with it. For a durable setup, point the target at
+# an already-mounted external share and set `mount_root` to the mount
+# path; the script then refuses to run if the share is unavailable
+# (without that check, the bundle would silently land on the local FS
+# under what *looks* like the mount path and fill the root disk).
+#
+# Mount provisioning itself is out of scope for this role — bring
+# your own NFS / CIFS / S3-fuse / etc. The example below assumes a
+# CIFS share is already mounted at /mnt/backups by a separate playbook.
+#
+# plane_backup_cron_target_dir: /mnt/backups/plane
+# plane_backup_cron_mount_root: /mnt/backups
+# plane_backup_cron_retention_days: 28
+# plane_backup_cron_hour: "2"
+# plane_backup_cron_minute: "30"
+

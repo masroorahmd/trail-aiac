@@ -1,0 +1,9 @@
+# Managed by Ansible (roles/plane_backup_cron). Recurring Plane
+# backup; the script itself lives at {{ plane_backup_cron_script_path }}.
+# Cron honours /etc/localtime, set to {{ timezone | default('UTC') }} by the homelab base
+# role. Output is piped to the logfile; logrotate.d/plane-backup
+# handles rotation.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+{{ plane_backup_cron_minute }} {{ plane_backup_cron_hour }} {{ plane_backup_cron_dom }} {{ plane_backup_cron_month }} {{ plane_backup_cron_dow }} root {{ plane_backup_cron_script_path }} >> {{ plane_backup_cron_log_path }} 2>&1
