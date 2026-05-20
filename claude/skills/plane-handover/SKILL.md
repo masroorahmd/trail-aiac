@@ -22,8 +22,18 @@ A persona invokes this skill when, and only when:
    returning sub-work-items to USER).
 3. A Definition-of-Done checklist exists for the slice that just
    finished. Without one, the receiver has nothing to verify against.
+4. The persona's most recent end-of-turn menu (see the *End-of-turn
+   menu* rule in every persona's Operating mode) offered
+   `★ commit & hand over` as a ready row with **zero `not yet` rows
+   present**, and USER explicitly accepted that row this turn
+   (bare `ok` / `go` / `weiter`, the row number, or unambiguous
+   prose to the same effect). A USER `ok` on a turn whose menu
+   still carried any `not yet` row does NOT satisfy this — close
+   or explicitly defer those gaps (logged in a comment), post a
+   fresh menu, then commit on the next `ok`. The point of this
+   gate is to make premature handovers structurally impossible.
 
-If any of those three is false, **stop and ask the user** instead of
+If any of those four is false, **stop and ask the user** instead of
 calling this skill.
 
 ## What the skill does
