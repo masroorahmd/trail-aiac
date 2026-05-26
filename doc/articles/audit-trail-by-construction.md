@@ -7,8 +7,9 @@ published: false
 
 # Audit-trail-by-construction: a thesis for spec-driven AI coding
 
-> **TL;DR.** Trail is a multi-agent framework for Claude Code that uses
-> Plane work-items as the audit bus. Requirements get stable IDs that
+> **TL;DR.** [Trail](https://github.com/mahmadhuebsch/trail-aiac) is a
+> multi-agent framework for Claude Code that uses Plane work-items as
+> the audit bus. Requirements get stable IDs that
 > thread all the way down into test-code annotations, so every line of
 > AI-generated code can be traced back to a signed-off intent. Built
 > for regulated work and security-critical systems, not for general
