@@ -47,7 +47,8 @@ trail-aiac/
 │   ├── skills/                    shared skills (plane-handover)
 │   ├── commands/                  slash-command dispatchers
 │   │                              (/gm, /ba, /re, /sa, /sr, /bd,
-│   │                              /ud, /tm, /tw, /rm, /mm, /kickoff)
+│   │                              /ud, /tm, /tw, /rm, /mm, /kickoff,
+│   │                              /fast — off-Plane fast lane)
 │   ├── mcp/                       multi-tenant Plane MCP server
 │   │                              (Python + FastMCP). One process,
 │   │                              one tool set × N personas, persona
