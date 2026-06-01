@@ -364,16 +364,16 @@ without the cold-start each subagent invocation otherwise causes.
   uncertainty is resolved in chat with USER *before* the body /
   comment is written.
 
-## The fast lane (off-Plane)
+## The quick lane (off-Plane)
 
-`/fast` is a deliberate exception to everything above. For a small,
+`/quick` is a deliberate exception to everything above. For a small,
 safe change — a trivial chore, a local bug fix, a small
 single-surface feature — the full spine costs more than the change is
-worth. The fast lane collapses it into a **single main-loop turn that
+worth. The quick lane collapses it into a **single main-loop turn that
 leaves no Plane footprint**: no Story, no sub-work-items, no state
 spine, no assignee chain, no handover comments. The **git commit is
-the only audit artefact**, carrying a `Trail-Lane: fast (<class>)`
-trailer so `git log --grep='Trail-Lane: fast'` reconstructs everything
+the only audit artefact**, carrying a `Trail-Lane: quick (<class>)`
+trailer so `git log --grep='Trail-Lane: quick'` reconstructs everything
 that bypassed Plane.
 
 It is *not* a persona: no Plane identity, no token, no MCP calls. It
@@ -385,15 +385,15 @@ is gated, not a free pass:
   bounded blast radius (~≤3 files / one module); reversible by a
   single `git revert`. Any failure routes USER to `/ba` (or `/re`).
 - **Bounce rule:** the gate is re-checked *during* implementation. If
-  the change grows past it, `/fast` stops without committing and sends
+  the change grows past it, `/quick` stops without committing and sends
   USER to the normal spine. Security work never gets routed around SR
   by going off-Plane.
 - **Tests are mandatory in-lane** (regression test for a fix, smoke
   test for a feature) even though no Test Manager turn runs; the suite
   must be green at commit.
 
-See [`../claude/workflows/fast-lane.md`](../claude/workflows/fast-lane.md)
-for the full path and triggers. The fast lane does **not** run the
+See [`../claude/workflows/quick-lane.md`](../claude/workflows/quick-lane.md)
+for the full path and triggers. The quick lane does **not** run the
 Story lifecycle, so the ticket-lifecycle and description-once rules
 above simply do not apply to it.
 

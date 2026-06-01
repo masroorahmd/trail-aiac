@@ -1,12 +1,12 @@
 ---
-description: Off-Plane fast lane — implement a small, safe change in a single main-loop turn (no Story, no personas, no Plane). Git commit is the only artefact.
+description: Off-Plane quick lane — implement a small, safe change in a single main-loop turn (no Story, no personas, no Plane). Git commit is the only artefact.
 argument-hint: "<short description of the change, e.g. 'fix typo in CLI help' or 'bump axios to 1.7.9'>"
 ---
 
-You are running `/fast` directly in the **main loop** of this Claude
-Code session. `/fast` is **not a persona** — it has no Plane identity,
+You are running `/quick` directly in the **main loop** of this Claude
+Code session. `/quick` is **not a persona** — it has no Plane identity,
 no token, and makes **no Plane MCP calls whatsoever**. It is the
-framework's deliberate *off-Plane fast lane*: a single turn that
+framework's deliberate *off-Plane quick lane*: a single turn that
 implements a small, safe change and commits it. The git commit is the
 **only** audit artefact.
 
@@ -27,11 +27,11 @@ Read these in full and treat them as your constraints for this turn:
 3. `.claude/context/stack.md` — the tech stack and how to run tests.
 
 Do **not** read `product.md`, `roadmap.md`, `security.md`,
-`testing.md`, etc. — the fast lane has no product/spec phase.
+`testing.md`, etc. — the quick lane has no product/spec phase.
 
 ## The eligibility gate (ALL must hold)
 
-A change is fast-lane-eligible **only if every one** of these is true.
+A change is quick-lane-eligible **only if every one** of these is true.
 Check them out loud against USER's brief before you write a line:
 
 1. **No security non-negotiable touched.** Nothing under
@@ -63,7 +63,7 @@ change turns out to break the gate — you discover it needs a
 migration, it reaches into an auth path, the blast radius grows — you
 **stop immediately**. Do not finish and do not commit. Summarise what
 you found, leave the working tree for USER to inspect, and recommend
-the normal spine. The fast lane never silently smuggles a big change
+the normal spine. The quick lane never silently smuggles a big change
 through.
 
 ## Tests are mandatory in-lane
@@ -84,19 +84,19 @@ chat. A red suite is a stopper.
 
 Make the change with Edit / Write, matching `coding.md`. Then commit
 (only after USER picks `★ commit` from the menu below). The commit
-message carries the fast-lane trail:
+message carries the quick-lane trail:
 
 ```
 <imperative subject line — what changed>
 
 <optional one-paragraph why, if not obvious from the subject>
 
-Trail-Lane: fast (<chore|fix|feature>)
+Trail-Lane: quick (<chore|fix|feature>)
 ```
 
-The `Trail-Lane: fast` trailer is the off-Plane audit record — it
-makes `git log --grep='Trail-Lane: fast'` the complete list of
-everything that bypassed Plane, so any fast-lane change stays
+The `Trail-Lane: quick` trailer is the off-Plane audit record — it
+makes `git log --grep='Trail-Lane: quick'` the complete list of
+everything that bypassed Plane, so any quick-lane change stays
 traceable and reviewable after the fact. Classify honestly: `chore`,
 `fix`, or `feature`. Keep the project's own commit conventions
 (sign-off, co-author trailers, issue refs) as the repo already uses
@@ -108,7 +108,7 @@ USER asks.
 
 ## Operating mode
 
-- **Main loop, not a subagent.** You stay in fast-lane mode for this
+- **Main loop, not a subagent.** You stay in quick-lane mode for this
   and any follow-up turn until USER says "done" / "exit", or starts a
   different `/<persona>` command.
 - **No self-finalization.** End every turn with the menu below.
@@ -135,7 +135,7 @@ chars (`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤`). Columns: `# / Option / Ef
   (DE: `noch nicht — <Lücke>`). This is how the gate is enforced in
   the UI: each unmet item is a visible blocker.
 - A `bounce → /ba` (or `/re`) row whenever the change looks
-  spine-shaped rather than fast-shaped.
+  spine-shaped rather than quick-shaped.
 - A `pause / hand back` exit row (DE: `Pause / zurück an USER`).
 
 Reply shorthand: bare `ok` / `go` / `weiter` accepts `★`; a number
