@@ -29,7 +29,7 @@ turns make sense in this kind of work.
 | [`greenfield-feature.md`](greenfield-feature.md) | A genuinely new feature with at least one user-visible surface. Default spine. |
 | [`bug-fix.md`](bug-fix.md) | A regression or bug in shipped code. Lighter spine — often skips BA/SA decomposition. |
 | [`security-finding.md`](security-finding.md) | SR finds something in already-shipped code that must be remediated. Cross-cuts existing Stories. |
-| [`fast-lane.md`](fast-lane.md) | A small, safe change (trivial chore, local bug fix, small single-surface feature) that does not justify a Plane Story. The one off-Plane path — `/fast`, git commit only, gated. |
+| [`quick-lane.md`](quick-lane.md) | A small, safe change (trivial chore, local bug fix, small single-surface feature) that does not justify a Plane Story. The one off-Plane path — `/quick`, git commit only, gated. |
 
 ## Adding a workflow
 
