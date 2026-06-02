@@ -38,6 +38,9 @@ TOOL_VERBS = (
     "list_states",
     "list_labels",
     "list_modules",
+    "list_module_work_items",
+    "add_work_items_to_module",
+    "remove_work_item_from_module",
     "list_work_items",
     "retrieve_work_item",
     "create_work_item",
@@ -277,6 +280,53 @@ async def test_add_work_items_to_cycle_sends_issues_list(
     assert post["json"] == {"issues": [WORK_ITEM_UUID]}
 
 
+async def test_add_work_items_to_module_sends_issues_list(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The module-issues POST must carry ``{"issues": [<uuid>]}`` and
+    route under the invoking persona's token — the mechanism the SA uses
+    to set a child's Plane Module (``create_work_item`` has no module
+    field). UUIDs short-circuit the identifier lookup.
+    """
+    captured: list[dict[str, Any]] = []
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        captured.append(
+            {
+                "method": method,
+                "url": str(url),
+                "auth_header": self.headers.get("X-API-Key"),
+                "json": kwargs.get("json"),
+            }
+        )
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 201
+        response.content = b"{}"
+        response.json = lambda: {}
+        response.text = "{}"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    module_uuid = "feedface-1111-2222-3333-feedfacefeed"
+    await mcp.call_tool(
+        "business_analyst__add_work_items_to_module",
+        {
+            "project_id": PROJECT_UUID,
+            "module_id": module_uuid,
+            "work_item_ids": [WORK_ITEM_UUID],
+        },
+    )
+    assert captured, "no HTTP request captured"
+    post = captured[-1]
+    assert post["method"] == "POST"
+    assert post["auth_header"] == "ba-token"
+    assert f"/modules/{module_uuid}/module-issues/" in post["url"]
+    assert post["json"] == {"issues": [WORK_ITEM_UUID]}
+
+
 async def test_create_cycle_omits_unset_dates(
     two_personas_registered, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -376,6 +426,10 @@ def test_pat_url_new_endpoints(
     assert client._pat_url("projects/p/states/") == f"{base}/projects/p/states/"
     assert client._pat_url("projects/p/labels/") == f"{base}/projects/p/labels/"
     assert client._pat_url("projects/p/modules/") == f"{base}/projects/p/modules/"
+    assert (
+        client._pat_url("projects/p/modules/m/module-issues/")
+        == f"{base}/projects/p/modules/m/module-issues/"
+    )
     assert (
         client._pat_url("projects/p/work-items/")
         == f"{base}/projects/p/work-items/"

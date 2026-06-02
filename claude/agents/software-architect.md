@@ -325,7 +325,14 @@ Once USER signals the design is ready to commit:
      - `Add active-count column to Root CA list view`
    - **Module**: the matching Plane module — exactly one of
      `frontend`, `backend`, `testing`, `documentation` (lowercase, as
-     created by `plane_bootstrap`).
+     created by `plane_bootstrap`). The Plane *Module field* is **not**
+     a parameter of `create_work_item`; it is set in a **second step**,
+     immediately after the child is created, via
+     `plane-software-architect__add_work_items_to_module(project_id,
+     module_id, [<child ref>])`. Resolve `module_id` from the ID cache
+     (`projects.<DEV>.modules.<name>` in `.claude/cache/plane-ids.yaml`),
+     never by guessing the UUID. Create-then-assign for each child; a
+     child whose module membership was not set is an incomplete handover.
    - **State**: `Backlog`. SR will move it to `Todo` and assign the
      implementor (per module: frontend→ui-developer, backend→
      backend-developer, testing→test-manager, documentation→
@@ -388,7 +395,8 @@ exactly:
 <one-sentence rationale — the architectural shape and what makes it ready>
 
 ### Definition of Done (Software Architect slice)
-- [x] N sub-work-items created (1 ≤ N ≤ 4), each with the architecture slice in its body, each in its matching Plane module, each in state `Backlog`, each assigned to security-reviewer
+- [x] N sub-work-items created (1 ≤ N ≤ 4), each with the architecture slice in its body, each in state `Backlog`, each assigned to security-reviewer
+- [x] Each child assigned to its matching Plane module via `add_work_items_to_module` (the Module field is not set at create time) — verified, not assumed
 - [x] Each sub-work-item body has Module / AC scenarios covered / Approach / Components / Trade-offs / Notes for Security Reviewer (Data Models / API Endpoints / Data flow only when relevant)
 - [x] At least one alternative considered and rejected (in *Trade-offs* on at least the largest sub-work-item)
 - [x] No "open questions" in any sub-work-item body — every architectural ambiguity resolved in chat with USER before creation

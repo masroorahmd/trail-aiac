@@ -26,6 +26,9 @@ Twenty verbs per persona:
 | `list_states` | `GET  /api/v1/workspaces/{slug}/projects/{p}/states/` |
 | `list_labels` | `GET  /api/v1/workspaces/{slug}/projects/{p}/labels/` |
 | `list_modules` | `GET  /api/v1/workspaces/{slug}/projects/{p}/modules/` |
+| `list_module_work_items` | `GET  /api/v1/workspaces/{slug}/projects/{p}/modules/{m}/module-issues/` |
+| `add_work_items_to_module` | `POST /api/v1/workspaces/{slug}/projects/{p}/modules/{m}/module-issues/` |
+| `remove_work_item_from_module` | `DELETE /api/v1/workspaces/{slug}/projects/{p}/modules/{m}/module-issues/{id}/` |
 | `list_work_items` | `GET  /api/v1/workspaces/{slug}/projects/{p}/work-items/` |
 | `retrieve_work_item` | `GET  /api/v1/workspaces/{slug}/projects/{p}/work-items/{id}/` |
 | `create_work_item` | `POST /api/v1/workspaces/{slug}/projects/{p}/work-items/` |
@@ -48,7 +51,12 @@ identifiers automatically via the workspace-scoped lookup
 `GET /workspaces/{slug}/work-items/{identifier}/`. A `cycle_id` is
 always a UUID — cycles have no human-readable identifier. The cycle
 add/remove tools resolve their `work_item_id`(s) the same way as the
-work-item tools.
+work-item tools. A `module_id` is likewise always a UUID; the module
+membership tools resolve their `work_item_id`(s) identically. Modules
+themselves are created by `plane_bootstrap` / humans, not by personas,
+so only membership (not module CRUD) is exposed. A work item may belong
+to several modules at once — `add_work_items_to_module` leaves existing
+module memberships intact.
 
 > Earlier versions also exposed page CRUD via Plane's internal app
 > API (session-cookie auth), because Plane v1.3.0 does not expose
