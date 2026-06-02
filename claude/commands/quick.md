@@ -25,6 +25,12 @@ Read these in full and treat them as your constraints for this turn:
    match. Read at least one existing file near your change before
    writing.
 3. `.claude/context/stack.md` — the tech stack and how to run tests.
+4. **The lane's persona memory** — once the brief tells you which lane
+   the change lands in (see the mapping in *Memory* below), read that
+   lane's `.claude/agent-memory/<persona>/MEMORY.md`. It carries the
+   conventions, fixture patterns, and gotchas prior turns locked in;
+   your change must follow them, and reading it now is what lets you
+   append without duplicating later.
 
 Do **not** read `product.md`, `roadmap.md`, `security.md`,
 `testing.md`, etc. — the quick lane has no product/spec phase.
@@ -80,9 +86,55 @@ You do not spin up a Test Manager turn — but you do not skip tests:
 (see `stack.md`) before committing and record the command + result in
 chat. A red suite is a stopper.
 
+## Memory — capture reusable knowledge in the lane's persona memory
+
+`/quick` has no persona identity, but the change still lands in a
+persona's *lane*, and that lane keeps a memory across sessions. When a
+change locks in something a future turn would need to know — a
+convention, a fixture / wiring pattern, a non-obvious gotcha — record
+it there so the knowledge does not die with the commit. This is the one
+knowledge artefact the quick lane keeps beyond the commit itself.
+
+**Which file.** Map the change to its lane and append to that lane's
+`MEMORY.md`:
+
+| Change touches | Lane memory file |
+|---|---|
+| UI / frontend | `.claude/agent-memory/ui-developer/MEMORY.md` |
+| backend / server / API-internal | `.claude/agent-memory/backend-developer/MEMORY.md` |
+| tests / fixtures | `.claude/agent-memory/test-manager/MEMORY.md` |
+| docs | `.claude/agent-memory/technical-writer/MEMORY.md` |
+
+If the change cleanly spans two lanes, write the relevant fact to each.
+If it spans more than two, that is a sign it is too big for the quick
+lane — reconsider the gate.
+
+**When to write — same bar as a persona's own memory discipline.**
+Append only when the change establishes something reusable. A typo fix,
+a comment tweak, a dep bump with no logic change → **nothing to
+remember, write nothing.** Do not pad the file with per-change noise;
+an empty-handed trivial change is correct, not a gap.
+
+**What to write.** One concrete, dated bullet under `## Lessons learned`
+(or `## Decisions` if you locked in a convention), tagged `[quick]` so
+quick-lane entries stay greppable — mirroring the `Trail-Lane: quick`
+commit trailer. English, like every artefact:
+
+```markdown
+## Lessons learned
+- 2026-06-02 [quick] <the reusable fact — what and why, in one line>
+```
+
+The memory write is **not** a gate item — it never blocks `★ commit`,
+and its absence on a trivial change is expected. It rides in the **same
+commit** as the code change (see *Output*), so knowledge and change
+land atomically.
+
 ## Output — one commit, the only artefact
 
-Make the change with Edit / Write, matching `coding.md`. Then commit
+Make the change with Edit / Write, matching `coding.md`. If the change
+warranted a memory entry (see *Memory*), stage that `MEMORY.md` edit
+together with the code so both land in one commit. Then commit
 (only after USER picks `★ commit` from the menu below). The commit
 message carries the quick-lane trail:
 
