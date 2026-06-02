@@ -426,6 +426,16 @@ is gated, not a free pass:
 - **Tests are mandatory in-lane** (regression test for a fix, smoke
   test for a feature) even though no Test Manager turn runs; the suite
   must be green at commit.
+- **Lane memory is kept.** Though it has no persona identity, the
+  change lands in a persona's *lane* (UI→`ui-developer`,
+  backend→`backend-developer`, tests→`test-manager`,
+  docs→`technical-writer`). When the change locks in something reusable
+  — a convention, a fixture pattern, a gotcha — `/quick` reads and
+  appends to that lane's `agent-memory/<persona>/MEMORY.md`, tagged
+  `[quick]`, and commits the note in the same commit. Trivial changes
+  (typo, dep bump) write nothing. This is the one cross-session
+  artefact the quick lane keeps beyond the commit; it is not a gate
+  item and never blocks the commit.
 
 See [`../claude/workflows/quick-lane.md`](../claude/workflows/quick-lane.md)
 for the full path and triggers. The quick lane does **not** run the

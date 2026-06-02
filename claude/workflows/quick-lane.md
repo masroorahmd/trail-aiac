@@ -17,7 +17,8 @@ token, no MCP calls. It is a single main-loop turn:
 
 1. **`/quick <change>`** — checks the eligibility gate, implements the
    change against `coding.md`, writes the mandated test, runs the
-   suite, and commits with a `Trail-Lane: quick (<class>)` trailer.
+   suite, records any reusable knowledge in the lane's memory (see
+   below), and commits with a `Trail-Lane: quick (<class>)` trailer.
 
 That's the whole path. No Story, no sub-work-items, no state spine, no
 assignee chain, no handover comments.
@@ -47,6 +48,18 @@ Story already frames it).
 - Trivial chore → no new test, but the existing suite must stay green.
 
 Green suite at commit is the contract.
+
+## Lane memory (the one cross-session artefact)
+
+`/quick` has no persona, but the change lands in a persona's *lane*:
+UI→`ui-developer`, backend→`backend-developer`, tests→`test-manager`,
+docs→`technical-writer`. When the change locks in something a future
+turn needs — a convention, a fixture pattern, a non-obvious gotcha —
+the lane reads and appends to its
+`agent-memory/<persona>/MEMORY.md`, one dated bullet tagged `[quick]`,
+committed in the same commit. Trivial changes (typo, dep bump) record
+nothing. The memory write is never a gate item and never blocks the
+commit — it is knowledge upkeep, not an audit step.
 
 ## The bounce rule
 
