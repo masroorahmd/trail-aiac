@@ -359,3 +359,133 @@ class PlaneClient:
             "DELETE",
             f"projects/{project_id}/work-items/{wid}/comments/{comment_id}/",
         )
+
+    # ----- cycles (sprints) -----
+
+    async def list_cycles(self, project_id: str) -> list[dict[str, Any]]:
+        """List cycles (sprints) defined on a project."""
+        return self._unwrap_list(
+            await self._pat_request("GET", f"projects/{project_id}/cycles/")
+        )
+
+    async def retrieve_cycle(
+        self, project_id: str, cycle_id: str
+    ) -> dict[str, Any]:
+        """Retrieve a single cycle by UUID (full metadata + progress)."""
+        return await self._pat_request(
+            "GET", f"projects/{project_id}/cycles/{cycle_id}/"
+        )
+
+    async def create_cycle(
+        self,
+        project_id: str,
+        *,
+        name: str,
+        description: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a cycle. ``start_date`` / ``end_date`` are ISO
+        ``YYYY-MM-DD``; Plane requires both dates together or neither.
+        """
+        body = {
+            k: v
+            for k, v in {
+                "name": name,
+                "description": description,
+                "start_date": start_date,
+                "end_date": end_date,
+            }.items()
+            if v is not None
+        }
+        return await self._pat_request(
+            "POST", f"projects/{project_id}/cycles/", json=body
+        )
+
+    async def update_cycle(
+        self,
+        project_id: str,
+        cycle_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
+        """Patch a cycle. Only non-None fields are sent, so a date-only
+        reschedule does not blank the name.
+        """
+        body = {
+            k: v
+            for k, v in {
+                "name": name,
+                "description": description,
+                "start_date": start_date,
+                "end_date": end_date,
+            }.items()
+            if v is not None
+        }
+        return await self._pat_request(
+            "PATCH", f"projects/{project_id}/cycles/{cycle_id}/", json=body
+        )
+
+    async def delete_cycle(self, project_id: str, cycle_id: str) -> None:
+        """Delete a cycle. The work items it held are not deleted — they
+        only leave the cycle. Irreversible; prefer transferring unfinished
+        items to another cycle first.
+        """
+        await self._pat_request(
+            "DELETE", f"projects/{project_id}/cycles/{cycle_id}/"
+        )
+
+    async def list_cycle_work_items(
+        self, project_id: str, cycle_id: str
+    ) -> list[dict[str, Any]]:
+        """List the work items assigned to a cycle."""
+        return self._unwrap_list(
+            await self._pat_request(
+                "GET",
+                f"projects/{project_id}/cycles/{cycle_id}/cycle-issues/",
+            )
+        )
+
+    async def add_work_items_to_cycle(
+        self, project_id: str, cycle_id: str, work_item_refs: list[str]
+    ) -> dict[str, Any]:
+        """Add one or more work items to a cycle. Each ref accepts a UUID
+        or human identifier (e.g. ``DEV-12``); resolved to UUIDs before
+        the request. A work item lives in at most one cycle — adding it to
+        a new cycle moves it.
+        """
+        issue_ids = [await self.resolve_work_item(r) for r in work_item_refs]
+        return await self._pat_request(
+            "POST",
+            f"projects/{project_id}/cycles/{cycle_id}/cycle-issues/",
+            json={"issues": issue_ids},
+        )
+
+    async def remove_work_item_from_cycle(
+        self, project_id: str, cycle_id: str, work_item_ref: str
+    ) -> None:
+        """Remove a single work item from a cycle. ``work_item_ref``
+        accepts a UUID or human identifier. The work item itself is not
+        deleted.
+        """
+        wid = await self.resolve_work_item(work_item_ref)
+        await self._pat_request(
+            "DELETE",
+            f"projects/{project_id}/cycles/{cycle_id}/cycle-issues/{wid}/",
+        )
+
+    async def transfer_cycle_work_items(
+        self, project_id: str, cycle_id: str, new_cycle_id: str
+    ) -> dict[str, Any]:
+        """Transfer the *incomplete* work items of one cycle into another
+        — Plane's "carry unfinished work into the next sprint" action.
+        ``new_cycle_id`` is the destination cycle's UUID.
+        """
+        return await self._pat_request(
+            "POST",
+            f"projects/{project_id}/cycles/{cycle_id}/transfer-issues/",
+            json={"new_cycle_id": new_cycle_id},
+        )

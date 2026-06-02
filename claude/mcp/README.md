@@ -17,7 +17,7 @@ One stdio process registers every Plane operation N×, prefixed by
 each configured persona's snake-case username — e.g. for
 `business-analyst` and `release-manager` you get
 `business_analyst__list_states`, `release_manager__list_states`, etc.
-Eleven verbs per persona:
+Twenty verbs per persona:
 
 | Verb | Endpoint |
 |---|---|
@@ -32,11 +32,23 @@ Eleven verbs per persona:
 | `update_work_item` | `PATCH /api/v1/workspaces/{slug}/projects/{p}/work-items/{id}/` |
 | `add_comment` | `POST /api/v1/workspaces/{slug}/projects/{p}/work-items/{id}/comments/` |
 | `list_comments` | `GET  /api/v1/workspaces/{slug}/projects/{p}/work-items/{id}/comments/` |
+| `list_cycles` | `GET  /api/v1/workspaces/{slug}/projects/{p}/cycles/` |
+| `retrieve_cycle` | `GET  /api/v1/workspaces/{slug}/projects/{p}/cycles/{c}/` |
+| `create_cycle` | `POST /api/v1/workspaces/{slug}/projects/{p}/cycles/` |
+| `update_cycle` | `PATCH /api/v1/workspaces/{slug}/projects/{p}/cycles/{c}/` |
+| `delete_cycle` | `DELETE /api/v1/workspaces/{slug}/projects/{p}/cycles/{c}/` |
+| `list_cycle_work_items` | `GET  /api/v1/workspaces/{slug}/projects/{p}/cycles/{c}/cycle-issues/` |
+| `add_work_items_to_cycle` | `POST /api/v1/workspaces/{slug}/projects/{p}/cycles/{c}/cycle-issues/` |
+| `remove_work_item_from_cycle` | `DELETE /api/v1/workspaces/{slug}/projects/{p}/cycles/{c}/cycle-issues/{id}/` |
+| `transfer_cycle_work_items` | `POST /api/v1/workspaces/{slug}/projects/{p}/cycles/{c}/transfer-issues/` |
 
 Tools that take a `work_item_id` accept either the UUID or the
 human-readable identifier (e.g. `INT-1`); the client resolves
 identifiers automatically via the workspace-scoped lookup
-`GET /workspaces/{slug}/work-items/{identifier}/`.
+`GET /workspaces/{slug}/work-items/{identifier}/`. A `cycle_id` is
+always a UUID — cycles have no human-readable identifier. The cycle
+add/remove tools resolve their `work_item_id`(s) the same way as the
+work-item tools.
 
 > Earlier versions also exposed page CRUD via Plane's internal app
 > API (session-cookie auth), because Plane v1.3.0 does not expose

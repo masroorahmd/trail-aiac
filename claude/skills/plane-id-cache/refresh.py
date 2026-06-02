@@ -184,15 +184,26 @@ def main() -> None:
         except SystemExit:
             modules = []
 
+        # Cycles (sprints) churn faster than the rest — a new one each
+        # sprint — but caching name→id still saves the BA a round-trip
+        # when resolving "the current sprint". Endpoint may 404 if the
+        # project has none.
+        try:
+            cycles_raw = _get(client, f"/api/v1/workspaces/{workspace}/projects/{pid}/cycles/")
+            cycles = _unwrap(cycles_raw)
+        except SystemExit:
+            cycles = []
+
         out["plane"]["projects"][ident] = {
             "id": pid,
             "name": p.get("name"),
             "states": dict(sorted((s.get("name"), s.get("id")) for s in states if s.get("name") and s.get("id"))),
             "labels": dict(sorted((l.get("name"), l.get("id")) for l in labels if l.get("name") and l.get("id"))),
             "modules": dict(sorted((m.get("name"), m.get("id")) for m in modules if m.get("name") and m.get("id"))),
+            "cycles": dict(sorted((c.get("name"), c.get("id")) for c in cycles if c.get("name") and c.get("id"))),
         }
         proj_summary.append(
-            f"{ident}({len(states)}s/{len(labels)}l/{len(modules)}m)"
+            f"{ident}({len(states)}s/{len(labels)}l/{len(modules)}m/{len(cycles)}c)"
         )
 
     cache_dir = dot / "cache"
