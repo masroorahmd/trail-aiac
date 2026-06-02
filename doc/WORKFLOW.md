@@ -49,10 +49,11 @@ the previous page-based design fragile. Everything now lives in
 is written when it's created, and never edited afterwards. Later
 annotations and handovers travel as comments.
 
-## Two Plane axes — modules and labels
+## Three Plane axes — modules, labels, and cycles
 
-The framework uses Plane's modules and labels for two orthogonal
-purposes:
+The framework uses Plane's modules, labels, and cycles for three
+orthogonal purposes — *who* implements a slice (module), *what kind*
+of work it is (label), and *when* it is scheduled to ship (cycle):
 
 ### Phase modules (4, fixed by the framework)
 
@@ -97,6 +98,40 @@ in `host_vars/plane.yml` (or supply an inline list):
 The Business Analyst applies one or more of the relevant set's labels
 to each Story it creates. Labels can be added or retired over the
 project's lifetime without changing the workflow.
+
+### Sprints (Plane cycles, BA-owned)
+
+A **cycle** is Plane's sprint primitive: a named, dated window
+(`start_date` … `end_date`) that work items are assigned to. Cycles
+are the *when* axis — orthogonal to both module (*who*) and label
+(*what*). They are **optional**: a project that ships continuously can
+ignore them entirely and the Story spine above is unchanged.
+
+The **Business Analyst owns the sprint cadence** — and only the BA.
+Cycles live on the dev project (`config.yaml: plane.projects.dev`).
+The BA creates each sprint, schedules its window, pulls triaged
+Stories into it, and at sprint's end transfers whatever is unfinished
+into the next cycle. No other persona creates, edits, or deletes a
+cycle; implementors and reviewers may *read* cycle membership (e.g. to
+see which sprint a Story belongs to) but never mutate it. Full CRUD is
+exposed over Plane's public REST — see the BA persona prompt
+(*Sprint / cycle management*) for the conventions (one active cycle at
+a time, English cycle names, both dates set together).
+
+Conventions:
+
+- **One active cycle at a time** on the dev project. Overlapping live
+  sprints are not used.
+- **A Story joins a cycle as a whole.** Sub-work-items inherit their
+  scheduling from the parent Story; the BA assigns the *Story* to the
+  cycle, not individual children.
+- **Cycle assignment is independent of state and assignee.** Putting a
+  Story in the current sprint does not move it along the state spine or
+  change who is assigned — it is purely a scheduling signal.
+- **Description-once does not apply to cycles.** Cycles are mutable
+  scheduling containers (reschedule the window, add/remove members,
+  transfer unfinished work); the rule governs work-item *bodies*, not
+  cycles.
 
 ## Workflow diagram
 

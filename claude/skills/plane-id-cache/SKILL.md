@@ -1,6 +1,6 @@
 ---
 name: plane-id-cache
-description: Resolve Plane project / state / label / assignee / module UUIDs from a local cache file (`.claude/cache/plane-ids.yaml`) instead of round-tripping through MCP listing tools every turn. Read the cache before any `list_projects` / `list_states` / `list_labels` / `list_workspace_members` MCP call — these UUIDs are stable per deployment. Refresh by running the bundled `refresh.py` script when a needed name is missing.
+description: Resolve Plane project / state / label / assignee / module / cycle UUIDs from a local cache file (`.claude/cache/plane-ids.yaml`) instead of round-tripping through MCP listing tools every turn. Read the cache before any `list_projects` / `list_states` / `list_labels` / `list_workspace_members` / `list_cycles` MCP call — these UUIDs are stable per deployment (cycles are the one exception: refresh after a new sprint is created). Refresh by running the bundled `refresh.py` script when a needed name is missing.
 ---
 
 # plane-id-cache
@@ -9,6 +9,10 @@ Plane's UUIDs for projects, workflow states, labels, workspace members,
 and modules are **stable per deployment**: they are written once when
 the workspace is provisioned and almost never change. Fetching them
 from MCP every persona turn is a round-trip tax.
+
+Cycles (sprints) are the one churning entity — the Business Analyst
+creates a new one each sprint — so their name→id map is cached too,
+but it goes stale faster: refresh after creating or renaming a cycle.
 
 This skill caches them in `.claude/cache/plane-ids.yaml` and tells
 every persona to consult that file *before* calling any Plane MCP
@@ -43,6 +47,10 @@ plane:
         frontend:      <uuid>
         testing:       <uuid>
         documentation: <uuid>
+      cycles:
+        "Sprint 1": <uuid>
+        "Sprint 2": <uuid>
+        # … one entry per cycle; refresh after the BA opens a new sprint
     BIZ:
       id: <uuid>
       # … same shape
@@ -59,7 +67,7 @@ plane:
 ## When to read it (every persona, every turn)
 
 Whenever a persona needs to set or filter on `state`, `assignee`,
-`labels`, `parent_project`, or `module` in a Plane MCP call:
+`labels`, `parent_project`, `module`, or `cycle` in a Plane MCP call:
 
 1. Read `.claude/cache/plane-ids.yaml`.
 2. Look up the human name (e.g. `Backlog`, `Security`,
@@ -80,6 +88,8 @@ Refresh whenever:
 - A name you need is missing from the cache.
 - The user announces a new label / state / member was added in the
   Plane UI.
+- The BA just opened a new sprint (cycle) — its name→id won't be in
+  the cache until the next refresh.
 - An MCP write fails with a "no such state / label / member" error.
 
 Refresh command:
@@ -92,7 +102,7 @@ uv run --no-project --with httpx --with pyyaml \
 The script reads `.claude/config.yaml` (workspace, projects) and
 `.claude/credentials.yaml` (any persona's PAT — read-only resolver
 work, no attribution concern). It queries the public REST API for
-projects, states, labels, modules, and workspace members, then
+projects, states, labels, modules, cycles, and workspace members, then
 overwrites `.claude/cache/plane-ids.yaml`.
 
 Refresh is idempotent and cheap (≈10 HTTP calls). Re-run as often as

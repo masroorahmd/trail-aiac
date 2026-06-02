@@ -88,6 +88,47 @@ async def test_add_list_delete_comment(
         await client.delete_comment(project_id, work_item_id, comment_id)
 
 
+# ----- cycles / sprints (public REST, X-API-Key) -----
+
+
+async def test_cycle_crud_lifecycle(
+    client: PlaneClient, project_id: str, work_item_id: str
+) -> None:
+    """Full sprint lifecycle: create → list → retrieve → update → add a
+    work item → list members → remove it → delete the cycle.
+    """
+    created = await client.create_cycle(
+        project_id, name=f"trail-it-cycle {_stamp()}"
+    )
+    cycle_id = created["id"]
+
+    try:
+        cycles = await client.list_cycles(project_id)
+        assert any(c["id"] == cycle_id for c in cycles), (
+            f"new cycle {cycle_id} not found in list"
+        )
+
+        fetched = await client.retrieve_cycle(project_id, cycle_id)
+        assert fetched["id"] == cycle_id
+
+        await client.update_cycle(
+            project_id, cycle_id, description="rescheduled by integration test"
+        )
+
+        await client.add_work_items_to_cycle(
+            project_id, cycle_id, [work_item_id]
+        )
+        members = await client.list_cycle_work_items(project_id, cycle_id)
+        member_issue_ids = {m.get("issue") or m.get("id") for m in members}
+        assert member_issue_ids, "cycle reports no work items after add"
+
+        await client.remove_work_item_from_cycle(
+            project_id, cycle_id, work_item_id
+        )
+    finally:
+        await client.delete_cycle(project_id, cycle_id)
+
+
 async def test_plane_error_carries_status(
     client: PlaneClient, project_id: str
 ) -> None:
