@@ -489,3 +489,50 @@ class PlaneClient:
             f"projects/{project_id}/cycles/{cycle_id}/transfer-issues/",
             json={"new_cycle_id": new_cycle_id},
         )
+
+    # ----- modules (membership) -----
+    #
+    # Modules are created by humans (or Ansible), not by personas — the
+    # team only assigns work items to an existing module. Unlike a cycle
+    # (the *when* axis, at most one per item), a work item may belong to
+    # several modules (the *who* axis), so adding to one module does not
+    # remove it from another.
+
+    async def list_module_work_items(
+        self, project_id: str, module_id: str
+    ) -> list[dict[str, Any]]:
+        """List the work items assigned to a module."""
+        return self._unwrap_list(
+            await self._pat_request(
+                "GET",
+                f"projects/{project_id}/modules/{module_id}/module-issues/",
+            )
+        )
+
+    async def add_work_items_to_module(
+        self, project_id: str, module_id: str, work_item_refs: list[str]
+    ) -> dict[str, Any]:
+        """Add one or more work items to a module. Each ref accepts a UUID
+        or human identifier (e.g. ``DEV-12``); resolved to UUIDs before
+        the request. A work item may belong to several modules at once —
+        adding it here leaves its other module memberships intact.
+        """
+        issue_ids = [await self.resolve_work_item(r) for r in work_item_refs]
+        return await self._pat_request(
+            "POST",
+            f"projects/{project_id}/modules/{module_id}/module-issues/",
+            json={"issues": issue_ids},
+        )
+
+    async def remove_work_item_from_module(
+        self, project_id: str, module_id: str, work_item_ref: str
+    ) -> None:
+        """Remove a single work item from a module. ``work_item_ref``
+        accepts a UUID or human identifier. The work item itself is not
+        deleted, and its other module memberships are untouched.
+        """
+        wid = await self.resolve_work_item(work_item_ref)
+        await self._pat_request(
+            "DELETE",
+            f"projects/{project_id}/modules/{module_id}/module-issues/{wid}/",
+        )

@@ -20,6 +20,23 @@
 > Business Analyst owns the sprint cadence — see
 > [`WORKFLOW.md`](WORKFLOW.md) *Sprints*.
 >
+> **Update 2026-06-02 (module membership wired in)**: the multi-tenant
+> MCP now exposes module work-item membership —
+> `list_module_work_items`, `add_work_items_to_module`,
+> `remove_work_item_from_module` — alongside the pre-existing read-only
+> `list_modules`. This closes a real gap: `create_work_item` has no
+> `module` field, so before this the Software Architect's prompt
+> required a Module on every child it could not actually set. Module
+> membership, like cycle membership, is a separate through-table
+> endpoint: `…/projects/{pid}/modules/{module_id}/module-issues/`
+> (GET/POST, body `{"issues":[…]}`) and
+> `…/module-issues/{issue_id}/` (DELETE). Unlike a cycle (at most one
+> per item), a work item may belong to several modules — adding to one
+> leaves the others intact. Modules themselves are created by
+> `plane_bootstrap` / humans, not by personas, so no create/delete
+> module tools are exposed. The Software Architect owns child→module
+> assignment — see [`PERSONAS.md`](PERSONAS.md).
+>
 > **Update 2026-05-17 (multi-tenant MCP)**: the upstream
 > `makeplane/plane-mcp-server` is no longer used. The framework now
 > ships a single multi-tenant MCP server (`claude/mcp/`) that holds

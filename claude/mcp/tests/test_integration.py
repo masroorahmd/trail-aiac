@@ -88,6 +88,42 @@ async def test_add_list_delete_comment(
         await client.delete_comment(project_id, work_item_id, comment_id)
 
 
+# ----- modules (membership, public REST, X-API-Key) -----
+
+
+async def test_module_membership_lifecycle(
+    client: PlaneClient, project_id: str, work_item_id: str
+) -> None:
+    """Module membership round-trip: add a work item to a module → list
+    members → remove it. Modules are not persona-creatable, so the test
+    provisions and tears down its own module via the raw REST endpoint.
+    This is the mechanism the Software Architect uses to set a child's
+    Plane Module, which ``create_work_item`` cannot.
+    """
+    created = await client._pat_request(
+        "POST",
+        f"projects/{project_id}/modules/",
+        json={"name": f"trail-it-module {_stamp()}"},
+    )
+    module_id = created["id"]
+
+    try:
+        await client.add_work_items_to_module(
+            project_id, module_id, [work_item_id]
+        )
+        members = await client.list_module_work_items(project_id, module_id)
+        member_issue_ids = {m.get("issue") or m.get("id") for m in members}
+        assert member_issue_ids, "module reports no work items after add"
+
+        await client.remove_work_item_from_module(
+            project_id, module_id, work_item_id
+        )
+    finally:
+        await client._pat_request(
+            "DELETE", f"projects/{project_id}/modules/{module_id}/"
+        )
+
+
 # ----- cycles / sprints (public REST, X-API-Key) -----
 
 
