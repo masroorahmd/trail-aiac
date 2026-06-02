@@ -369,6 +369,44 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
                 project_id, cycle_id, new_cycle_id
             )
 
+    # ----- modules (membership) -----
+
+    @mcp.tool(name=f"{prefix}__list_module_work_items")
+    async def list_module_work_items(
+        project_id: str, module_id: str
+    ) -> list[dict[str, Any]]:
+        """List the work items assigned to a module."""
+        async with _client() as c:
+            return await c.list_module_work_items(project_id, module_id)
+
+    @mcp.tool(name=f"{prefix}__add_work_items_to_module")
+    async def add_work_items_to_module(
+        project_id: str, module_id: str, work_item_ids: list[str]
+    ) -> dict[str, Any]:
+        """Add one or more work items to a module. Each entry of
+        ``work_item_ids`` accepts a UUID or human identifier (e.g.
+        ``DEV-12``). A work item may belong to several modules at once —
+        adding it here leaves its other module memberships intact.
+        """
+        async with _client() as c:
+            return await c.add_work_items_to_module(
+                project_id, module_id, work_item_ids
+            )
+
+    @mcp.tool(name=f"{prefix}__remove_work_item_from_module")
+    async def remove_work_item_from_module(
+        project_id: str, module_id: str, work_item_id: str
+    ) -> dict[str, Any]:
+        """Remove a single work item from a module. ``work_item_id``
+        accepts a UUID or human identifier. The work item itself is not
+        deleted, and its other module memberships are untouched.
+        """
+        async with _client() as c:
+            await c.remove_work_item_from_module(
+                project_id, module_id, work_item_id
+            )
+            return {"removed": work_item_id, "module": module_id}
+
 
 def register_personas_from_env() -> dict[str, dict[str, str]]:
     """Register tools for every persona found in the environment.
