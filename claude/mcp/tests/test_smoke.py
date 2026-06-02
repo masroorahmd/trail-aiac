@@ -44,6 +44,15 @@ TOOL_VERBS = (
     "update_work_item",
     "add_comment",
     "list_comments",
+    "list_cycles",
+    "retrieve_cycle",
+    "create_cycle",
+    "update_cycle",
+    "delete_cycle",
+    "list_cycle_work_items",
+    "add_work_items_to_cycle",
+    "remove_work_item_from_cycle",
+    "transfer_cycle_work_items",
 )
 
 PROJECT_UUID = "11111111-2222-3333-4444-555555555555"
@@ -222,6 +231,80 @@ async def test_update_work_item_only_sends_provided_fields(
     )
 
 
+async def test_add_work_items_to_cycle_sends_issues_list(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The cycle-issues POST must carry ``{"issues": [<uuid>]}`` and
+    route under the invoking persona's token. UUIDs short-circuit the
+    identifier lookup, so the only request captured is the POST itself.
+    """
+    captured: list[dict[str, Any]] = []
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        captured.append(
+            {
+                "method": method,
+                "url": str(url),
+                "auth_header": self.headers.get("X-API-Key"),
+                "json": kwargs.get("json"),
+            }
+        )
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 201
+        response.content = b"{}"
+        response.json = lambda: {}
+        response.text = "{}"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    cycle_uuid = "abcdabcd-1111-2222-3333-abcdabcdabcd"
+    await mcp.call_tool(
+        "business_analyst__add_work_items_to_cycle",
+        {
+            "project_id": PROJECT_UUID,
+            "cycle_id": cycle_uuid,
+            "work_item_ids": [WORK_ITEM_UUID],
+        },
+    )
+    assert captured, "no HTTP request captured"
+    post = captured[-1]
+    assert post["method"] == "POST"
+    assert post["auth_header"] == "ba-token"
+    assert f"/cycles/{cycle_uuid}/cycle-issues/" in post["url"]
+    assert post["json"] == {"issues": [WORK_ITEM_UUID]}
+
+
+async def test_create_cycle_omits_unset_dates(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A name-only cycle create must not send null start/end dates —
+    Plane rejects one date without the other."""
+    captured: list[dict[str, Any]] = []
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        captured.append({"method": method, "json": kwargs.get("json")})
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 201
+        response.content = b'{"id":"cycle-1"}'
+        response.json = lambda: {"id": "cycle-1"}
+        response.text = '{"id":"cycle-1"}'
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    await mcp.call_tool(
+        "business_analyst__create_cycle",
+        {"project_id": PROJECT_UUID, "name": "Sprint 1"},
+    )
+    post = [c for c in captured if c["method"] == "POST"][-1]
+    assert post["json"] == {"name": "Sprint 1"}
+
+
 def test_register_personas_empty_when_no_workspace(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -296,6 +379,15 @@ def test_pat_url_new_endpoints(
     assert (
         client._pat_url("projects/p/work-items/")
         == f"{base}/projects/p/work-items/"
+    )
+    assert client._pat_url("projects/p/cycles/") == f"{base}/projects/p/cycles/"
+    assert (
+        client._pat_url("projects/p/cycles/c/cycle-issues/")
+        == f"{base}/projects/p/cycles/c/cycle-issues/"
+    )
+    assert (
+        client._pat_url("projects/p/cycles/c/transfer-issues/")
+        == f"{base}/projects/p/cycles/c/transfer-issues/"
     )
 
 

@@ -253,6 +253,122 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         async with _client() as c:
             return await c.list_comments(project_id, work_item_id)
 
+    # ----- cycles (sprints) -----
+
+    @mcp.tool(name=f"{prefix}__list_cycles")
+    async def list_cycles(project_id: str) -> list[dict[str, Any]]:
+        """List cycles (sprints) defined on a project."""
+        async with _client() as c:
+            return await c.list_cycles(project_id)
+
+    @mcp.tool(name=f"{prefix}__retrieve_cycle")
+    async def retrieve_cycle(
+        project_id: str, cycle_id: str
+    ) -> dict[str, Any]:
+        """Retrieve one cycle by UUID (metadata + progress counters)."""
+        async with _client() as c:
+            return await c.retrieve_cycle(project_id, cycle_id)
+
+    @mcp.tool(name=f"{prefix}__create_cycle")
+    async def create_cycle(
+        project_id: str,
+        name: str,
+        description: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a cycle. ``start_date`` / ``end_date`` are ISO
+        ``YYYY-MM-DD``; Plane requires both dates together or neither.
+        """
+        async with _client() as c:
+            return await c.create_cycle(
+                project_id,
+                name=name,
+                description=description,
+                start_date=start_date,
+                end_date=end_date,
+            )
+
+    @mcp.tool(name=f"{prefix}__update_cycle")
+    async def update_cycle(
+        project_id: str,
+        cycle_id: str,
+        name: str | None = None,
+        description: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
+        """Patch a cycle. Only non-None fields are sent, so a date-only
+        reschedule leaves the name untouched.
+        """
+        async with _client() as c:
+            return await c.update_cycle(
+                project_id,
+                cycle_id,
+                name=name,
+                description=description,
+                start_date=start_date,
+                end_date=end_date,
+            )
+
+    @mcp.tool(name=f"{prefix}__delete_cycle")
+    async def delete_cycle(project_id: str, cycle_id: str) -> dict[str, Any]:
+        """Delete a cycle. The work items it held are not deleted — they
+        only leave the cycle. Irreversible; prefer transferring unfinished
+        items to another cycle first.
+        """
+        async with _client() as c:
+            await c.delete_cycle(project_id, cycle_id)
+            return {"deleted": cycle_id}
+
+    @mcp.tool(name=f"{prefix}__list_cycle_work_items")
+    async def list_cycle_work_items(
+        project_id: str, cycle_id: str
+    ) -> list[dict[str, Any]]:
+        """List the work items assigned to a cycle."""
+        async with _client() as c:
+            return await c.list_cycle_work_items(project_id, cycle_id)
+
+    @mcp.tool(name=f"{prefix}__add_work_items_to_cycle")
+    async def add_work_items_to_cycle(
+        project_id: str, cycle_id: str, work_item_ids: list[str]
+    ) -> dict[str, Any]:
+        """Add one or more work items to a cycle. Each entry of
+        ``work_item_ids`` accepts a UUID or human identifier (e.g.
+        ``DEV-12``). A work item lives in at most one cycle — adding it
+        to a new cycle moves it.
+        """
+        async with _client() as c:
+            return await c.add_work_items_to_cycle(
+                project_id, cycle_id, work_item_ids
+            )
+
+    @mcp.tool(name=f"{prefix}__remove_work_item_from_cycle")
+    async def remove_work_item_from_cycle(
+        project_id: str, cycle_id: str, work_item_id: str
+    ) -> dict[str, Any]:
+        """Remove a single work item from a cycle. ``work_item_id``
+        accepts a UUID or human identifier. The work item is not deleted.
+        """
+        async with _client() as c:
+            await c.remove_work_item_from_cycle(
+                project_id, cycle_id, work_item_id
+            )
+            return {"removed": work_item_id, "cycle": cycle_id}
+
+    @mcp.tool(name=f"{prefix}__transfer_cycle_work_items")
+    async def transfer_cycle_work_items(
+        project_id: str, cycle_id: str, new_cycle_id: str
+    ) -> dict[str, Any]:
+        """Transfer the *incomplete* work items of one cycle into another
+        — Plane's "carry unfinished work into the next sprint" action.
+        ``new_cycle_id`` is the destination cycle's UUID.
+        """
+        async with _client() as c:
+            return await c.transfer_cycle_work_items(
+                project_id, cycle_id, new_cycle_id
+            )
+
 
 def register_personas_from_env() -> dict[str, dict[str, str]]:
     """Register tools for every persona found in the environment.

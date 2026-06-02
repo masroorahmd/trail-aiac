@@ -13,7 +13,7 @@ that performed it.
 
 | Server | Where from | Used for | Auth |
 |---|---|---|---|
-| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset), states / labels / modules, workspace members, comments. Tool names are prefixed by persona: `business_analyst__list_states`, `release_manager__add_comment`, … | `X-API-Key` against `/api/v1/` |
+| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset), states / labels / modules, cycles (sprints, full CRUD + work-item membership + transfer), workspace members, comments. Tool names are prefixed by persona: `business_analyst__list_states`, `release_manager__add_comment`, … | `X-API-Key` against `/api/v1/` |
 
 > Earlier versions ran two servers per persona — upstream
 > `makeplane/plane-mcp-server` (via `uvx`) plus a supplementary

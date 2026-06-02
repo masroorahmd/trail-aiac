@@ -6,6 +6,20 @@
 > claims here should be re-verified before each major Phase-3 design
 > commit — Plane's API and MCP both move quickly.
 >
+> **Update 2026-06-02 (cycles wired in)**: the multi-tenant MCP now
+> exposes cycles (sprints) — full CRUD plus work-item membership
+> (`add`/`remove`/`list`) and `transfer-issues` — verified against
+> Plane's public REST source (`apps/api/.../urls/cycle.py`). Cycle
+> endpoints live at `…/projects/{pid}/cycles/` (GET/POST),
+> `…/cycles/{id}/` (GET/PATCH/DELETE),
+> `…/cycles/{id}/cycle-issues/` (GET/POST, body `{"issues":[…]}`),
+> `…/cycle-issues/{issue_id}/` (DELETE), and
+> `…/cycles/{id}/transfer-issues/` (POST, body `{"new_cycle_id":…}`).
+> Writable cycle fields: `name`, `description`, `start_date`,
+> `end_date` (Plane requires both dates together or neither). The
+> Business Analyst owns the sprint cadence — see
+> [`WORKFLOW.md`](WORKFLOW.md) *Sprints*.
+>
 > **Update 2026-05-17 (multi-tenant MCP)**: the upstream
 > `makeplane/plane-mcp-server` is no longer used. The framework now
 > ships a single multi-tenant MCP server (`claude/mcp/`) that holds
