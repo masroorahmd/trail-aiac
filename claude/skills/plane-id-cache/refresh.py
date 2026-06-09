@@ -12,6 +12,7 @@ Run via:
     uv run --no-project --with httpx --with pyyaml \
         python3 .claude/skills/plane-id-cache/refresh.py
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -98,12 +99,31 @@ def _unwrap(payload: Any) -> list[dict]:
     return []
 
 
-def _get(client: httpx.Client, path: str) -> Any:
+def _get(client: httpx.Client, path: str, *, soft: bool = False) -> Any:
     r = client.get(path)
     if r.status_code != 200:
-        print(f"!! GET {path} → {r.status_code}: {r.text[:200]}", file=sys.stderr)
+        msg = f"!! GET {path} → {r.status_code}: {r.text[:200]}"
+        if soft:
+            print(msg, file=sys.stderr)
+            return None
+        print(msg, file=sys.stderr)
         sys.exit(3)
     return r.json()
+
+
+def _all_tokens(creds: dict) -> list[tuple[str, str]]:
+    """All persona PATs, primary first, for per-project failover —
+    no single persona is a member of every project (e.g. HQ is
+    GM-only), so project-scoped endpoints may 403 for the primary."""
+    plane = creds.get("plane") or {}
+    tokens = plane.get("agent-tokens") or {}
+    primary, _ = _pick_token(creds)
+    names = [primary] + [n for n in tokens if n != primary]
+    return [
+        (n, tokens[n])
+        for n in names
+        if isinstance(tokens.get(n), str) and tokens[n].startswith("plane_api_")
+    ]
 
 
 def main() -> None:
@@ -126,12 +146,19 @@ def main() -> None:
         sys.exit(2)
 
     persona, token = _pick_token(creds)
-    client = httpx.Client(
-        base_url=base_url,
-        headers={"X-API-Key": token, "Content-Type": "application/json"},
-        verify=_verify_arg(),
-        timeout=30.0,
-    )
+
+    def _mk_client(tok: str) -> httpx.Client:
+        return httpx.Client(
+            base_url=base_url,
+            headers={"X-API-Key": tok, "Content-Type": "application/json"},
+            verify=_verify_arg(),
+            timeout=30.0,
+        )
+
+    client = _mk_client(token)
+    fallback_clients: list[tuple[str, httpx.Client]] = [
+        (n, _mk_client(t)) for n, t in _all_tokens(creds) if t != token
+    ]
 
     out: dict[str, Any] = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
@@ -175,24 +202,48 @@ def main() -> None:
         pid = p.get("id")
         if not ident or not pid:
             continue
-        states = _unwrap(_get(client, f"/api/v1/workspaces/{workspace}/projects/{pid}/states/"))
-        labels = _unwrap(_get(client, f"/api/v1/workspaces/{workspace}/projects/{pid}/labels/"))
+        # The workspace project list includes projects the primary
+        # persona is NOT a member of; their per-project endpoints 403.
+        # Try the primary first, then every other PAT; skip if none fits.
+        states_raw = None
+        pclient = client
+        for cand_name, cand_client in [(persona, client)] + fallback_clients:
+            states_raw = _get(
+                cand_client,
+                f"/api/v1/workspaces/{workspace}/projects/{pid}/states/",
+                soft=True,
+            )
+            if states_raw is not None:
+                pclient = cand_client
+                if cand_name != persona:
+                    print(
+                        f"   {ident}: read via {cand_name} "
+                        f"(primary {persona} lacks access)",
+                        file=sys.stderr,
+                    )
+                break
+        if states_raw is None:
+            print(f"!! {ident}: no persona PAT has access — skipped", file=sys.stderr)
+            continue
+        states = _unwrap(states_raw)
+        labels = _unwrap(
+            _get(pclient, f"/api/v1/workspaces/{workspace}/projects/{pid}/labels/", soft=True)
+            or []
+        )
         # Modules endpoint may 404 if the project has none — that's OK.
-        try:
-            modules_raw = _get(client, f"/api/v1/workspaces/{workspace}/projects/{pid}/modules/")
-            modules = _unwrap(modules_raw)
-        except SystemExit:
-            modules = []
+        modules_raw = _get(
+            pclient, f"/api/v1/workspaces/{workspace}/projects/{pid}/modules/", soft=True
+        )
+        modules = _unwrap(modules_raw) if modules_raw is not None else []
 
         # Cycles (sprints) churn faster than the rest — a new one each
         # sprint — but caching name→id still saves the BA a round-trip
         # when resolving "the current sprint". Endpoint may 404 if the
         # project has none.
-        try:
-            cycles_raw = _get(client, f"/api/v1/workspaces/{workspace}/projects/{pid}/cycles/")
-            cycles = _unwrap(cycles_raw)
-        except SystemExit:
-            cycles = []
+        cycles_raw = _get(
+            pclient, f"/api/v1/workspaces/{workspace}/projects/{pid}/cycles/", soft=True
+        )
+        cycles = _unwrap(cycles_raw) if cycles_raw is not None else []
 
         out["plane"]["projects"][ident] = {
             "id": pid,
