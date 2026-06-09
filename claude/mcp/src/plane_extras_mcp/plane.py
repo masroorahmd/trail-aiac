@@ -490,6 +490,57 @@ class PlaneClient:
             json={"new_cycle_id": new_cycle_id},
         )
 
+    # ----- relations (blocked_by / blocking / duplicate / relates_to) -----
+    #
+    # Verified against Plane's public REST surface: the per-work-item
+    # ``relations/`` collection supports GET and POST only (POST body:
+    # ``{"relation_type": ..., "issues": [uuids]}``). There is no public
+    # removal endpoint — deleting a relation stays a manual UI step.
+
+    async def list_relations(
+        self, project_id: str, work_item_ref: str
+    ) -> dict[str, Any]:
+        """Return the work item's relations grouped by type
+        (``blocking`` / ``blocked_by`` / ``duplicate`` / ``relates_to``
+        / ``start_*`` / ``finish_*``). ``work_item_ref`` accepts UUID
+        or identifier.
+        """
+        wid = await self.resolve_work_item(work_item_ref)
+        return await self._pat_request(
+            "GET", f"projects/{project_id}/work-items/{wid}/relations/"
+        )
+
+    async def add_relation(
+        self,
+        project_id: str,
+        work_item_ref: str,
+        *,
+        relation_type: str,
+        related_work_item_refs: list[str],
+    ) -> dict[str, Any]:
+        """Add a relation from one work item to one or more others.
+        ``relation_type`` is one of Plane's types (``blocked_by``,
+        ``blocking``, ``duplicate``, ``relates_to``, ...); an invalid
+        value is rejected by Plane with the list of valid choices.
+        All refs accept UUID or identifier.
+        """
+        wid = await self.resolve_work_item(work_item_ref)
+        related = [
+            await self.resolve_work_item(r) for r in related_work_item_refs
+        ]
+        await self._pat_request(
+            "POST",
+            f"projects/{project_id}/work-items/{wid}/relations/",
+            json={"relation_type": relation_type, "issues": related},
+        )
+        # Plane's POST response shape varies across versions; return a
+        # summary we construct ourselves so callers get a stable shape.
+        return {
+            "work_item": wid,
+            "relation_type": relation_type,
+            "related": related,
+        }
+
     # ----- modules (membership) -----
     #
     # Modules are created by humans (or Ansible), not by personas — the
