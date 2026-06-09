@@ -355,9 +355,11 @@ USER_NAME_BLOCK_RE = re.compile(
 
 def render_persona_files(consumer_claude: Path, env_map: dict[str, str]) -> list[Path]:
     """Substitute `__VAR__` placeholders in each
-    `<consumer>/.claude/agents/*.md` with the corresponding value from
-    `env_map`. Files without placeholders are left untouched. Returns
-    the list of paths actually rewritten. Rewrites are mode 0600.
+    `<consumer>/.claude/agents/*.md` AND `<consumer>/.claude/commands/*.md`
+    with the corresponding value from `env_map`. (Commands carry the
+    same placeholders — `/quick` references CHAT_LANGUAGE and the
+    user's name.) Files without placeholders are left untouched.
+    Returns the list of paths actually rewritten. Rewrites are mode 0600.
 
     Conditional blocks: any text wrapped between `<!-- USER_NAME_LINE -->`
     and `<!-- /USER_NAME_LINE -->` markers is kept (with markers
@@ -366,12 +368,16 @@ def render_persona_files(consumer_claude: Path, env_map: dict[str, str]) -> list
     `config.yaml` don't see an awkward bullet referring to a blank
     placeholder.
     """
-    agents_dir = consumer_claude / "agents"
-    if not agents_dir.is_dir():
+    render_targets: list[Path] = []
+    for subdir in ("agents", "commands"):
+        d = consumer_claude / subdir
+        if d.is_dir():
+            render_targets.extend(sorted(d.glob("*.md")))
+    if not render_targets:
         return []
     user_name = env_map.get("USER_NAME", "")
     written: list[Path] = []
-    for persona_path in sorted(agents_dir.glob("*.md")):
+    for persona_path in render_targets:
         original = persona_path.read_text(encoding="utf-8")
         substituted = original
         if user_name:
@@ -497,7 +503,7 @@ def main() -> int:
         print(f"     > /ba ...    (start your first Story)")
         return 0
 
-    print("Rendering per-persona MCP wiring (settings.local.json + .mcp.json + agents/*.md) …")
+    print("Rendering per-persona MCP wiring (settings.local.json + .mcp.json + agents/*.md + commands/*.md) …")
     rc = render_settings(framework_root, consumer_root, consumer_claude)
     if rc != 0:
         return rc
