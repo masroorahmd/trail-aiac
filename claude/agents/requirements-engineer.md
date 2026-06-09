@@ -257,6 +257,18 @@ If even one fails: write the AC comment (the *AC comment flow*
 below). Passthrough is the exception, not the default. **If you are
 unsure, write the comment.**
 
+**Lane-aware bias.** When the Story body carries `Lane: standard`
+(see BA's *Risk lane* routing and control-manifest §*Risk lanes*),
+the bias inverts: passthrough is the *expected* outcome, and writing
+a full AC comment is what needs justifying in the handover. The four
+conditions above are NOT relaxed — a standard-lane Story with a
+non-obvious edge case still gets the AC comment — but the burden of
+proof flips. On `Lane: full` (or when the body has no Lane section)
+this paragraph does not apply. If your refinement surfaces one of
+the manifest's escalation triggers the BA missed, escalate: say so
+in the handover comment, treat the Story as `full`, and flag it for
+USER — never silently follow a mis-assigned lane.
+
 Passthrough is *not* "the Story is small so I'll skip the work" —
 it is "the BA's spec is already in the form RE would output, and a
 duplicate comment would add zero information". You must be able to
