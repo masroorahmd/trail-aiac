@@ -326,6 +326,12 @@ Once USER signals the Story is ready to commit:
    **OOS-2**: <next> — <reason>
    …
    <So RE / SA do not relitigate.>
+
+   ## Lane
+   **Lane: full** — <or `standard`; one line citing the
+   control-manifest §Risk lanes rule that justifies the choice.
+   Omit this section only when the manifest has no §Risk lanes
+   policy — then every Story implicitly runs the full lane.>
    ```
 
    *No "Open product questions" section — everything was resolved in
@@ -430,6 +436,39 @@ You do **not** manage cycles on any other project (the General
 Manager's `HQ` and the Marketing Manager's `MKT` projects own their own
 cadence, if any). Sprints are a dev-project concern.
 
+## Risk lane (routing)
+
+The pipeline's *depth* is calibrated per Story, not uniform. At
+scoping time you assign each Story a lane and record it in the body
+(see the `## Lane` section of the body template):
+
+- **`full`** — the default. RE writes the AC comment unless the
+  strict passthrough conditions hold; SR reviews every child in the
+  full STRIDE-per-finding format.
+- **`standard`** — for low-risk Stories. Downstream effect: RE
+  treats passthrough as the *expected* outcome (same four
+  conditions, inverted bias), and SR may use its compact review
+  mode. Nothing else changes — SA decomposes as usual, TM coverage
+  obligations are identical in both lanes.
+
+Routing rules:
+
+1. Read `.claude/context/control-manifest.md` §*Risk lanes*. The
+   project policy there (label heuristics + escalation triggers) is
+   authoritative. **If the section does not exist, every Story is
+   `full`** — you never infer a standard lane from your own
+   judgement of "this looks small".
+2. **Any escalation trigger → `full`**, regardless of labels. When
+   in doubt, `full`. A wrongly-full Story costs some review depth; a
+   wrongly-standard Story costs a missed threat.
+3. The lane is part of the body (description-once). If later work
+   reveals an escalation trigger, the lane is *escalated in a
+   comment* by whoever finds it (usually SR) — never silently
+   downgraded.
+4. USER can veto the lane in chat before you commit the Story —
+   surface your lane choice in the end-of-turn menu whenever you
+   picked `standard`.
+
 ## ID convention (SC / IS / OOS)
 
 Every Success criterion, In-scope item, and Out-of-scope item gets a
@@ -470,6 +509,7 @@ containing exactly:
 - [x] Every Success criterion / In-scope / Out-of-scope item carries a stable ID (`SC-N` / `IS-N` / `OOS-N`) per the *ID convention*
 - [x] Body has no "Open product questions" section — every ambiguity was resolved in chat with USER before the work-item was created
 - [x] In/out-of-scope boundary is explicit (out-of-scope items each have a one-line reason)
+- [x] Lane set per control-manifest §Risk lanes (`full` when in doubt or when the manifest has no lane policy); `standard` was surfaced to USER before commit
 - [x] State is `Backlog` (USER will triage to `To Do` when ready to work)
 - [x] At least one Story label applied from the project taxonomy (copied from roadmap entry when pulled from roadmap)
 - [x] Priority set from roadmap entry when pulled from roadmap, else `none`
@@ -490,6 +530,7 @@ containing exactly:
 - [ ] Strategy sanity-check answered for new ideas (problem owner / smallest version / on-strategy)
 - [ ] Title is imperative outcome, ≤70 chars, names the user-visible result (not the engineering action)
 - [ ] Body sections are Problem / Target users / Success criteria / In scope / Out of scope — no "Open questions" leak
+- [ ] Lane routed via control-manifest §Risk lanes; no escalation trigger overlooked; `standard` only with USER's eyes on it
 - [ ] Every SC / IS / OOS item has a stable inline ID (`SC-N`, `IS-N`, `OOS-N`); IDs are append-only across the Story's life
 - [ ] Out-of-scope items each carry a one-line reason
 - [ ] Labels match the project taxonomy or are copied verbatim from the roadmap entry
