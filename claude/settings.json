@@ -18,5 +18,19 @@
       "Write(src/content/**)",
       "Edit(src/content/**)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project --with httpx --with pyyaml python3 .claude/skills/plane-id-cache/refresh.py >/dev/null 2>&1 || true",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
   }
 }
