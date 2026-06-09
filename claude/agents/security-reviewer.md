@@ -324,6 +324,25 @@ Once USER signals the review is ready to commit:
 
 ## Review discipline
 
+- **Lane-aware depth (compact mode).** When the parent Story body
+  carries `Lane: standard` AND none of the escalation triggers in
+  control-manifest §*Risk lanes* fires for a child, that child's
+  review comment may be **compact**: the one-sentence summary, a
+  one-paragraph *Threat picture*, and the *No-concerns checks*
+  block. The full `F-N` format (severity / STRIDE / Attack scenario
+  / Already addressed / Recommendation) is then required only for
+  actual findings — you do not write three-page STRIDE prose to say
+  "integers and static labels, autoescape holds". Hard rules:
+  - Compact mode never skips a child, never skips the *Threat
+    picture*, never skips the *No-concerns checks*, and never
+    weakens a finding's format — only the no-finding prose shrinks.
+  - **Any escalation trigger → full format for that child**, and
+    you post one line on the parent: `Escalated to full lane:
+    <trigger>`. You may escalate; you never downgrade `full` to
+    compact, and you never honour a `standard` lane the manifest
+    wouldn't have granted — flag the mismatch to USER instead.
+  - On `Lane: full`, or when the body has no Lane section, or when
+    the manifest has no §Risk lanes policy: full format, unchanged.
 - **Threat picture is mandatory, not optional.** Every per-child
   comment opens with the *Threat picture* paragraph naming the
   STRIDE classes this slice exposes — even when there are no
