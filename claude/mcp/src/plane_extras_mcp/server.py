@@ -67,6 +67,28 @@ def _persona_tool_prefix(persona: str) -> str:
     return persona.replace("-", "_")
 
 
+_DESCRIPTION_FIELDS = (
+    "description_html",
+    "description_binary",
+    "description_stripped",
+    "description",
+)
+
+
+def _strip_descriptions(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop body fields from list responses.
+
+    Work-item bodies routinely run 10–80 KB of HTML each; a 100-item
+    list page can exceed 2 MB, which blows the caller's context for a
+    listing it only needed ids/names/states from. Listing tools strip
+    bodies by default; ``retrieve_work_item`` returns the full body.
+    """
+    return [
+        {k: v for k, v in item.items() if k not in _DESCRIPTION_FIELDS}
+        for item in items
+    ]
+
+
 def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
     """Define and register every Plane tool for one persona.
 
@@ -130,12 +152,16 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         cursor: str | None = None,
         expand: str | None = None,
         order_by: str | None = None,
+        include_description: bool = False,
     ) -> list[dict[str, Any]]:
         """List work items in a project. Filters become query params;
         ``assignees`` and ``labels`` are comma-separated UUID strings.
+        Body fields are omitted by default (a 100-item page otherwise
+        exceeds 2 MB); set ``include_description=true`` only when you
+        truly need every body, else use ``retrieve_work_item``.
         """
         async with _client() as c:
-            return await c.list_work_items(
+            items = await c.list_work_items(
                 project_id,
                 state=state,
                 assignees=assignees,
@@ -146,6 +172,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
                 expand=expand,
                 order_by=order_by,
             )
+        return items if include_description else _strip_descriptions(items)
 
     @mcp.tool(name=f"{prefix}__retrieve_work_item")
     async def retrieve_work_item(
@@ -323,11 +350,14 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
 
     @mcp.tool(name=f"{prefix}__list_cycle_work_items")
     async def list_cycle_work_items(
-        project_id: str, cycle_id: str
+        project_id: str, cycle_id: str, include_description: bool = False
     ) -> list[dict[str, Any]]:
-        """List the work items assigned to a cycle."""
+        """List the work items assigned to a cycle. Body fields are
+        omitted by default; use ``retrieve_work_item`` for full bodies.
+        """
         async with _client() as c:
-            return await c.list_cycle_work_items(project_id, cycle_id)
+            items = await c.list_cycle_work_items(project_id, cycle_id)
+        return items if include_description else _strip_descriptions(items)
 
     @mcp.tool(name=f"{prefix}__add_work_items_to_cycle")
     async def add_work_items_to_cycle(
@@ -339,9 +369,14 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         to a new cycle moves it.
         """
         async with _client() as c:
-            return await c.add_work_items_to_cycle(
+            await c.add_work_items_to_cycle(
                 project_id, cycle_id, work_item_ids
             )
+        # Plane answers this POST with a list of membership links, which
+        # used to fail the declared dict output schema AFTER a successful
+        # write (the "DictModel validation error" false negative). Return
+        # a summary we construct ourselves instead.
+        return {"added": work_item_ids, "cycle_id": cycle_id}
 
     @mcp.tool(name=f"{prefix}__remove_work_item_from_cycle")
     async def remove_work_item_from_cycle(
@@ -373,11 +408,14 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
 
     @mcp.tool(name=f"{prefix}__list_module_work_items")
     async def list_module_work_items(
-        project_id: str, module_id: str
+        project_id: str, module_id: str, include_description: bool = False
     ) -> list[dict[str, Any]]:
-        """List the work items assigned to a module."""
+        """List the work items assigned to a module. Body fields are
+        omitted by default; use ``retrieve_work_item`` for full bodies.
+        """
         async with _client() as c:
-            return await c.list_module_work_items(project_id, module_id)
+            items = await c.list_module_work_items(project_id, module_id)
+        return items if include_description else _strip_descriptions(items)
 
     @mcp.tool(name=f"{prefix}__add_work_items_to_module")
     async def add_work_items_to_module(
@@ -389,9 +427,12 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         adding it here leaves its other module memberships intact.
         """
         async with _client() as c:
-            return await c.add_work_items_to_module(
+            await c.add_work_items_to_module(
                 project_id, module_id, work_item_ids
             )
+        # See add_work_items_to_cycle: Plane answers with a list; return
+        # a self-constructed summary so the dict output schema holds.
+        return {"added": work_item_ids, "module_id": module_id}
 
     @mcp.tool(name=f"{prefix}__remove_work_item_from_module")
     async def remove_work_item_from_module(
@@ -406,6 +447,41 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
                 project_id, module_id, work_item_id
             )
             return {"removed": work_item_id, "module": module_id}
+
+    # ----- relations (blocked_by / blocking / duplicate / relates_to) -----
+
+    @mcp.tool(name=f"{prefix}__list_relations")
+    async def list_relations(
+        project_id: str, work_item_id: str
+    ) -> dict[str, Any]:
+        """List a work item's relations, grouped by type (``blocking``,
+        ``blocked_by``, ``duplicate``, ``relates_to``, ``start_*``,
+        ``finish_*``). ``work_item_id`` accepts UUID or identifier.
+        """
+        async with _client() as c:
+            return await c.list_relations(project_id, work_item_id)
+
+    @mcp.tool(name=f"{prefix}__add_relation")
+    async def add_relation(
+        project_id: str,
+        work_item_id: str,
+        relation_type: str,
+        related_work_item_ids: list[str],
+    ) -> dict[str, Any]:
+        """Relate a work item to one or more others — e.g.
+        ``relation_type="blocked_by"`` to record a dependency that
+        previously required a manual Plane-UI step. All ids accept UUID
+        or identifier. Note: Plane's public API has no relation
+        *removal* endpoint — undoing a relation stays a manual UI step,
+        so add relations deliberately.
+        """
+        async with _client() as c:
+            return await c.add_relation(
+                project_id,
+                work_item_id,
+                relation_type=relation_type,
+                related_work_item_refs=related_work_item_ids,
+            )
 
 
 def register_personas_from_env() -> dict[str, dict[str, str]]:

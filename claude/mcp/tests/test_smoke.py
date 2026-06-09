@@ -56,6 +56,8 @@ TOOL_VERBS = (
     "add_work_items_to_cycle",
     "remove_work_item_from_cycle",
     "transfer_cycle_work_items",
+    "list_relations",
+    "add_relation",
 )
 
 PROJECT_UUID = "11111111-2222-3333-4444-555555555555"
@@ -353,6 +355,136 @@ async def test_create_cycle_omits_unset_dates(
     )
     post = [c for c in captured if c["method"] == "POST"][-1]
     assert post["json"] == {"name": "Sprint 1"}
+
+
+async def test_list_work_items_strips_descriptions_by_default(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Body fields are dropped from list responses unless explicitly
+    requested — a 100-item page of full HTML bodies exceeds 2 MB and
+    blows the caller's context window.
+    """
+    item = {
+        "id": WORK_ITEM_UUID,
+        "name": "Some story",
+        "description_html": "<p>huge body</p>",
+        "description_stripped": "huge body",
+        "state": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    }
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 200
+        response.content = b"[...]"
+        response.json = lambda: [dict(item)]
+        response.text = "[...]"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    result = await mcp.call_tool(
+        "business_analyst__list_work_items", {"project_id": PROJECT_UUID}
+    )
+    flat = str(result)
+    assert "Some story" in flat
+    assert "description_html" not in flat
+    assert "huge body" not in flat
+
+    result = await mcp.call_tool(
+        "business_analyst__list_work_items",
+        {"project_id": PROJECT_UUID, "include_description": True},
+    )
+    assert "huge body" in str(result)
+
+
+async def test_add_to_module_survives_list_shaped_response(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression: Plane answers the module-issues POST with a *list*
+    of membership links. The tool used to declare a dict output schema
+    and fail validation AFTER the successful write (the "DictModel"
+    false negative that made the SA post bogus manual-step warnings).
+    The tool must return its own dict summary instead.
+    """
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 201
+        response.content = b'[{"id":"link-1"}]'
+        response.json = lambda: [{"id": "link-1"}]
+        response.text = '[{"id":"link-1"}]'
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    module_uuid = "feedface-1111-2222-3333-feedfacefeed"
+    result = await mcp.call_tool(
+        "business_analyst__add_work_items_to_module",
+        {
+            "project_id": PROJECT_UUID,
+            "module_id": module_uuid,
+            "work_item_ids": [WORK_ITEM_UUID],
+        },
+    )
+    flat = str(result)
+    assert "added" in flat and WORK_ITEM_UUID in flat
+
+    cycle_uuid = "abcdabcd-1111-2222-3333-abcdabcdabcd"
+    result = await mcp.call_tool(
+        "business_analyst__add_work_items_to_cycle",
+        {
+            "project_id": PROJECT_UUID,
+            "cycle_id": cycle_uuid,
+            "work_item_ids": [WORK_ITEM_UUID],
+        },
+    )
+    flat = str(result)
+    assert "added" in flat and WORK_ITEM_UUID in flat
+
+
+async def test_add_relation_posts_relation_contract(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``add_relation`` must POST ``{"relation_type", "issues"}`` to the
+    work item's ``relations/`` collection — the contract verified
+    against Plane's public REST surface.
+    """
+    captured: list[dict[str, Any]] = []
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        captured.append(
+            {"method": method, "url": str(url), "json": kwargs.get("json")}
+        )
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 201
+        response.content = b"{}"
+        response.json = lambda: {}
+        response.text = "{}"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    other_uuid = "abcdabcd-9999-8888-7777-abcdabcdabcd"
+    result = await mcp.call_tool(
+        "business_analyst__add_relation",
+        {
+            "project_id": PROJECT_UUID,
+            "work_item_id": WORK_ITEM_UUID,
+            "relation_type": "blocked_by",
+            "related_work_item_ids": [other_uuid],
+        },
+    )
+    post = captured[-1]
+    assert post["method"] == "POST"
+    assert f"/work-items/{WORK_ITEM_UUID}/relations/" in post["url"]
+    assert post["json"] == {"relation_type": "blocked_by", "issues": [other_uuid]}
+    assert "blocked_by" in str(result)
 
 
 def test_register_personas_empty_when_no_workspace(
