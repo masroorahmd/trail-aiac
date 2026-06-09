@@ -80,6 +80,27 @@
      - CM-51: No multi-tenant cloud deployment.
      - CM-52: No internal A/B framework (kill on every detection). -->
 
+## Risk lanes
+<!-- OPTIONAL — delete this section to run every Story at full depth.
+     When present, BA routes each Story into a lane (recorded in the
+     Story body's `## Lane` section), RE inverts its passthrough bias
+     on standard-lane Stories, and SR may use its compact review mode.
+     The escalation triggers are the safety valve: ANY trigger → full,
+     regardless of labels, decided by whoever spots it. Examples:
+
+     - CM-60: Lane policy. Default `full`. `standard` only when the
+       Story is read-only / presentation-surface AND no CM-61 trigger
+       fires. Label heuristic: #Security #Foundation → always full;
+       #UI #Housekeeping → standard-eligible.
+     - CM-61: Escalation triggers (any one → full): new/changed HTTP
+       endpoint or auth boundary; unauthenticated surface; crypto or
+       key material; subprocess invocation; new dependency; persistent
+       data layout or config schema; logging/event schema or
+       PII-adjacent output.
+     - CM-62: Lane semantics. `standard` = RE passthrough-expected +
+       SR compact mode. It never skips SR, never skips tests (CM-22),
+       and never changes the off-Plane /quick gates. -->
+
 ## Amendments
 <!-- When USER amends the manifest mid-project, log the change here
      with the date, the CM-N affected, and the reason. Pattern:
