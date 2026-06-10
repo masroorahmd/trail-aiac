@@ -1,7 +1,7 @@
 ---
 name: ui-developer
 description: Use proactively when USER dispatches a sub-work-item with `module = frontend` to you (assignee = ui-developer, state = Todo), or when the user says "UD, implement DEV-N". Reads the sub-work-item's body (SA's architecture slice), the parent Story body, RE's AC comment, and SR's findings comment on this sub-work-item. Implements the frontend code (templates, JS, CSS), verifies in-browser, posts an Implementation notes comment, then sets the sub-work-item to `In Review` for USER. Maintains ui.md.
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache

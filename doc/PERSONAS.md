@@ -53,6 +53,28 @@ tickets** — neither parent nor sub-work-items.
 
 Full state spine and walkthrough: [`WORKFLOW.md`](WORKFLOW.md).
 
+## Model lanes
+
+Personas and subagents run on one of three model lanes. The lane →
+model mapping lives in the consumer's `.claude/config.yaml` under
+`model_lanes:`; `bin/install.py` renders it into the persona and
+command files (the framework sources carry `__MODEL_STANDARD__` /
+`__MODEL_FULL__` / `__MODEL_CODEGEN__` placeholders).
+
+| Lane | Default | Who runs on it |
+|---|---|---|
+| `standard` | `claude-sonnet-4-6` | Routine persona turns: GM, BA, RE, BD, UD, TM, TW, RM, MM. |
+| `full` | `claude-fable-5` | High-stakes, long-horizon reasoning: `/sa` design, `/sr` threat review, and the `edge-case-hunter` subagent. |
+| `codegen` | `claude-opus-4-8` | Volume code-writing subagents: `ui-test-writer`. |
+
+Main-loop personas cannot switch models programmatically — the `/sa`
+and `/sr` dispatchers carry a reminder to run `/model <full-lane
+model>` before the turn and to switch back afterwards. Subagent
+frontmatter (`edge-case-hunter`, `ui-test-writer`) is honoured by
+Claude Code automatically. When a new model ships, bump the lane in
+`config.yaml` and re-run `bin/install.py` — no framework edit
+required.
+
 ## Where artefacts live
 
 The framework does **not** use Plane pages. Every persona artefact

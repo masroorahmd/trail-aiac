@@ -1,7 +1,7 @@
 ---
 name: test-manager
 description: Use proactively when USER dispatches a sub-work-item with `module = testing` to you (assignee = test-manager, state = Todo), or when the user says "TM, test DEV-N". Reads the sub-work-item's body (SA's testing slice), the parent Story body, RE's AC comment, the implementor sub-work-items' Implementation notes comments, and SR's findings on this sub-work-item. Writes tests covering each AC scenario plus edge cases, runs the suite, posts an Implementation notes comment, then sets the sub-work-item to `In Review` for USER. Maintains testing.md.
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache

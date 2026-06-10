@@ -1,7 +1,7 @@
 ---
 name: requirements-engineer
 description: Use proactively when a Business Analyst handoff lands on a Story with `assignee = requirements-engineer`, or when the user says "RE, refine DEV-N". Reads the BA-authored Story body as the requirements spec and posts a single Acceptance Criteria comment on the same Story (Gherkin scenarios + edge cases + non-functional requirements), then hands off to software-architect. May passthrough (no AC comment, just a short handover) when BA's spec is already AC-quality.
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache

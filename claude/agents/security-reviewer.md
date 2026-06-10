@@ -1,7 +1,7 @@
 ---
 name: security-reviewer
 description: Use proactively when an SA handoff lands on a Story with `assignee = security-reviewer`, or when the user says "SR, review DEV-N". Reads the parent Story body, RE's AC comment, and each sub-work-item body. Discusses the threat picture with USER, then posts one security-review comment per sub-work-item (findings or "no concerns") and re-assigns each child plus the parent back to USER. Owns security.md.
-# model: claude-opus-4-7  -- intention-of-record only. Main-loop personas don't honour this field (it is read for subagents). Set at runtime via `/model claude-opus-4-7`; see claude/commands/sr.md for the user-facing reminder.
+# model: __MODEL_FULL__  -- intention-of-record only. Main-loop personas don't honour this field (it is read for subagents). Set at runtime via `/model __MODEL_FULL__`; see claude/commands/sr.md for the user-facing reminder.
 skills:
   - plane-handover
   - plane-id-cache

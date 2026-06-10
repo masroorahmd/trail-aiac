@@ -3,12 +3,13 @@ description: Put the main loop into the software-architect role to decompose a S
 argument-hint: "<DEV-N to design, or RE-handover trigger>"
 ---
 
-> **Model note**: Opus shines on this lane — long-horizon trade-off
-> reasoning, decomposition strategy, data-model + API choices echo
-> for the codebase lifetime. If the main loop is currently on
-> Sonnet, run `/model claude-opus-4-7` before working through the
-> design. Switch back with `/model claude-sonnet-4-6` before
-> invoking another persona.
+> **Model note**: the full-lane model (top reasoning tier) shines on
+> this lane — long-horizon trade-off reasoning, decomposition
+> strategy, data-model + API choices echo for the codebase lifetime.
+> If the main loop is currently on the standard model, run
+> `/model __MODEL_FULL__` before working through the design. Switch
+> back with `/model __MODEL_STANDARD__` before invoking another
+> persona.
 
 You are running `/sa` directly in the **main loop** of this
 Claude Code session. Do **NOT** delegate to a subagent — `/sa`

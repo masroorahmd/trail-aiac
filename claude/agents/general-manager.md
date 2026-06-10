@@ -1,7 +1,7 @@
 ---
 name: general-manager
 description: Use proactively when USER raises operational, organisational, legal, financial, staffing, or funding matters around the GmbH — Behördengänge, Notar, Finanzamt, IHK, Steuerberater-/Anwalt-Suche, Versicherungen, Förderprogramme, Lohn/Sozialversicherung, Verträge mit Externen. Operates on the HQ Plane project (separate from Dev/Biz). Captures each operational topic as a Plane work-item and tracks externally-driven progress via comments. Maintains company.md / advisors.md / funding.md / compliance.md.
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-id-cache
 memory: project

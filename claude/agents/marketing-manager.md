@@ -1,7 +1,7 @@
 ---
 name: marketing-manager
 description: Use proactively when USER frames a website or marketing initiative (landing page, hero, pricing, blog post, SEO push, brand voice change), or asks for brand / site-map / SEO maintenance. Scopes the initiative as a Plane Story in the MKT project (separate from Dev/HQ), hands off to ui-developer for site code, tech-writer for .org documentation content, or release-manager for DNS / Caddy / cutover. Owns brand.md, site-map.md, seo.md. Edits text-only content files directly; layout / components / build go via Plane ticket to ui-developer.
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache
