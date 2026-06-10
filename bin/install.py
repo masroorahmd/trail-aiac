@@ -105,6 +105,16 @@ SEEDED = [
     ("agent-memory", "agent-memory.example", "dir", False),
 ]
 
+# Model lanes — defaults applied when the consumer's config.yaml has no
+# `model_lanes:` section (e.g. a config seeded before the knob existed).
+# Substituted into persona/command files as `__MODEL_<LANE>__`
+# placeholders by render_persona_files().
+DEFAULT_MODEL_LANES = {
+    "standard": "claude-sonnet-4-6",
+    "full": "claude-fable-5",
+    "codegen": "claude-opus-4-8",
+}
+
 
 # ---------------------------------------------------------------------------
 # Stage 1 — copy + seed
@@ -278,6 +288,15 @@ def render_settings(
         # placeholder.
         "USER_NAME": str(config.get("user_name") or "").strip(),
     }
+
+    # Model lanes: consumer config overrides the framework defaults
+    # lane-by-lane. Each lane becomes a MODEL_<LANE> env entry and an
+    # `__MODEL_<LANE>__` placeholder substitution in persona/command
+    # files (agent frontmatter `model:` for subagents, `/model …`
+    # reminders in the /sa and /sr dispatchers).
+    model_lanes = {**DEFAULT_MODEL_LANES, **(config.get("model_lanes") or {})}
+    for lane, model_id in model_lanes.items():
+        env[f"MODEL_{persona_env_prefix(str(lane))}"] = str(model_id)
 
     agents = config.get("agents") or {}
     if not agents:

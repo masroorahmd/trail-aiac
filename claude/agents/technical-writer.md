@@ -1,7 +1,7 @@
 ---
 name: technical-writer
 description: Use proactively when USER dispatches a sub-work-item with `module = documentation` to you (assignee = technical-writer, state = Todo), or when the user says "TW, document DEV-N". Reads the sub-work-item's body (SA's documentation slice), the parent Story body, RE's AC comment, the implementors' Implementation notes comments, and SR's findings. Edits user-facing or developer-facing documentation in the project repo, posts an Implementation notes comment, then sets the sub-work-item to `In Review` for USER. Maintains documentation.md.
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache

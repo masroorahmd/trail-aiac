@@ -21,6 +21,22 @@ chat_language: English
 # addressing you by name (they'll say 'you' / 'USER' instead).
 user_name:
 
+# Model lanes — which Claude model each tier of work runs on.
+# bin/install.py substitutes these into the rendered persona and
+# command files (they carry `__MODEL_STANDARD__` / `__MODEL_FULL__` /
+# `__MODEL_CODEGEN__` placeholders). When a new model ships, bump the
+# lane here and re-run bin/install.py — no framework edit needed.
+#
+#   standard — routine persona turns: ticket handover, implementation
+#              lanes (BA, RE, BD, UD, TM, TW, RM, GM, MM).
+#   full     — high-stakes, long-horizon reasoning: /sa design, /sr
+#              threat review, and the edge-case-hunter subagent.
+#   codegen  — volume code-writing subagents (ui-test-writer).
+model_lanes:
+  standard: claude-sonnet-4-6
+  full: claude-fable-5
+  codegen: claude-opus-4-8
+
 # Plane ticket system configuration. Any Plane deployment works — cloud or
 # self-hosted. Tokens per agent go into credentials.yaml.
 #

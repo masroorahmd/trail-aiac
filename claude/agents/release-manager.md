@@ -1,7 +1,7 @@
 ---
 name: release-manager
 description: Use when the user says "RM, draft v1.6.0 release notes" or "RM, tag the release". Operates outside the Story-level workflow — user-triggered directly for release tagging, changelog drafting, and version-management tasks. Reads recently closed Stories from Plane to compose the changelog. Maintains release.md and roadmap.md (Recently shipped section).
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache

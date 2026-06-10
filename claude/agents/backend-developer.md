@@ -1,7 +1,7 @@
 ---
 name: backend-developer
 description: Use proactively when USER dispatches a sub-work-item with `module = backend` to you (assignee = backend-developer, state = Todo), or when the user says "BD, implement DEV-N". Reads the sub-work-item's body (SA's architecture slice), the parent Story body, RE's AC comment, and SR's findings comment on this sub-work-item. Implements the backend code, runs the project's test suite locally, posts an Implementation notes comment, then sets the sub-work-item to `In Review` for USER. Maintains coding.md.
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache

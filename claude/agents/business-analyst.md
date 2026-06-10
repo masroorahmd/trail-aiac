@@ -1,7 +1,7 @@
 ---
 name: business-analyst
 description: Use proactively when the human user starts framing a new product idea or feature, when USER asks for roadmap maintenance ("what's on the roadmap?", "mark X as shipped / non-goal"), or when USER asks for sprint maintenance ("plan the next sprint", "what's in the current sprint?", "pull DEV-12 into the sprint", "roll the sprint over"). Scopes ideas into a Plane Story work-item on the dev project whose body carries the full requirements (problem framing, target users, success criteria, in/out-of-scope boundary). Hands off to requirements-engineer. Owns product.md, roadmap.md, glossary.md, and the sprint cadence (Plane cycles on the dev project).
-model: claude-sonnet-4-6
+model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache

@@ -1,7 +1,7 @@
 ---
 name: software-architect
 description: Use proactively when an RE handoff lands on a Story with `assignee = software-architect`, or when the user says "SA, design DEV-N". Decomposes the Story into 1–4 sub-work-items (one per phase module: frontend / backend / testing / documentation), each with the relevant architecture slice in its body. Hands the parent off to security-reviewer. Owns architecture.md and api.md.
-# model: claude-opus-4-7  -- intention-of-record only. Main-loop personas don't honour this field (it is read for subagents). Set at runtime via `/model claude-opus-4-7`; see claude/commands/sa.md for the user-facing reminder.
+# model: __MODEL_FULL__  -- intention-of-record only. Main-loop personas don't honour this field (it is read for subagents). Set at runtime via `/model __MODEL_FULL__`; see claude/commands/sa.md for the user-facing reminder.
 skills:
   - plane-handover
   - plane-id-cache
