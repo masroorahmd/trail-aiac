@@ -442,6 +442,58 @@ for the full path and triggers. The quick lane does **not** run the
 Story lifecycle, so the ticket-lifecycle and description-once rules
 above simply do not apply to it.
 
+## The autopilot lane (unattended full spine)
+
+`/autopilot DEV-N` is the opposite trade from the quick lane. Where
+`/quick` *shrinks* the process for a tiny change, autopilot *keeps the
+entire spine* but removes the human from between its stages. One
+human-initiated turn (USER types `/autopilot DEV-N`) drives a single
+already-framed Story all the way to a closed ticket — RE → SA → SR →
+BD/UD → TM → TW → commit/push → RM — without stopping to ask USER
+anything.
+
+It does not weaken the user-triggered rule (see *Why the human is the
+dispatcher*): USER still triggers exactly one turn, and nothing in
+Plane drives Claude Code. Autopilot just collapses the N handover turns
+USER would otherwise type into one supervised-by-design run.
+
+How it stays safe and auditable:
+
+- **Orchestrator owns control flow + git, nothing else.** `/autopilot`
+  is not a persona — no Plane identity, no token, no MCP calls. It
+  spawns each spine persona as a **subagent under that persona's own
+  `plane__<persona>__*` identity**, so Plane attribution stays exactly
+  as in the interactive flow. The orchestrator only reads each
+  subagent's `AUTOPILOT-VERDICT` and decides PROCEED / STOP / REPAIR,
+  and it owns the feature branch, the commit, and the push (personas
+  never touch git).
+- **Assume-and-log, not ask.** Each persona, under the `AUTOPILOT-MODE`
+  token, flips from "ask USER" to "pick the most reasonable assumption
+  and record it as a numbered `AS-N` entry in an *Autopilot assumptions*
+  comment". The assumption ledger is what USER reviews after the fact
+  instead of being interrupted up front — every assumption is on the
+  ticket, attributed to the persona that made it.
+- **The narrow lane, with gates that stop it.** Autopilot is for rare,
+  low-risk, already-framed tickets. RE is the first gate (no testable
+  AC, or the Story exceeds `autopilot.max_risk_lane` → stop); **SR is
+  the hard gate** (any blocker/high finding → stop, never self-cleared);
+  implementors bounce like `/quick` if the change reaches a security
+  non-negotiable or a migration; TM↔implementor repair-loops a fixable
+  red suite up to `max_repair_iterations`, then stops. **Stopping is a
+  success** — it means the change reached the edge of what may be done
+  unattended and handed the wheel back, working tree and branch intact.
+- **Git is the orchestrator's.** On a green run it commits the working
+  tree with a `Trail-Lane: autopilot (<DEV-N>)` trailer — the mirror of
+  `Trail-Lane: quick`, so `git log --grep='Trail-Lane: autopilot'`
+  lists every unattended change — and pushes the **feature branch**
+  (never the default branch, never `--force`).
+
+Gated off by default: `/autopilot` refuses to run unless
+`autopilot.enabled: true` in `config.yaml`. See
+[`../claude/workflows/autopilot.md`](../claude/workflows/autopilot.md)
+for the full path, the `AUTOPILOT-VERDICT` protocol, and the per-persona
+STOP conditions.
+
 ## Out of scope here
 
 - **Release Manager** runs **outside** this Story-level workflow,
@@ -464,3 +516,12 @@ operating Claude Code beyond user-initiated turns. So:
   through USER is intentional: SR's findings might re-route the work,
   and USER curates that decision before fanning out to multiple
   implementors.
+
+`/autopilot` is consistent with this, not an exception to it: it is a
+single user-initiated turn that runs many persona stages internally as
+subagents. No ticket triggers it, no harness polls Plane — USER typed
+the command. The difference from the normal flow is only *where* the
+human sits: ahead of the run (choosing to autopilot a low-risk ticket
+and reviewing the assumption ledger after) rather than between every
+stage. The moment a stage hits its STOP condition, the wheel is handed
+straight back to USER.
