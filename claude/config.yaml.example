@@ -37,6 +37,28 @@ model_lanes:
   full: claude-fable-5
   codegen: claude-opus-4-8
 
+# Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
+# initiated turn drives a single already-framed Story through the whole
+# engineering spine (RE → SA → SR → BD/UD → TM → TW → commit/push → RM)
+# with no human in the loop: personas make + log reasonable assumptions
+# instead of asking, and the orchestrator owns git. It is deliberately
+# the NARROW lane — it stops and hands back the moment a change leaves
+# the risk lane (a hard security finding, a migration, a new external
+# contract, a new dependency, or irreducible ambiguity).
+#
+#   enabled               — master switch. `/autopilot` refuses to run
+#                           unless this is true. Default off: opt in per
+#                           project once you trust the lane.
+#   max_repair_iterations — how many times TM↔implementor may loop to
+#                           turn a red suite green before autopilot stops.
+#   max_risk_lane         — the highest risk tier autopilot may carry on
+#                           its own (`standard`). Anything the personas
+#                           judge above this is handed back to a human.
+autopilot:
+  enabled: false
+  max_repair_iterations: 2
+  max_risk_lane: standard
+
 # Plane ticket system configuration. Any Plane deployment works — cloud or
 # self-hosted. Tokens per agent go into credentials.yaml.
 #

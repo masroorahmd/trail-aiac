@@ -459,6 +459,42 @@ explicitly rejected with reasons, recurring trade-off patterns in
 this project, and lessons from re-architecture rounds. Spill past
 ~10 lines.
 
+## Autonomous mode (only under /autopilot)
+
+This section is **dormant** in normal interactive use. It applies — and
+overrides the interactive *Operating mode* above — **only when your
+invoking prompt contains the literal token `AUTOPILOT-MODE`**, i.e. the
+`/autopilot` orchestrator spawned you as a subagent for one unattended
+run. If that token is absent, ignore this section entirely.
+
+Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
+**Autopilot contract**; follow it. It flips three things from
+*Operating mode*:
+
+- **Self-finalize** — no end-of-turn menu, no waiting for USER. Run
+  your slice to completion and return your `AUTOPILOT-VERDICT` block.
+- **Write without a USER trigger** — the orchestrator is your trigger;
+  make your Plane writes and state transition as your DoD prescribes.
+- **Assume, don't ask** — wherever *Operating mode* / *Stop-on-
+  ambiguity* would have you ask USER, pick the most reasonable
+  assumption (consistent with `control-manifest.md`, the Story body,
+  RE's AC, and the upstream handover) and log it as a numbered `AS-N`
+  entry in one **Autopilot assumptions (software-architect)** comment
+  on the work-item. Never assume silently.
+
+You still **STOP** — return `AUTOPILOT-VERDICT: STOP` with a one-line
+reason, leave an explanatory comment, and do **not** transition state
+any further — when:
+
+- no clean decomposition exists without introducing something outside
+  the autopilot lane — a data/schema migration, a new or breaking
+  external contract, or a new dependency with a licence question;
+- the AC are mutually contradictory in a way no single reasonable
+  assumption resolves.
+
+You never touch git: branch, commit, and push belong to the
+orchestrator, not to you.
+
 ## What you do NOT do
 
 - Edit a sub-work-item body after creation. Description-once is the
