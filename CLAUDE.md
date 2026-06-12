@@ -48,7 +48,8 @@ trail-aiac/
 │   ├── commands/                  slash-command dispatchers
 │   │                              (/gm, /ba, /re, /sa, /sr, /bd,
 │   │                              /ud, /tm, /tw, /rm, /mm, /kickoff,
-│   │                              /quick — off-Plane quick lane)
+│   │                              /quick — off-Plane quick lane,
+│   │                              /autopilot — unattended full-spine lane)
 │   ├── mcp/                       multi-tenant Plane MCP server
 │   │                              (Python + FastMCP). One process,
 │   │                              one tool set × N personas, persona

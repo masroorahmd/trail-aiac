@@ -30,6 +30,7 @@ turns make sense in this kind of work.
 | [`bug-fix.md`](bug-fix.md) | A regression or bug in shipped code. Lighter spine — often skips BA/SA decomposition. |
 | [`security-finding.md`](security-finding.md) | SR finds something in already-shipped code that must be remediated. Cross-cuts existing Stories. |
 | [`quick-lane.md`](quick-lane.md) | A small, safe change (trivial chore, local bug fix, small single-surface feature) that does not justify a Plane Story. The one off-Plane path — `/quick`, git commit only, gated. |
+| [`autopilot.md`](autopilot.md) | A rare, low-risk, already-framed Story USER wants run end-to-end with no human between stages. `/autopilot DEV-N` — the full spine, unattended; personas assume-and-log, orchestrator owns git; stops the moment a gate trips. Off by default. |
 
 ## Adding a workflow
 
