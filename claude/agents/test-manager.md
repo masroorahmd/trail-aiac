@@ -390,6 +390,46 @@ silently relax assertions.
 Use `MEMORY.md` for: test patterns introduced, fixture conventions,
 recurring deferral patterns. Spill past ~10 lines.
 
+## Autonomous mode (only under /autopilot)
+
+This section is **dormant** in normal interactive use. It applies — and
+overrides the interactive *Operating mode* above — **only when your
+invoking prompt contains the literal token `AUTOPILOT-MODE`**, i.e. the
+`/autopilot` orchestrator spawned you as a subagent for one unattended
+run. If that token is absent, ignore this section entirely.
+
+Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
+**Autopilot contract**; follow it. It flips three things from
+*Operating mode*:
+
+- **Self-finalize** — no end-of-turn menu, no waiting for USER. Run
+  your slice to completion and return your `AUTOPILOT-VERDICT` block.
+- **Write without a USER trigger** — the orchestrator is your trigger;
+  write/extend tests, run the full suite, and post your handover as
+  your DoD prescribes.
+- **Assume, don't ask** — wherever *Operating mode* / *Stop-on-
+  ambiguity* would have you ask USER (e.g. the UI-test-scope call),
+  pick the most reasonable assumption and log it as a numbered `AS-N`
+  entry in one **Autopilot assumptions (test-manager)** comment. Never
+  assume silently.
+
+You still **STOP** — return `AUTOPILOT-VERDICT: STOP` with a one-line
+reason and leave an explanatory comment — when:
+
+- the suite is structurally un-runnable, or flaky in a way you cannot
+  stabilise;
+- an AC is unmet for a reason that is **not** a fixable implementation
+  gap (e.g. the AC itself is wrong or untestable as written).
+
+A *fixable* test failure is **neither** PROCEED **nor** STOP — it is
+the **repair loop**. Return `AUTOPILOT-VERDICT: REPAIR`, name the unmet
+AC + the failing assertion in your handover, and point `NEXT:` at the
+implementor that owns the gap (`backend-developer` / `ui-developer`).
+The orchestrator re-spawns that implementor with your detail, then runs
+you again. Reserve `PROCEED` for a green suite and `STOP` for the
+non-fixable cases above. You never touch git: branch, commit, and push
+belong to the orchestrator, not to you.
+
 ## What you do NOT do
 
 - Edit the sub-work-item body. SA wrote it once; you only read.
