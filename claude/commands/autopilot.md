@@ -1,5 +1,5 @@
 ---
-description: Unattended lane — drive ONE already-framed Story end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit/push → RM) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the orchestrator owns git. Stops and hands back the moment the change leaves the autopilot risk lane.
+description: Unattended lane — drive ONE already-framed Story end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → merge) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, the parallel implementors each run in their own git worktree, and the orchestrator owns git — including, on a clean COMPLETED run, merging the feature branch into the default branch and deleting it. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
 argument-hint: "<DEV-N — an existing Story in state `To Do`, assignee requirements-engineer>"
 ---
 
@@ -18,7 +18,10 @@ poll, no ticket-trigger.
 
 You are the **orchestrator**. You own three things and nothing else:
 1. **Control flow** — which persona runs next, and whether to PROCEED or STOP.
-2. **Git** — branch, commit, push (personas never touch git; you do).
+2. **Git** — branch, worktrees, commit, push, merge, delete (personas
+   never touch git; you do). On a clean COMPLETED run you merge the
+   feature branch into the default branch and delete it; on STOP you
+   leave the feature branch intact for USER.
 3. **The audit summary** — the final report to USER.
 
 **All Plane I/O happens inside the persona subagents**, each under its
@@ -42,11 +45,16 @@ the orchestrator a token.
    *Compliance / legal*, and *Architectural invariants* sections to
    judge STOP verdicts) and `.claude/context/stack.md` (how to run the
    test suite, what the default branch is).
-4. **Git pre-flight.** Confirm a clean working tree (`git status`). If
-   dirty, stop and ask USER to stash/commit first — autopilot will not
-   mix its changes with pre-existing ones. Then create and switch to a
-   feature branch named `autopilot/<DEV-N>-<short-slug>` off the
-   project's default branch. All persona work lands here.
+4. **Git pre-flight.** Confirm a clean working tree (`git status`) and
+   record the project's default branch. If dirty, stop and ask USER to
+   stash/commit first — autopilot will not mix its changes with
+   pre-existing ones. Confirm `git worktree list` shows no stale
+   `autopilot/<DEV-N>-…` worktree from an aborted earlier run; if one
+   exists, stop and ask USER to clear it (`git worktree remove`) rather
+   than reusing it blind. Then create and switch to a feature branch
+   named `autopilot/<DEV-N>-<short-slug>` off the default branch. All
+   sequential persona work lands here; the parallel implementors get
+   their own throwaway worktrees off this branch (spine step 4).
 
 5. **Permission-mode check.** "Unattended" presumes the session won't
    stop for an approval prompt mid-run. The framework's `settings.json`
@@ -95,8 +103,11 @@ literal token `AUTOPILOT-MODE` is what flips the persona's gated
 >    licence question, or ambiguity no reasonable assumption resolves).
 >    On STOP: do NOT transition state further; leave a comment
 >    explaining the blocker; return verdict STOP.
-> 6. Do NOT touch git (no add/commit/branch/push). The orchestrator
->    owns git. You only edit the working tree and write to Plane.
+> 6. Do NOT touch git (no add/commit/branch/push/merge/worktree). The
+>    orchestrator owns git. You only edit files and write to Plane. If
+>    the orchestrator hands you a WORKTREE path, make every file edit
+>    inside that directory and nowhere else — it is your isolated copy
+>    of the tree; the orchestrator commits and merges it for you.
 > 7. END your response with this block, nothing after it:
 >
 >    AUTOPILOT-VERDICT: PROCEED | STOP | REPAIR
@@ -140,21 +151,49 @@ verdict is treated as STOP (reason: "no verdict — subagent aborted").
    self-clears a hard finding under autopilot. PROCEED only on a clean
    or low/info-only review → implementors.
 
-4. **Implementors (parallel)** — for each sub-work-item SA created in a
-   code module, spawn concurrently **in a single message**:
-   - `backend-developer` for the backend slice,
-   - `ui-developer` for the frontend slice.
-   Each implements, runs the suite locally, posts Implementation notes,
-   moves its item `Todo → In Progress → In Review`. Collect every
-   verdict; if any implementor STOPs, the round STOPs.
+4. **Implementors (parallel, each in its own git worktree).** This is
+   the one stage where two agents would otherwise edit the same working
+   tree at once, so each implementor gets an **isolated worktree** —
+   the orchestrator owns the git around it:
+   a. **Before spawning**, for each code-module sub-work-item, create a
+      worktree off the feature branch on its own branch, e.g.
+      `git worktree add ../<repo>-<DEV-N>-backend -b autopilot/<DEV-N>-<slug>-backend <feature-branch>`
+      and likewise `…-frontend`. Use a **hyphen** sibling name, never a
+      `…/<slug>/backend` sub-path — that would D/F-conflict with the
+      `autopilot/<DEV-N>-<slug>` feature branch ref. Omit a module SA
+      didn't create.
+   b. **Spawn concurrently in a single message** — `backend-developer`
+      for the backend slice, `ui-developer` for the frontend slice —
+      each with the contract + persona + sub-work-item, and tell each
+      the **absolute WORKTREE path** it must edit in (contract point 6).
+      Each implements there, runs the suite locally **inside its
+      worktree**, posts Implementation notes, moves its item
+      `Todo → In Progress → In Review`. Collect every verdict; if any
+      implementor STOPs, the round STOPs (clean up worktrees per
+      *Hand-back on STOP*).
+   c. **On all-PROCEED, fold the worktrees back in (you, the
+      orchestrator).** In each worktree, stage + commit the implementor's
+      changes with a message naming its sub-work-item and the
+      `Trail-Lane: autopilot (<DEV-N>)` trailer. Merge each implementor
+      branch into the feature branch with `--no-ff`. A real merge
+      conflict between backend and frontend is outside the autopilot
+      lane → **STOP** (reason: "implementor worktree merge conflict").
+      Then `git worktree remove` each worktree and delete its branch.
+      The feature branch's main tree now holds the merged implementation;
+      TM (next) runs there.
 
 5. **Test Manager** — spawn with persona `test-manager` + the testing
    sub-work-item. TM writes/extends tests and runs the full suite.
    - TM PROCEEDs only with a **green suite**.
    - TM returns `REPAIR` for a fixable red suite (with `NEXT:` naming
      the implementor). That is the **repair loop**, not a STOP:
-     re-spawn that implementor with TM's failure detail, then run TM
-     again. Repeat at most `max_repair_iterations` times. If still not
+     re-spawn that implementor with TM's failure detail — **directly in
+     the feature tree, with no worktree** (the round-4 worktrees are
+     gone, and only one agent edits at a time now, so isolation buys
+     nothing) — then run TM again. After the implementor's fix, commit
+     it onto the feature branch (same `Trail-Lane` trailer) before
+     re-running TM. Repeat at most `max_repair_iterations` times. If
+     still not
      green after that → treat as STOP (reason: "suite red after N
      repair iterations"). TM returns `STOP` directly for a non-fixable
      or un-runnable suite.
@@ -163,25 +202,51 @@ verdict is treated as STOP (reason: "no verdict — subagent aborted").
    SA created a documentation sub-work-item. TW updates user-facing
    docs. (Internal-only changes skip this — no STOP.)
 
-7. **Git — commit + push (you, the orchestrator).** Once the suite is
-   green and all sub-work-items are `In Review`:
-   - Stage the working tree. Commit with a message whose body lists the
-     Story, the sub-work-items, and a one-line assumption count, and
-     whose trailer is **`Trail-Lane: autopilot (<DEV-N>)`** — the
-     mirror of `/quick`'s `Trail-Lane: quick`, making
-     `git log --grep='Trail-Lane: autopilot'` the complete list of
-     unattended changes. Keep the repo's own commit conventions
-     (sign-off, co-author, issue refs).
-   - Push the **feature branch** (never the default branch, never
-     `--force`). If push fails (no remote, branch protection), record
-     the failure in the summary and continue — the local commit is the
-     durable artefact.
+7. **Git — commit + push the feature branch (you, the orchestrator).**
+   Once the suite is green and all sub-work-items are `In Review` (the
+   implementor worktrees have already been folded into the feature
+   branch in step 4c):
+   - Stage anything still uncommitted in the feature tree (TM's test
+     additions, TW's doc edits). Commit with a message whose body lists
+     the Story, the sub-work-items, and a one-line assumption count.
+   - **Every autopilot commit carries the trailer
+     `Trail-Lane: autopilot (<DEV-N>)`** — the implementor commits from
+     step 4c and this one alike — the mirror of `/quick`'s
+     `Trail-Lane: quick`, so `git log --grep='Trail-Lane: autopilot'`
+     stays the complete list of unattended changes. Keep the repo's own
+     commit conventions (sign-off, co-author, issue refs).
+   - Push the **feature branch** (never `--force`). If push fails (no
+     remote, branch protection), record the failure in the summary and
+     continue — the local commits are the durable artefact, and the
+     step-9 merge is local-first regardless.
 
 8. **Release Manager** — spawn with persona `release-manager` + the
    commit/branch. RM performs the project's release/close step for the
    Story per its DoD (it will not push tags without the gate its
    persona defines; respect that). RM STOPs if release preconditions
    aren't met.
+
+9. **Git — merge into default + delete the branch (you, the
+   orchestrator).** This step runs **only** on a clean COMPLETED run:
+   every gate green (RE/SA/SR/implementors/TM/TW/RM all PROCEEDed, suite
+   green, SR clean). It is the deliberate end of the unattended lane —
+   what was previously a human's merge.
+   - Fast-forward the feature branch onto the current default branch
+     tip first (`git merge <default>` *into* the feature branch, or
+     rebase) so the merge is clean; a conflict here is outside the lane
+     → fall through to *Hand-back on STOP* (the branch survives for USER).
+   - Check out the default branch and merge the feature branch with
+     `--no-ff` (a single merge commit makes `git revert -m 1 <hash>`
+     the one-line undo). Never `--force`.
+   - Push the default branch. If the push is rejected (branch
+     protection, non-fast-forward, no remote), **do not** retry with
+     force and **do not** delete the branch: record it in the summary,
+     leave the local merge in place, and tell USER the branch still
+     needs a human/CI merge. The local merge is the durable artefact.
+   - Only after a successful default-branch update: delete the feature
+     branch locally (`git branch -d`) and on the remote (if it was
+     pushed), and `git worktree prune` to clear any residue. Report the
+     deletion in the summary.
 
 ## Hand-back on STOP (the safety valve)
 
@@ -190,7 +255,13 @@ subagent aborts — **halt the spine**. Do not run later stages. Do not
 commit a half-built change. Then:
 
 1. Leave the working tree and the feature branch as they are for USER
-   to inspect (do not revert, do not delete the branch).
+   to inspect: **do not revert, do not merge into the default branch,
+   do not delete the feature branch.** Do clean up the throwaway
+   implementor worktrees if any are still checked out (`git worktree
+   remove` / `git worktree prune`) — but only after committing or
+   confirming their in-progress edits are already on the feature
+   branch, so nothing USER might want is lost; if a worktree holds
+   unmerged work, leave it and name it in the summary.
 2. Spawn no further personas. The Plane items stay in whatever state
    the last persona left them; that persona already left an explanatory
    comment.
@@ -213,10 +284,17 @@ covering:
   one list — this is what USER reviews after the fact instead of being
   asked up front.
 - Each gate decision (SR verdict, repair iterations used).
-- Git: branch name, commit hash, push result (or why it didn't push),
-  test command + result.
-- A one-line "to undo: `git revert <hash>` / delete branch
-  `autopilot/<DEV-N>-…`".
+- Git: feature-branch name, commit hash(es), push result, and — on
+  COMPLETED — the merge into the default branch (merge-commit hash,
+  default-branch push result) and confirmation the feature branch +
+  implementor worktrees were deleted. On STOPPED: that the branch is
+  intact and where it is. Test command + result either way.
+- A one-line undo:
+  - COMPLETED + merged → `git revert -m 1 <merge-hash>`.
+  - COMPLETED but merge/push couldn't land (e.g. branch protection) →
+    the branch still exists; name it and how to merge it by hand.
+  - STOPPED → `git branch -D autopilot/<DEV-N>-…` to discard, or resume
+    with the recommended `/<persona>`.
 
 ## Operating mode (the orchestrator itself)
 
