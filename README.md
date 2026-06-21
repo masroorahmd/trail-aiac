@@ -91,7 +91,7 @@ and stays legible without anyone having to interpret it.
 
 | | Agent | Trait | Role |
 |---|---|---|---|
-| <img src="avatars/venture-advisor.png" width="80"/>       | **Venture Advisor**       | Hype-resistant            | Strategic advisor for founders; operates on a private "business" track. |
+| <img src="avatars/general-manager.png" width="80"/>       | **General Manager** *(masroor branch)* | Form vor Tempo            | Founder operations — Behörden, Notar, Recht, Steuern, Staffing, Förderung, Compliance. Eigenes `HQ`-Plane-Projekt. |
 | <img src="avatars/business-analyst.png" width="80"/>      | **Business Analyst**      | Curious about the unsaid  | Turns feature ideas into stories; owns the backlog and priorities.      |
 | <img src="avatars/requirements-engineer.png" width="80"/> | **Requirements Engineer** | Pedantic about wording    | Adds testable acceptance criteria (Gherkin) and edge cases as a comment on the Story. |
 | <img src="avatars/software-architect.png" width="80"/>    | **Software Architect**    | Long-horizon              | Designs the solution; documents trade-offs and pitfalls.                |
@@ -101,6 +101,7 @@ and stays legible without anyone having to interpret it.
 | <img src="avatars/test-manager.png" width="80"/>          | **Test Manager**          | Fastidious about coverage | Owns test strategy and verification.                                    |
 | <img src="avatars/technical-writer.png" width="80"/>      | **Technical Writer**      | Reads own draft as a stranger | Keeps docs, READMEs, and changelogs honest.                         |
 | <img src="avatars/release-manager.png" width="80"/>       | **Release Manager**       | Rollback-first            | Drives versioning, tagging, and release.                                |
+| <img src="avatars/marketing-manager.png" width="80"/>     | **Marketing Manager** *(masroor branch)* | Audience's language first | Owns the website (`.org` OSS narrative + `.com` enterprise funnel), brand voice, and SEO. Eigenes `MKT`-Plane-Projekt; hands site code to UI Developer. |
 
 More on what each agent reads, writes, and does:
 [`doc/PERSONAS.md`](doc/PERSONAS.md). The handover sequence over a
@@ -119,7 +120,7 @@ PR review.
 |---|---|---|
 | **PRD** — *what & why* | ✅ covered | BA Story body (problem / target users / success criteria / scope) + RE acceptance-criteria comment (Gherkin scenarios + edge cases + non-functional requirements). |
 | **SDD** — *how* | ✅ covered | SA sub-work-item bodies, one per module: approach, components (new + modified), data models, API endpoints, trade-offs, security hand-off notes. |
-| **BRD** — *strategic why* | ◻ ready | Venture Advisor and the BIZ project provide the strategic-context lane; no fixed schema enforced — invoked when stakeholders need the why-chain made explicit. |
+| **BRD** — *strategic why* | ◻ ready | The BIZ project plus the BA's strategy-sanity-check provide the strategic-context lane; no fixed schema enforced — invoked when stakeholders need the why-chain made explicit. |
 | **TSD** — *implementation detail* | ◻ by design, not by document | Implementation specs live in the code itself, in PR descriptions, and in the implementor's DoD comment on the sub-work-item — kept where they cannot drift from reality. |
 
 Why no parallel TSD document: a separate implementation spec
@@ -158,11 +159,11 @@ Manual reference if you'd rather drive by hand:
 
 ## Usage
 
-Each persona is a slash command (`/va`, `/ba`, `/re`, `/sa`, `/sr`,
-`/bd`, `/ud`, `/tm`, `/tw`, `/rm`). Typing `/<persona>` puts the
-main loop into that role until you say `done` or start a different
-`/<persona>`. You trigger every turn — agents do not auto-pick up
-tickets.
+Each persona is a slash command (`/gm` — *masroor branch; main has `/va`* —
+`/ba`, `/re`, `/sa`, `/sr`, `/bd`, `/ud`, `/tm`, `/tw`, `/rm`, `/mm` — *masroor*).
+Typing `/<persona>` puts the main loop into that role until you say `done`
+or start a different `/<persona>`. You trigger every turn — agents do not
+auto-pick up tickets.
 
 ### First run — seed the context
 
@@ -217,11 +218,12 @@ that persona's own API token, so every change is attributed in Plane.
 ### Other practical patterns
 
 ```
-> /va "Should we even build CSV export, or push users to the API?"
+> /gm "Brauche ich eine D&O-Versicherung schon vor dem HRB-Eintrag?"
 ```
-Strategic gut-check before scoping. Venture Advisor pushes back on
-weakly-justified work; runs on a private "business" track and does
-not write to engineering Plane.
+*(masroor branch)* Operative GmbH-Begleitung — General Manager
+arbeitet auf einem separaten `HQ`-Plane-Projekt für Behörden, Notar,
+Recht, Steuern, Staffing, Förderungen, Compliance. Berührt das
+Engineering-Plane nicht.
 
 ```
 > /ba pull from roadmap
@@ -247,7 +249,7 @@ work so the persona's MCP-tool discipline does not constrain you.
 |---|---|
 | [`doc/INSTALLATION.md`](doc/INSTALLATION.md) | Manual install reference for all three scenarios — what the install-helper does under the hood. |
 | [`doc/PROVISIONING.md`](doc/PROVISIONING.md) | Ansible playbook details: host pre-conditions, TLS strategies, idempotency, secret rotation, tear-down. |
-| [`doc/PERSONAS.md`](doc/PERSONAS.md) | The ten agents — what each one reads, writes, when to invoke. |
+| [`doc/PERSONAS.md`](doc/PERSONAS.md) | The eleven agents — what each one reads, writes, when to invoke. |
 | [`doc/WORKFLOW.md`](doc/WORKFLOW.md) | Story lifecycle, state spine, handover protocol over Plane tickets. |
 | [`doc/MCP.md`](doc/MCP.md) | Per-persona MCP scoping; multi-tenant `plane` server with tool-name prefix routing. |
 | [`doc/PLANE_API.md`](doc/PLANE_API.md) | Background on Plane's public + internal APIs and what each surface offers. |

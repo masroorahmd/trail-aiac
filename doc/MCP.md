@@ -67,7 +67,7 @@ prefix — `business_analyst__list_states`,
 a closure over its persona's client, so the call lands in Plane
 under the right token regardless of which slash command invoked it.
 
-When a slash command (`/va`, `/ba`, …) puts the main loop into a
+When a slash command (`/gm`, `/ba`, …) puts the main loop into a
 persona's role, the main loop sees every persona's tools. The
 persona prompt explicitly constrains it: *"use only
 `plane__<persona_snake>__*` tools so every API call is attributed to

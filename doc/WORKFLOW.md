@@ -92,7 +92,7 @@ in `host_vars/plane.yml` (or supply an inline list):
   engineering project where 9/10 personas execute.
 - **Business track** (`plane_bootstrap_labels_business`):
   `Strategy`, `Go-to-Market`, `Pricing`, `Community`, `Discovery`.
-  Designed for the founder/Venture-Advisor track where work is
+  Designed for the founder/Business-Analyst track where work is
   classified by business outcome rather than engineering surface.
 
 The Business Analyst applies one or more of the relevant set's labels
@@ -449,8 +449,10 @@ above simply do not apply to it.
 entire spine* but removes the human from between its stages. One
 human-initiated turn (USER types `/autopilot DEV-N`) drives a single
 already-framed Story all the way to a closed ticket — RE → SA → SR →
-BD/UD → TM → TW → commit/push → RM — without stopping to ask USER
-anything.
+BD/UD → TM → TW → commit → RM → merge — without stopping to ask USER
+anything. On a clean run it ends with the feature branch merged into
+the default branch and deleted; on a STOP it hands back with the branch
+intact.
 
 It does not weaken the user-triggered rule (see *Why the human is the
 dispatcher*): USER still triggers exactly one turn, and nothing in
@@ -465,8 +467,9 @@ How it stays safe and auditable:
   `plane__<persona>__*` identity**, so Plane attribution stays exactly
   as in the interactive flow. The orchestrator only reads each
   subagent's `AUTOPILOT-VERDICT` and decides PROCEED / STOP / REPAIR,
-  and it owns the feature branch, the commit, and the push (personas
-  never touch git).
+  and it owns all git — the feature branch, the parallel implementors'
+  isolated worktrees, the commits, the push, and the final merge/delete
+  (personas never touch git).
 - **Assume-and-log, not ask.** Each persona, under the `AUTOPILOT-MODE`
   token, flips from "ask USER" to "pick the most reasonable assumption
   and record it as a numbered `AS-N` entry in an *Autopilot assumptions*
@@ -482,11 +485,19 @@ How it stays safe and auditable:
   red suite up to `max_repair_iterations`, then stops. **Stopping is a
   success** — it means the change reached the edge of what may be done
   unattended and handed the wheel back, working tree and branch intact.
-- **Git is the orchestrator's.** On a green run it commits the working
-  tree with a `Trail-Lane: autopilot (<DEV-N>)` trailer — the mirror of
+- **Git is the orchestrator's.** The two parallel implementors each run
+  in their own throwaway `git worktree` (the one stage where two agents
+  would otherwise share a tree); the orchestrator commits and merges
+  each back into the feature branch. Every autopilot commit carries a
+  `Trail-Lane: autopilot (<DEV-N>)` trailer — the mirror of
   `Trail-Lane: quick`, so `git log --grep='Trail-Lane: autopilot'`
-  lists every unattended change — and pushes the **feature branch**
-  (never the default branch, never `--force`).
+  lists every unattended change. On a **clean COMPLETED run** (all gates
+  green) the orchestrator merges the feature branch into the default
+  branch with `--no-ff`, pushes it, and deletes the feature branch +
+  worktrees — the deliberate end of the unattended lane. If that merge
+  or push can't land (conflict, branch protection), it stops with the
+  branch intact for a human. It never uses `--force`, and on **STOP** it
+  never merges or deletes — the branch stays for USER to inspect.
 
 Gated off by default: `/autopilot` refuses to run unless
 `autopilot.enabled: true` in `config.yaml`. See
@@ -499,8 +510,10 @@ STOP conditions.
 - **Release Manager** runs **outside** this Story-level workflow,
   triggered directly by USER (e.g. "tag a release", "draft changelog").
   Release Manager does not consume Stories or sub-work-items.
-- **Venture Advisor** operates on a private "business" track separate
-  from Story execution.
+- **General Manager** *(masroor branch)* runs on a separate `HQ`
+  Plane project for founder operations (Behörden, Notar, Recht,
+  Steuern, Staffing, Förderung, Compliance). Independent of the
+  Story workflow — no upstream/downstream persona handover.
 
 ## Why the human is the dispatcher
 

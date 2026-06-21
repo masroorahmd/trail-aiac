@@ -1,7 +1,7 @@
 ---
 name: ui-test-writer
 description: One-shot subagent for parallel UI test authoring. Spawned by test-manager via the Agent tool to fan out a sub-work-item's UI test scenarios across multiple workers — each worker writes tests for a partitioned subset, runs them, returns a structured summary, and exits. Has no Plane access; receives all required context (AC scenarios in scope, target test files, UD implementation notes, framework conventions) inline in the spawn prompt. Not for direct USER invocation; not a persona.
-model: claude-opus-4-7
+model: __MODEL_CODEGEN__
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Autopilot worktree isolation + auto-merge on completion.** Under
+  `/autopilot`, the parallel implementors (backend / UI developer) now
+  each run in their own throwaway `git worktree` off the feature branch
+  — the one spine stage where two agents would otherwise share a
+  working tree — and the orchestrator commits and merges each back. On
+  a clean `COMPLETED` run the orchestrator now also merges the feature
+  branch into the default branch (`--no-ff`) and deletes the branch +
+  worktrees; on `STOP` the branch is left intact for inspection.
+  Always-on within the autopilot lane (no config flag). Personas still
+  never touch git. (`claude/commands/autopilot.md`,
+  `claude/agents/{backend,ui}-developer.md`, `doc/WORKFLOW.md`,
+  `claude/config.yaml.example`)
+
 ## [0.1.0] — 2026-05-08
 
 Initial public release of the Trail framework: ten
