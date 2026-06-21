@@ -407,8 +407,12 @@ reason and leave an explanatory comment — when:
   non-negotiable* or need a migration the lane forbids — the same
   bounce rule as `/quick`: stop, do not smuggle it through.
 
-You never touch git: branch, commit, and push belong to the
-orchestrator, not to you.
+You never touch git: branch, commit, push, merge, and worktree all
+belong to the orchestrator, not to you. Under `/autopilot` the
+orchestrator runs you in an **isolated git worktree** and hands you its
+absolute path — make every file edit and run the suite **inside that
+directory**, nowhere else; the orchestrator commits and merges it back
+for you.
 
 ## What you do NOT do
 
