@@ -7,11 +7,21 @@ the journey, the doc/ folder and the git log are authoritative.
 ## What this repo is
 
 A spec-driven, multi-agent framework for software development with
-Claude Code and Plane. Ten named personas (Venture Advisor, Business
+Claude Code and Plane. Eleven named personas (General Manager, Business
 Analyst, Requirements Engineer, Software Architect, Security Reviewer,
 Backend Developer, UI Developer, Test Manager, Technical Writer,
-Release Manager) collaborate through a shared Plane workspace to take
-a feature from idea to release. The human user triggers each agent
+Release Manager, Marketing Manager) collaborate through a shared Plane
+workspace to take a feature from idea to release.
+
+> **Branch note (masroor).** Public `main` ships a `venture-advisor`
+> persona on a `BIZ` track. This branch retires VA in favour of a
+> `general-manager` scoped to founder operations (Behörden, Notar,
+> Recht, Steuern, Staffing, Förderung, Compliance) on a separate
+> `HQ` Plane project, and adds a `marketing-manager` for the
+> website (`.org` OSS narrative + `.com` enterprise sales funnel),
+> brand voice, and SEO on a separate `MKT` Plane project. The
+> lightweight strategy sanity-check VA used to gate ideas now lives
+> in BA, which also owns `roadmap.md`. The human user triggers each agent
 turn — never the ticket system — and agents hand work off by
 reassigning tickets and walking them through a fixed state spine.
 
@@ -32,12 +42,12 @@ trail-aiac/
 ├── claude/                        the framework deliverable bundle.
 │   │                              `bin/install.py` copies these into
 │   │                              `<consumer>/.claude/` as REAL files.
-│   ├── agents/                    10 persona definitions (loaded
+│   ├── agents/                    11 persona definitions (loaded
 │   │                              into the main loop by /<persona>)
 │   ├── skills/                    shared skills (plane-handover)
 │   ├── commands/                  slash-command dispatchers
-│   │                              (/va, /ba, /re, /sa, /sr, /bd,
-│   │                              /ud, /tm, /tw, /rm, /kickoff,
+│   │                              (/gm, /ba, /re, /sa, /sr, /bd,
+│   │                              /ud, /tm, /tw, /rm, /mm, /kickoff,
 │   │                              /quick — off-Plane quick lane,
 │   │                              /autopilot — unattended full-spine lane)
 │   ├── mcp/                       multi-tenant Plane MCP server
@@ -49,11 +59,11 @@ trail-aiac/
 │   │                              bug-fix, security-finding). Reading
 │   │                              material for the human user, not
 │   │                              orchestration.
-│   ├── context.example/           13 kickoff stubs that seed the
+│   ├── context.example/           kickoff stubs that seed the
 │   │                              consumer's context/ on first install
 │   │                              (incl. control-manifest.md — the
 │   │                              project's CM-N guardrails)
-│   ├── agent-memory.example/      10 per-persona MEMORY.md stubs that
+│   ├── agent-memory.example/      11 per-persona MEMORY.md stubs that
 │   │                              seed the consumer's agent-memory/
 │   ├── config.yaml.example        seeds consumer's config.yaml
 │   ├── credentials.yaml.example   seeds consumer's credentials.yaml
@@ -80,8 +90,23 @@ trail-aiac/
 │                                  and re-template the consumer's
 │                                  agents/*.md placeholders (mode 0600).
 │
+├── bin/link-shared.py             multi-consumer linker. For setups
+│                                  where one company has several consumer
+│                                  repos sharing one Plane workspace and
+│                                  cross-cutting product narrative.
+│                                  Replaces a consumer's shared .claude/
+│                                  files (config.yaml, credentials.yaml,
+│                                  cross-cutting context/*.md, every
+│                                  persona's agent-memory/) with symlinks
+│                                  into a designated claude-context/ dir.
+│                                  Per-consumer files (stack.md, coding.md,
+│                                  agents/, .mcp.json, …) are never
+│                                  touched. Bootstrap once from a canonical
+│                                  consumer, then link N consumers
+│                                  idempotently.
+│
 ├── doc/                           public docs — see index below
-├── avatars/                       10 persona PNGs + generator source
+├── avatars/                       11 persona PNGs + generator source
 └── .claude/                       Claude Code state for THIS repo's
                                    dev sessions only.
                                    Holds the install-helper agent +
@@ -141,7 +166,7 @@ trail-aiac/
 |---|---|
 | Install procedure (three scenarios, what install.py does) | [`doc/INSTALLATION.md`](doc/INSTALLATION.md) |
 | Plane provisioning via Ansible (host pre-conditions, TLS, idempotency, secret rotation, tear-down) | [`doc/PROVISIONING.md`](doc/PROVISIONING.md) |
-| The ten personas — what each one reads, writes, and when to invoke | [`doc/PERSONAS.md`](doc/PERSONAS.md) |
+| The eleven personas — what each one reads, writes, and when to invoke | [`doc/PERSONAS.md`](doc/PERSONAS.md) |
 | Story lifecycle, state spine, handover protocol over Plane tickets | [`doc/WORKFLOW.md`](doc/WORKFLOW.md) |
 | MCP scoping, the multi-tenant `plane` server design, tool-name prefix convention | [`doc/MCP.md`](doc/MCP.md) |
 | Plane public + internal API surface | [`doc/PLANE_API.md`](doc/PLANE_API.md) |
@@ -151,7 +176,7 @@ trail-aiac/
 
 - **The framework's `claude/` is the deliverable bundle, NOT live
   subagents for THIS repo.** Running `claude` here gets a clean dev
-  session, not the ten-persona team. The personas only become live
+  session, not the eleven-persona team. The personas only become live
   subagents in a *consumer* project after `bin/install.py`.
 - **Don't dogfood the framework into this repo's `.claude/`.** The only
   agent that lives in `.claude/agents/` here is `install-helper` — a
@@ -168,3 +193,21 @@ trail-aiac/
 - **Edit `claude/agents/*.md` and `claude/commands/*.md` for framework
   changes**, not the rendered copies under any consumer's `.claude/`.
   The consumer's copies are regenerated by `install.py`.
+- **Model IDs are config, not hard-coded.** Persona/command sources
+  carry `__MODEL_STANDARD__` / `__MODEL_FULL__` / `__MODEL_CODEGEN__`
+  placeholders; the lane → model mapping lives in the consumer's
+  `config.yaml` (`model_lanes:`, defaults in `config.yaml.example` and
+  `bin/install.py`). When a new model ships, bump the lane in config
+  and re-run `install.py` — never write a concrete model ID into
+  `claude/agents/*.md` or `claude/commands/*.md`. Tier policy:
+  [`doc/PERSONAS.md`](doc/PERSONAS.md) → Model lanes.
+- **Multi-consumer setups (one company → several repos)** use
+  `bin/link-shared.py` to symlink cross-cutting `.claude/` slots
+  (config, credentials, product/roadmap/glossary/brand/seo/site-map/
+  company/advisors/funding/compliance + every persona's agent-memory)
+  to a shared `claude-context/` repo. Per-consumer slots (stack,
+  coding, ui, security, testing, documentation, release, api,
+  architecture; agents/; .mcp.json) stay local and are managed by
+  `install.py` as before. Symlinks survive `install.py` re-runs
+  because Stage 1 preserves any `.claude/`-slot whose target already
+  exists (`seed_if_absent`).

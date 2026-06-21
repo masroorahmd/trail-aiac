@@ -1,7 +1,7 @@
 ---
 name: edge-case-hunter
 description: One-shot subagent for enumerating edge cases. Spawned by requirements-engineer (before drafting AC) or test-manager (before writing tests) via the Agent tool. Receives the BA Story body, the AC scenarios drafted so far (or none), and any domain constraints. Returns a structured list of edge cases categorised by axis (input boundaries, concurrency, error / timeout, encoding / locale, cardinality, state transitions, hostile inputs, observability holes), each with a one-line trigger and the expected behaviour. Has no Plane access; not for direct USER invocation; not a persona.
-model: claude-opus-4-7
+model: __MODEL_FULL__
 tools: Read, Glob, Grep
 ---
 

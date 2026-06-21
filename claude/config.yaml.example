@@ -21,14 +21,34 @@ chat_language: English
 # addressing you by name (they'll say 'you' / 'USER' instead).
 user_name:
 
+# Model lanes — which Claude model each tier of work runs on.
+# bin/install.py substitutes these into the rendered persona and
+# command files (they carry `__MODEL_STANDARD__` / `__MODEL_FULL__` /
+# `__MODEL_CODEGEN__` placeholders). When a new model ships, bump the
+# lane here and re-run bin/install.py — no framework edit needed.
+#
+#   standard — routine persona turns: ticket handover, implementation
+#              lanes (BA, RE, BD, UD, TM, TW, RM, GM, MM).
+#   full     — high-stakes, long-horizon reasoning: /sa design, /sr
+#              threat review, and the edge-case-hunter subagent.
+#   codegen  — volume code-writing subagents (ui-test-writer).
+model_lanes:
+  standard: claude-sonnet-4-6
+  full: claude-fable-5
+  codegen: claude-opus-4-8
+
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives a single already-framed Story through the whole
-# engineering spine (RE → SA → SR → BD/UD → TM → TW → commit/push → RM)
-# with no human in the loop: personas make + log reasonable assumptions
-# instead of asking, and the orchestrator owns git. It is deliberately
-# the NARROW lane — it stops and hands back the moment a change leaves
-# the risk lane (a hard security finding, a migration, a new external
-# contract, a new dependency, or irreducible ambiguity).
+# engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM →
+# merge) with no human in the loop: personas make + log reasonable
+# assumptions instead of asking, and the orchestrator owns git — the
+# parallel implementors each run in their own throwaway git worktree,
+# and on a clean COMPLETED run the orchestrator merges the feature
+# branch into the default branch and deletes it. It is deliberately
+# the NARROW lane — it stops and hands back (branch intact, never
+# merged) the moment a change leaves the risk lane (a hard security
+# finding, a migration, a new external contract, a new dependency, or
+# irreducible ambiguity).
 #
 #   enabled               — master switch. `/autopilot` refuses to run
 #                           unless this is true. Default off: opt in per
@@ -46,17 +66,19 @@ autopilot:
 # Plane ticket system configuration. Any Plane deployment works — cloud or
 # self-hosted. Tokens per agent go into credentials.yaml.
 #
-# `projects.{business,dev}` are the Plane project IDENTIFIERS — the short
-# prefix Plane embeds in work-item IDs (e.g. `DEV-1`, `BIZ-7`). Visible
-# in the Plane UI under Project Settings → General → Identifier. The
-# Ansible turn-key install (see ansible/README.md) creates exactly these
-# two projects with these identifiers.
+# `projects.{business,dev,hq}` are the Plane project IDENTIFIERS — the
+# short prefix Plane embeds in work-item IDs (e.g. `DEV-1`, `BIZ-7`,
+# `HQ-3`). Visible in the Plane UI under Project Settings → General →
+# Identifier. The Ansible turn-key install (see ansible/README.md)
+# creates these projects with these identifiers.
 plane:
   base-url: https://plane.example.com    # your Plane URL, no trailing slash
   workspace: example                      # workspace slug (URL fragment, lowercase)
   projects:
-    business: BIZ                         # Startup Advisor's private project
-    dev:      DEV                         # main development project (every other persona)
+    business: BIZ                         # Business Analyst's strategy/research notebook
+    dev:      DEV                         # main development project (every engineering persona)
+    hq:       HQ                          # General Manager's operational track (Behörden, Recht, Förderung, …)
+    mkt:      MKT                         # Marketing Manager's website + brand + SEO track (OSS narrative + EE sales funnel)
 
 # Agent identities. The `email` field is each agent's Plane workspace login.
 # Replace `example.com` with your own domain (or use whatever email addresses
@@ -64,11 +86,11 @@ plane:
 # customised; keep the top-level agent keys (the "username") intact since
 # they are referenced across the framework.
 agents:
-  venture-advisor:
-    full-name: Venture Advisor
-    email: venture-advisor@example.com
+  general-manager:
+    full-name: General Manager
+    email: general-manager@example.com
     gender: male
-    avatar: avatars/venture-advisor.png
+    avatar: avatars/general-manager.png
   business-analyst:
     full-name: Business Analyst
     email: business-analyst@example.com
@@ -114,3 +136,8 @@ agents:
     email: release-manager@example.com
     gender: male
     avatar: avatars/release-manager.png
+  marketing-manager:
+    full-name: Marketing Manager
+    email: marketing-manager@example.com
+    gender: female
+    avatar: avatars/marketing-manager.png

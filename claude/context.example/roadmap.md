@@ -1,7 +1,7 @@
 # Roadmap — agent context
 
-> Read by: Venture Advisor (primary), Business Analyst, Release Manager.
-> Maintained by: Venture Advisor.
+> Read by: Business Analyst (primary), Release Manager.
+> Maintained by: Business Analyst.
 >
 > Purpose: the planned arc of the product. Agents use this to place new
 > work on the timeline, to recognise when a request belongs to a later
