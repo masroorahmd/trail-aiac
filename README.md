@@ -34,10 +34,14 @@ proves it.
   change is attributed by role-account; the board *is* the audit
   log. Open it, scan a column, see who designed, reviewed,
   implemented, and tested any change.
-- **Strict human-in-loop.** No autopilot. No ticket-triggered
-  hand-off. No auto-finalization. Every turn is a slash command
-  issued by a human; the ticket's `assignee` is a TODO list, not a
-  trigger.
+- **Human-initiated, never ticket-triggered.** Nothing in Plane drives
+  Claude Code — the ticket's `assignee` is a TODO list, not a trigger,
+  and every run starts from a slash command a human issued. Autonomy is
+  opt-in and bounded: the default lane runs one persona turn per command,
+  while the opt-in `/autopilot` lane drives a framed Story through the
+  spine unattended — but still from a single human-initiated turn,
+  risk-capped (`autopilot.max_risk_lane`), and built to **stop and hand
+  back rather than guess** the moment a change leaves its lane.
 
 ## What enforces it
 
@@ -91,7 +95,7 @@ and stays legible without anyone having to interpret it.
 
 | | Agent | Trait | Role |
 |---|---|---|---|
-| <img src="avatars/general-manager.png" width="80"/>       | **General Manager** *(masroor branch)* | Form vor Tempo            | Founder operations — Behörden, Notar, Recht, Steuern, Staffing, Förderung, Compliance. Eigenes `HQ`-Plane-Projekt. |
+| <img src="avatars/general-manager.png" width="80"/>       | **General Manager**       | Form vor Tempo            | Founder operations — Behörden, Notar, Recht, Steuern, Staffing, Förderung, Compliance. Eigenes `HQ`-Plane-Projekt. |
 | <img src="avatars/business-analyst.png" width="80"/>      | **Business Analyst**      | Curious about the unsaid  | Turns feature ideas into stories; owns the backlog and priorities.      |
 | <img src="avatars/requirements-engineer.png" width="80"/> | **Requirements Engineer** | Pedantic about wording    | Adds testable acceptance criteria (Gherkin) and edge cases as a comment on the Story. |
 | <img src="avatars/software-architect.png" width="80"/>    | **Software Architect**    | Long-horizon              | Designs the solution; documents trade-offs and pitfalls.                |
@@ -101,7 +105,7 @@ and stays legible without anyone having to interpret it.
 | <img src="avatars/test-manager.png" width="80"/>          | **Test Manager**          | Fastidious about coverage | Owns test strategy and verification.                                    |
 | <img src="avatars/technical-writer.png" width="80"/>      | **Technical Writer**      | Reads own draft as a stranger | Keeps docs, READMEs, and changelogs honest.                         |
 | <img src="avatars/release-manager.png" width="80"/>       | **Release Manager**       | Rollback-first            | Drives versioning, tagging, and release.                                |
-| <img src="avatars/marketing-manager.png" width="80"/>     | **Marketing Manager** *(masroor branch)* | Audience's language first | Owns the website (`.org` OSS narrative + `.com` enterprise funnel), brand voice, and SEO. Eigenes `MKT`-Plane-Projekt; hands site code to UI Developer. |
+| <img src="avatars/marketing-manager.png" width="80"/>     | **Marketing Manager**     | Audience's language first | Owns the website (`.org` OSS narrative + `.com` enterprise funnel), brand voice, and SEO. Eigenes `MKT`-Plane-Projekt; hands site code to UI Developer. |
 
 More on what each agent reads, writes, and does:
 [`doc/PERSONAS.md`](doc/PERSONAS.md). The handover sequence over a
@@ -159,8 +163,8 @@ Manual reference if you'd rather drive by hand:
 
 ## Usage
 
-Each persona is a slash command (`/gm` — *masroor branch; main has `/va`* —
-`/ba`, `/re`, `/sa`, `/sr`, `/bd`, `/ud`, `/tm`, `/tw`, `/rm`, `/mm` — *masroor*).
+Each persona is a slash command (`/gm`, `/ba`, `/re`, `/sa`, `/sr`,
+`/bd`, `/ud`, `/tm`, `/tw`, `/rm`, `/mm`).
 Typing `/<persona>` puts the main loop into that role until you say `done`
 or start a different `/<persona>`. You trigger every turn — agents do not
 auto-pick up tickets.
@@ -220,7 +224,7 @@ that persona's own API token, so every change is attributed in Plane.
 ```
 > /gm "Brauche ich eine D&O-Versicherung schon vor dem HRB-Eintrag?"
 ```
-*(masroor branch)* Operative GmbH-Begleitung — General Manager
+Operative GmbH-Begleitung — General Manager
 arbeitet auf einem separaten `HQ`-Plane-Projekt für Behörden, Notar,
 Recht, Steuern, Staffing, Förderungen, Compliance. Berührt das
 Engineering-Plane nicht.
