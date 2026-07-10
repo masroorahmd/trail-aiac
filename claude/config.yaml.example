@@ -58,10 +58,23 @@ model_lanes:
 #   max_risk_lane         — the highest risk tier autopilot may carry on
 #                           its own (`standard`). Anything the personas
 #                           judge above this is handed back to a human.
+#   lean_lane             — let the orchestrator use judgement to trim the
+#                           ceremony: skip SR / TW / RM when they add no
+#                           value for this Story, and collapse or swap the
+#                           BD/UD implementors (one agent covers both
+#                           slices, or a slice is routed to the other
+#                           discipline) when the cross-over work is small.
+#                           Every skip/merge is logged as a `SKIP-N`
+#                           decision and reported. A hard SR safety floor
+#                           always holds: SR still runs whenever the change
+#                           touches a security non-negotiable (CM-N). Set
+#                           false to force the full spine every run
+#                           (compliance-heavy projects). Default true.
 autopilot:
   enabled: false
   max_repair_iterations: 2
   max_risk_lane: standard
+  lean_lane: true
 
 # Plane ticket system configuration. Any Plane deployment works — cloud or
 # self-hosted. Tokens per agent go into credentials.yaml.

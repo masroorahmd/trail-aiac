@@ -1,6 +1,6 @@
 ---
-description: Unattended lane — drive ONE already-framed Story end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → merge) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, the parallel implementors each run in their own git worktree, and the orchestrator owns git — including, on a clean COMPLETED run, merging the feature branch into the default branch and deleting it. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
-argument-hint: "<DEV-N — an existing Story in state `To Do`, assignee requirements-engineer>"
+description: Unattended lane — drive an already-framed Story (or, when handed a parent work-item, each of its sub-Stories in turn) end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → merge) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, the parallel implementors each run in their own git worktree, and the orchestrator owns git — including, on a clean COMPLETED run, merging the feature branch into the default branch and deleting it. In lean-lane mode (default) the orchestrator uses judgement to trim the ceremony — skipping RE/SA/SR/TM/TW/RM when they add no value and collapsing or swapping the BD/UD implementors when the cross-over work is small, logging each choice as a SKIP-N decision — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice or needs a real decomposition, TM always runs when the change has any runtime surface, and SR always runs when the change touches a security non-negotiable. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+argument-hint: "<DEV-N — an existing Story (state `To Do`, assignee requirements-engineer), OR a parent work-item whose sub-Stories are driven in order>"
 ---
 
 You are running `/autopilot` directly in the **main loop** of this
@@ -8,8 +8,9 @@ Claude Code session. `/autopilot` is **not a persona** — like `/quick`
 it has **no Plane identity, no token, and makes no Plane MCP calls
 whatsoever**. It is the framework's deliberate **unattended lane**: a
 single human-initiated session (USER typed `/autopilot DEV-N`) that
-orchestrates the *whole* engineering spine for one Story and runs it to
-a closed ticket without stopping to ask USER anything.
+orchestrates the *whole* engineering spine for one Story — or, when
+handed a parent work-item, for each of its sub-Stories in turn — and
+runs it to a closed ticket without stopping to ask USER anything.
 
 This does **not** break the framework's user-triggered rule. USER
 triggered exactly one turn. Nothing in Plane drives Claude Code; *you*
@@ -35,11 +36,17 @@ the orchestrator a token.
 1. **Config check.** Read `.claude/config.yaml`. If `autopilot.enabled`
    is not `true`, **stop immediately** and tell USER autopilot is
    disabled for this project and how to enable it. Read
-   `autopilot.max_repair_iterations` (default 2) and
-   `autopilot.max_risk_lane` (default `standard`).
-2. **Argument check.** `$ARGUMENTS` must name exactly one Story ID
-   (e.g. `DEV-42`). If empty or ambiguous, ask USER for the single
-   Story ID and WAIT — this is the *one* question autopilot is allowed.
+   `autopilot.max_repair_iterations` (default 2),
+   `autopilot.max_risk_lane` (default `standard`), and
+   `autopilot.lean_lane` (default `true` — governs the *Lean-lane
+   discretion* section below; when `false`, run the full spine every
+   time and skip nothing).
+2. **Argument check.** `$ARGUMENTS` must name exactly one work-item ID
+   (e.g. `DEV-42`) — either a leaf Story to drive, or a parent
+   work-item whose sub-Stories autopilot will drive in order (the
+   *Triage* step below decides which). If empty or ambiguous, ask USER
+   for the single work-item ID and WAIT — this is the *one* question
+   autopilot is allowed.
 3. **Standards load.** Read `.claude/context/control-manifest.md` (the
    `CM-N` guardrails — you need the *Security non-negotiables*,
    *Compliance / legal*, and *Architectural invariants* sections to
@@ -51,10 +58,12 @@ the orchestrator a token.
    pre-existing ones. Confirm `git worktree list` shows no stale
    `autopilot/<DEV-N>-…` worktree from an aborted earlier run; if one
    exists, stop and ask USER to clear it (`git worktree remove`) rather
-   than reusing it blind. Then create and switch to a feature branch
-   named `autopilot/<DEV-N>-<short-slug>` off the default branch. All
-   sequential persona work lands here; the parallel implementors get
-   their own throwaway worktrees off this branch (spine step 4).
+   than reusing it blind. Do **not** create the feature branch here —
+   branch creation happens once per Story you actually drive (see
+   *Triage* and *Driving the work list*), so a parent run gets one
+   branch per sub-Story instead of one shared branch. All sequential
+   persona work for a Story lands on that Story's branch; the parallel
+   implementors get their own throwaway worktrees off it (spine step 4).
 
 5. **Permission-mode check.** "Unattended" presumes the session won't
    stop for an approval prompt mid-run. The framework's `settings.json`
@@ -129,32 +138,231 @@ block**. `PROCEED` → advance to the next stage. `STOP` → jump to
 repair loop in spine step 5. A subagent that returns no parseable
 verdict is treated as STOP (reason: "no verdict — subagent aborted").
 
-## The spine (drive in order; skip per SA's decomposition)
+## Triage — leaf Story or parent work-item? (run once, before the spine)
+
+Autopilot's spine drives **one Story**. But USER may hand you a **parent
+work-item** whose real work lives in its sub-Stories. You (the
+orchestrator) never call Plane, so you cannot tell a leaf from a parent
+yourself — spawn **one read-only triage subagent** to classify
+`$ARGUMENTS` before you create any branch or run any spine.
+
+Spawn it via the `Agent` tool (`subagent_type: general-purpose`) with a
+prompt that opens with the Autopilot contract block and adopts the
+`requirements-engineer` persona (its `plane__requirements_engineer__*`
+tools have the read access you need), then this task — which **overrides contract points 3 and 7**: it
+self-finalizes by *reporting only* (transitioning nothing) and ends with
+the `TRIAGE-VERDICT` block below instead of the usual `AUTOPILOT-VERDICT`:
+
+> TRIAGE ONLY — do not transition any state, do not post any comment,
+> do not create or edit anything. Read work-item `$ARGUMENTS` and its
+> sub-work-items, then classify it:
+> - **LEAF** — it has no sub-work-items; it is itself the Story to drive.
+> - **PARENT** — it has sub-work-items; list every child Story ID in
+>   ascending sequence order (the order they should be built), and note
+>   which children are already in a terminal/done state.
+> End with this block and nothing after it:
+>
+>     TRIAGE-VERDICT: LEAF | PARENT
+>     STORIES: <ordered, comma-separated Story IDs to drive — the item
+>              itself if LEAF; every not-yet-done child if PARENT>
+>     SKIPPED: <children already done, comma-separated, or none>
+>     NOTES: <one line — e.g. parent title, or why a child was skipped>
+
+Parse the block to build your **work list** — the ordered Story IDs the
+spine will drive:
+- **LEAF** → a one-element list: `[$ARGUMENTS]`. Drive it exactly as
+  before — no behaviour change from the original single-Story autopilot.
+- **PARENT** → the `STORIES` list, in order. You drive the **children**,
+  never the parent itself: the parent is a container and gets no branch,
+  no spine, and no state change from autopilot. Report the `SKIPPED`
+  children in the summary so USER sees nothing was silently dropped.
+- A triage subagent that returns no parseable verdict is treated as
+  STOP (reason: "triage failed — could not classify the work-item").
+
+## Driving the work list (one Story at a time)
+
+Run the spine below **once per Story in the work list, sequentially — in
+order, each to completion before the next begins.** For each Story in
+turn (call it `<DEV-N>` throughout the spine):
+
+1. Create and switch to its feature branch
+   `autopilot/<DEV-N>-<short-slug>` off the **current** default branch,
+   then run spine steps 1–9 for it. Driving children in order off the
+   current default means a later child branches off a default that
+   already carries the merged work of the earlier children — natural
+   dependency ordering.
+2. **On a clean COMPLETED** (spine step 9 merged it into default): move
+   to the next Story in the list.
+3. **On STOP** for any Story: **halt the whole work list.** Do not start
+   the remaining Stories. Hand back per *Hand-back on STOP*, and in the
+   summary record which Stories COMPLETED, which one STOPPED and why, and
+   which are still PENDING (untouched) — so USER can fix the blocker and
+   re-run autopilot on just the remainder (or on the individual Story).
+
+For a LEAF work list this loop runs exactly once and is identical to the
+original single-Story run. For a PARENT it is the same spine, looped.
+
+## Lean-lane discretion (skip and merge stages to fit the work)
+
+When `autopilot.lean_lane` is `true` (the default), you — the
+orchestrator — are trusted to **right-size the ceremony**. The full
+spine is the *maximum* path, not a fixed liturgy: on a small, low-risk
+Story, running every persona burns tokens for handovers that carry no
+real content. Use judgement. Three levers, each with a hard floor:
+
+1. **Skip RE / SA / SR / TM / TW / RM when they add no value for this
+   Story.** You may drop any of these six stages *on the specific Story*
+   when it plainly needs nothing from that persona — a Story already
+   framed with crisp, testable acceptance criteria needs no Requirements
+   Engineer to re-state them, a single-slice change with one obvious code
+   module needs no Software Architect to decompose it, a pure-logic
+   refactor needs no Security Reviewer, a docs- or config-only change
+   with no runtime surface needs no Test Manager, an internal-only change
+   needs no Technical Writer, a Story with no release/close ceremony
+   needs no Release Manager. Be generous: when a stage would only
+   rubber-stamp, skip it.
+   - **RE intake floor (never skippable through it).** RE **must** run
+     whenever the Story is *not already* expressed as testable
+     acceptance criteria in its body, or whenever framing it might expose
+     a risk-lane question — a migration, a new external contract, a new
+     dependency, or a security non-negotiable. RE is autopilot's *first
+     risk gate*; skip it only for a Story already crisply specified and
+     self-evidently in-lane, and only then does SA become the first gate.
+     If you are unsure whether the Story is fully framed or in-lane, you
+     are not sure enough to skip: **run RE.** Skipping RE leaves the
+     Plane Story in `To Do` (you have no token to move it to
+     `In Progress`) — an accepted trade for the token saving; name it as
+     a loose end in the summary, exactly as for a skipped RM.
+   - **SA decomposition floor (never skippable through it).** SA **must**
+     run whenever the change spans more than one module or discipline (a
+     real backend *and* frontend slice), needs a non-trivial
+     decomposition, or whenever decomposing it might expose a risk-lane
+     question — SA is a *risk gate* too, STOPping when a clean
+     decomposition demands something outside the lane. Skip SA only for a
+     single-module, single-slice change whose decomposition is
+     self-evident — one code slice plus its tests. If you are unsure, you
+     are not sure enough to skip: **run SA.** On a skip **no sub-work-items
+     are created**: the Story `<DEV-N>` itself is the single work-item you
+     hand to the one implementor (step 4, single-implementor path) and to
+     TM (step 5), and SR (if run) reviews the change against the Story —
+     a skipped SA therefore *implies* the single-implementor, no-worktree
+     shape from lever 2.
+   - **SR safety floor (never skippable through it).** SR **must** run
+     whenever the change touches a *security non-negotiable* from
+     `control-manifest.md` (CM-N) — anything under auth/authz, secrets
+     or crypto, handling of externally-controlled input, PII/personal
+     data, a new dependency, or a network/permission boundary. If you
+     are unsure whether a change touches one, you are not sure enough to
+     skip: **run SR.** The lean lane trims ceremony, never the hard
+     security gate.
+   - **TM runtime-surface floor (never skippable through it).** TM
+     **must** run whenever the change touches code with a *runtime
+     surface* — anything that alters behaviour, however small. It is the
+     **quality gate**: independent full-suite run plus the tests it
+     authors for the new behaviour, and the repair loop when the suite
+     goes red. Skip TM only for a change with **no runtime surface at
+     all** — docs, comments, or non-behavioural config/metadata (typically
+     a Story for which SA created no `testing` sub-work-item). Since the
+     implementor already ran the suite once inside its own tree, a TM
+     skip forfeits only the *independent* re-run and new-test authoring —
+     acceptable only when there is nothing behavioural to test. If you
+     are unsure whether the change has a runtime surface, you are not sure
+     enough to skip: **run TM.** A skipped TM means no independent green
+     gate ran; name it as a caveat in the summary.
+   - **Skipping RM leaves the Plane Story where the last persona left
+     it** (typically `In Review`) — you have no Plane token and cannot
+     close it yourself. That is an accepted trade for the token saving;
+     name it as a loose end in the summary (`Story left In Review — no
+     release ceremony run; close in Plane or re-run /rm`). The git
+     merge (spine step 9) still happens regardless of an RM skip.
+
+2. **Collapse or swap the BD/UD implementors when the cross-over work is
+   small.** The parallel two-implementor stage exists for Stories with a
+   real backend *and* a real frontend slice. When that's not the shape:
+   - **One module only** → spawn one implementor (already the rule).
+   - **Two slices, one trivial** → hand *both* code sub-work-items to a
+     single implementor and let it implement both in one worktree (or,
+     since only one agent edits, directly in the feature tree — no
+     worktree). Saves a whole subagent and its worktree.
+   - **Slice in the wrong discipline's lane** → route it to whichever
+     implementor fits: a mostly-frontend Story with a two-line backend
+     tweak can go entirely to `ui-developer`, and vice versa. The
+     implementor implements whatever sub-work-item(s) you hand it.
+   Only keep the true parallel split (both worktrees, spine step 4 as
+   written) when both slices are substantial enough that concurrency and
+   isolation actually pay for themselves.
+
+3. **Log every skip and merge as a `SKIP-N` decision.** These are the
+   orchestrator's analogue of a persona's `AS-N` assumptions — the
+   audit trail of what ceremony you trimmed and why. Keep a running list
+   and surface it in full in the terminal summary:
+   `SKIP-1: skipped SR — change is a pure-logic refactor of the sort
+   layer, touches no CM-N surface.`
+   `SKIP-2: merged UD into BD — frontend slice was a single label
+   change; backend-developer implemented both.`
+   No silent skips. An unlogged skip is a bug, exactly like an unlogged
+   assumption.
+
+When `autopilot.lean_lane` is `false`, ignore this whole section: run
+SR, TW (if SA made a doc item), RM, and the BD/UD split exactly as the
+spine describes, skipping only what the spine itself already makes
+conditional.
+
+## The spine (drive in order; skip per SA's decomposition and lean-lane discretion)
+
+Everything below drives **the one Story currently being driven** from
+the work list above — `<DEV-N>` is that Story, on its own feature branch.
 
 1. **Requirements Engineer** — spawn with the contract + persona
-   `requirements-engineer` + the Story ID. RE moves the Story
-   `To Do → In Progress`, posts AC (or passthrough), logs any `AS-N`,
-   and is the **first risk gate**: if the Story can't be made into
-   testable AC under a reasonable assumption, or it plainly exceeds the
-   `max_risk_lane` (touches a security non-negotiable, needs a
+   `requirements-engineer` + the Story ID. **Lean-lane:** you may skip
+   RE entirely when the Story already carries crisp, testable AC and is
+   self-evidently in-lane (log a `SKIP-N`); the RE intake floor above
+   governs when a skip is *not* allowed — when in doubt, run it. On a
+   skip, the Story stays in `To Do` (you have no token to move it) and SA
+   (next) becomes the first risk gate. When you do run it, RE moves the
+   Story `To Do → In Progress`, posts AC (or passthrough), logs any
+   `AS-N`, and is the **first risk gate**: if the Story can't be made
+   into testable AC under a reasonable assumption, or it plainly exceeds
+   the `max_risk_lane` (touches a security non-negotiable, needs a
    migration or a new external contract), RE returns STOP. PROCEED → SA.
 
 2. **Software Architect** — spawn with persona `software-architect` +
-   RE's handover. SA decomposes into `backend / frontend / testing /
-   documentation` sub-work-items (omitting modules that don't apply —
-   record which it created in `ITEMS`). SA STOPs if a clean
-   decomposition demands something outside the autopilot lane. PROCEED → SR.
+   RE's handover. **Lean-lane:** you may skip SA when the change is a
+   single-module, single-slice change whose decomposition is
+   self-evident — one code slice plus its tests (log a `SKIP-N`); the SA
+   decomposition floor above governs when a skip is *not* allowed — when
+   in doubt, run it. On a skip **no sub-work-items exist**: the Story
+   `<DEV-N>` itself is the single work-item you hand to the one
+   implementor (step 4, single-implementor path) and to TM (step 5) in
+   place of the sub-work-items SA would have made. When you do run it, SA
+   decomposes into `backend / frontend / testing / documentation`
+   sub-work-items (omitting modules that don't apply — record which it
+   created in `ITEMS`). SA STOPs if a clean decomposition demands
+   something outside the autopilot lane. PROCEED → SR.
 
 3. **Security Reviewer** — spawn with persona `security-reviewer` +
-   the sub-work-item IDs. SR is the **hard gate**: **any** blocker- or
-   high-severity finding (a violated `CM-N`) → STOP. SR never
-   self-clears a hard finding under autopilot. PROCEED only on a clean
-   or low/info-only review → implementors.
+   the sub-work-item IDs. **Lean-lane:** you may skip SR entirely when
+   the Story touches no CM-N security non-negotiable (log a `SKIP-N`);
+   the SR safety floor above governs when a skip is *not* allowed —
+   when in doubt, run it. When you do run it, SR is the **hard gate**:
+   **any** blocker- or high-severity finding (a violated `CM-N`) →
+   STOP. SR never self-clears a hard finding under autopilot. PROCEED
+   only on a clean or low/info-only review → implementors.
 
-4. **Implementors (parallel, each in its own git worktree).** This is
-   the one stage where two agents would otherwise edit the same working
-   tree at once, so each implementor gets an **isolated worktree** —
-   the orchestrator owns the git around it:
+4. **Implementors (parallel, each in its own git worktree).**
+   **Lean-lane first:** decide the implementor shape per *Lean-lane
+   discretion* lever 2 before you spawn anything. If you collapse to a
+   **single implementor** (one module, one trivial slice folded in, a
+   cross-discipline route, or SA was skipped so the Story itself is the
+   single slice), skip the worktree machinery entirely — hand that one
+   agent the code sub-work-item (or, when SA was skipped, the Story
+   `<DEV-N>` itself as its work-item), let it edit **directly in the
+   feature tree**, and commit its work as in 4c, then jump to TM. The
+   parallel/worktree path below is
+   only for a **genuine two-slice split**, the one stage where two
+   agents would otherwise edit the same working tree at once, so each
+   implementor gets an **isolated worktree** — the orchestrator owns the
+   git around it:
    a. **Before spawning**, for each code-module sub-work-item, create a
       worktree off the feature branch on its own branch, e.g.
       `git worktree add ../<repo>-<DEV-N>-backend -b autopilot/<DEV-N>-<slug>-backend <feature-branch>`
@@ -183,7 +391,15 @@ verdict is treated as STOP (reason: "no verdict — subagent aborted").
       TM (next) runs there.
 
 5. **Test Manager** — spawn with persona `test-manager` + the testing
-   sub-work-item. TM writes/extends tests and runs the full suite.
+   sub-work-item (or, when SA was skipped, the Story `<DEV-N>` itself).
+   **Lean-lane:** you may skip TM when the change has no runtime surface
+   at all — docs, comments, or non-behavioural config, typically a Story
+   with no `testing` sub-work-item (log a `SKIP-N`); the TM
+   runtime-surface floor above governs when a skip is *not* allowed —
+   when in doubt, run it. On a skip there is no independent green-suite
+   gate, so step 9 merges on the implementor's own local suite run alone;
+   flag that caveat in the summary. When you do run it, TM writes/extends
+   tests and runs the full suite.
    - TM PROCEEDs only with a **green suite**.
    - TM returns `REPAIR` for a fixable red suite (with `NEXT:` naming
      the implementor). That is the **repair loop**, not a STOP:
@@ -200,7 +416,10 @@ verdict is treated as STOP (reason: "no verdict — subagent aborted").
 
 6. **Technical Writer** — spawn with persona `technical-writer` only if
    SA created a documentation sub-work-item. TW updates user-facing
-   docs. (Internal-only changes skip this — no STOP.)
+   docs. (Internal-only changes skip this — no STOP.) **Lean-lane:** you
+   may also skip TW even when a doc item exists, if the change is
+   internal-only or the doc delta is trivially self-evident — log a
+   `SKIP-N`.
 
 7. **Git — commit + push the feature branch (you, the orchestrator).**
    Once the suite is green and all sub-work-items are `In Review` (the
@@ -224,12 +443,17 @@ verdict is treated as STOP (reason: "no verdict — subagent aborted").
    commit/branch. RM performs the project's release/close step for the
    Story per its DoD (it will not push tags without the gate its
    persona defines; respect that). RM STOPs if release preconditions
-   aren't met.
+   aren't met. **Lean-lane:** you may skip RM when the Story carries no
+   real release/close ceremony — log a `SKIP-N` and remember that the
+   Plane Story then stays where the last persona left it (you have no
+   token to close it); flag that loose end in the summary. The step-9
+   git merge is independent of RM and still runs.
 
 9. **Git — merge into default + delete the branch (you, the
    orchestrator).** This step runs **only** on a clean COMPLETED run:
-   every gate green (RE/SA/SR/implementors/TM/TW/RM all PROCEEDed, suite
-   green, SR clean). It is the deliberate end of the unattended lane —
+   every gate green (RE/SA/SR/implementors/TM/TW/RM all PROCEEDed — a
+   *skipped* lean-lane stage is not a STOP — suite green where TM ran,
+   SR clean). It is the deliberate end of the unattended lane —
    what was previously a human's merge.
    - Fast-forward the feature branch onto the current default branch
      tip first (`git merge <default>` *into* the feature branch, or
@@ -279,17 +503,32 @@ correctly handed the steering wheel back.
 End the run with a single report to USER, in **__CHAT_LANGUAGE__**,
 covering:
 - `OUTCOME: COMPLETED | STOPPED` and, if stopped, where and why.
-- The Story and every sub-work-item, with final states.
+- **If a parent work-item was expanded:** name the parent and give the
+  work-list roster — each child Story marked COMPLETED / STOPPED /
+  SKIPPED (already done) / PENDING (not reached because an earlier child
+  stopped).
+- For each Story actually driven: the Story and every sub-work-item,
+  with final states.
 - **Every `AS-N` assumption** logged across all personas, gathered in
   one list — this is what USER reviews after the fact instead of being
   asked up front.
 - Each gate decision (SR verdict, repair iterations used).
-- Git: feature-branch name, commit hash(es), push result, and — on
-  COMPLETED — the merge into the default branch (merge-commit hash,
-  default-branch push result) and confirmation the feature branch +
-  implementor worktrees were deleted. On STOPPED: that the branch is
-  intact and where it is. Test command + result either way.
-- A one-line undo:
+- **Every `SKIP-N` lean-lane decision** — each stage you skipped
+  (RE/SA/SR/TM/TW/RM) or implementor you merged/swapped (BD↔UD), with its
+  one-line reason. If you skipped RE or RM, restate the resulting loose
+  end (the Plane Story left in its non-terminal state — `To Do` for a
+  skipped RE, wherever the last persona left it for a skipped RM). If you
+  skipped TM, restate the quality caveat (no independent green-suite gate
+  ran; the merge rests on the implementor's own local suite run). If
+  `lean_lane` was `false`, say so and note nothing was skipped.
+- Git (per driven Story): feature-branch name, commit hash(es), push
+  result, and — on that Story's COMPLETED — the merge into the default
+  branch (merge-commit hash, default-branch push result) and
+  confirmation the feature branch + implementor worktrees were deleted.
+  On STOPPED: that the stopped Story's branch is intact and where it is.
+  Test command + result either way.
+- A one-line undo (one entry per driven Story — a parent run may list
+  several):
   - COMPLETED + merged → `git revert -m 1 <merge-hash>`.
   - COMPLETED but merge/push couldn't land (e.g. branch protection) →
     the branch still exists; name it and how to merge it by hand.
