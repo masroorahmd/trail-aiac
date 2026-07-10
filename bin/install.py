@@ -61,10 +61,13 @@ missing consumer dir, render configured but credentials inconsistent).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
+import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -114,6 +117,134 @@ DEFAULT_MODEL_LANES = {
     "full": "claude-fable-5",
     "codegen": "claude-opus-4-8",
 }
+
+
+# ---------------------------------------------------------------------------
+# Install manifest — provenance + consumer-side drift detection
+# ---------------------------------------------------------------------------
+
+# Written to <consumer>/.claude/trail-manifest.yaml at the end of every
+# install: which framework commit + version produced the deliverables,
+# when, and a sha256 of every deliverable file as install.py left it. On
+# the next run we re-hash *before* Stage 1 overwrites anything and warn
+# about each file whose hash drifted from the manifest — i.e. a
+# consumer-side hand-edit this run is about to clobber.
+MANIFEST_NAME = "trail-manifest.yaml"
+
+# Never hash (nor let them bloat the manifest): local dev/build cruft that
+# can ride along inside a copied deliverable dir such as `claude/mcp/`.
+_HASH_IGNORE_PARTS = {"__pycache__", ".venv", ".pytest_cache", ".git", ".mypy_cache"}
+
+
+def _iter_deliverable_files(consumer_claude: Path):
+    """Yield (relpath_str, Path) for every real deliverable file currently
+    installed under <consumer>/.claude/, skipping local build cruft."""
+    for name in DELIVERABLES:
+        base = consumer_claude / name
+        if not base.exists():
+            continue
+        paths = [base] if base.is_file() else sorted(base.rglob("*"))
+        for p in paths:
+            if not p.is_file():
+                continue
+            rel = p.relative_to(consumer_claude)
+            if any(part in _HASH_IGNORE_PARTS for part in rel.parts):
+                continue
+            yield str(rel), p
+
+
+def compute_deliverable_hashes(consumer_claude: Path) -> dict[str, str]:
+    """sha256 of every installed deliverable file, keyed by path relative
+    to <consumer>/.claude/."""
+    return {
+        rel: hashlib.sha256(path.read_bytes()).hexdigest()
+        for rel, path in _iter_deliverable_files(consumer_claude)
+    }
+
+
+def framework_commit(framework_root: Path) -> str | None:
+    """git HEAD of the framework repo, or None if it isn't a git checkout
+    / git isn't available."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(framework_root), "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True,
+        )
+        return out.stdout.strip() or None
+    except (subprocess.SubprocessError, OSError):
+        return None
+
+
+def framework_version(framework_claude: Path) -> str | None:
+    """The framework's declared version, read from its
+    `config.yaml.example` `framework.version` — previously a dead field,
+    now recorded in the manifest. None if absent/unreadable."""
+    example = framework_claude / "config.yaml.example"
+    if not example.is_file():
+        return None
+    try:
+        data = yaml.safe_load(example.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError:
+        return None
+    version = (data.get("framework") or {}).get("version")
+    return str(version) if version is not None else None
+
+
+def load_manifest(consumer_claude: Path) -> dict:
+    """Prior install manifest, or {} on a first install / unreadable file."""
+    path = consumer_claude / MANIFEST_NAME
+    if not path.is_file():
+        return {}
+    try:
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError:
+        return {}
+
+
+def detect_drift(consumer_claude: Path, manifest: dict) -> list[str]:
+    """Deliverable files whose current on-disk hash differs from what the
+    manifest recorded at the last install — consumer-side hand-edits a
+    fresh copy is about to overwrite. Only files present in both the
+    manifest and on disk are compared; new/removed files aren't drift."""
+    recorded = (manifest or {}).get("files") or {}
+    if not recorded:
+        return []
+    drifted = [
+        rel
+        for rel, path in _iter_deliverable_files(consumer_claude)
+        if rel in recorded
+        and hashlib.sha256(path.read_bytes()).hexdigest() != recorded[rel]
+    ]
+    return sorted(drifted)
+
+
+def write_manifest(
+    consumer_claude: Path,
+    framework_root: Path,
+    framework_claude: Path,
+    installed_at: str,
+) -> Path:
+    """Record framework provenance + per-file hashes of the deliverables
+    as this run left them, for the next run's drift check."""
+    manifest = {
+        "framework": {
+            "version": framework_version(framework_claude),
+            "commit": framework_commit(framework_root),
+        },
+        "installed_at": installed_at,
+        "files": compute_deliverable_hashes(consumer_claude),
+    }
+    header = (
+        "# Auto-generated by bin/install.py — do not edit by hand.\n"
+        "# Records which framework commit/version produced the installed\n"
+        "# deliverables and a sha256 of each, so a re-install can warn\n"
+        "# before overwriting any consumer-side hand-edit.\n"
+    )
+    path = consumer_claude / MANIFEST_NAME
+    path.write_text(
+        header + yaml.safe_dump(manifest, sort_keys=True), encoding="utf-8"
+    )
+    return path
 
 
 # ---------------------------------------------------------------------------
@@ -459,6 +590,29 @@ def main() -> int:
 
     consumer_claude.mkdir(exist_ok=True)
 
+    installed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    # Drift check — compare the deliverables as they stand now (from the
+    # previous install) against the manifest we wrote then, and warn
+    # BEFORE Stage 1 overwrites any consumer-side hand-edit.
+    prior_manifest = load_manifest(consumer_claude)
+    drifted = detect_drift(consumer_claude, prior_manifest)
+    if drifted:
+        prev = prior_manifest.get("framework") or {}
+        prev_commit = prev.get("commit") or "unknown"
+        print("WARNING: consumer-side edits detected in framework deliverables.")
+        print("These differ from the last install and will be OVERWRITTEN:")
+        for rel in drifted:
+            print(f"  ! {rel}")
+        print(
+            f"(last install: commit "
+            f"{prev_commit[:12] if prev_commit != 'unknown' else prev_commit}"
+            f", {prior_manifest.get('installed_at', 'unknown time')})"
+        )
+        print("Framework deliverables are not meant to be hand-edited — make")
+        print("such changes in the framework repo. Proceeding to overwrite.")
+        print()
+
     # Stage 1 — copy deliverables, seed consumer-owned slots.
     log_deliv: list[str] = []
     for name in DELIVERABLES:
@@ -520,12 +674,22 @@ def main() -> int:
         print(f"  4. cd {consumer_root} && claude")
         print(f"     > /kickoff   (one-time bootstrap of .claude/context/*.md from the project)")
         print(f"     > /ba ...    (start your first Story)")
+        manifest_path = write_manifest(
+            consumer_claude, framework_root, framework_claude, installed_at
+        )
+        print()
+        print(f"Wrote install manifest {manifest_path.name} (framework provenance + file hashes).")
         return 0
 
     print("Rendering per-persona MCP wiring (settings.local.json + .mcp.json + agents/*.md + commands/*.md) …")
     rc = render_settings(framework_root, consumer_root, consumer_claude)
     if rc != 0:
         return rc
+
+    manifest_path = write_manifest(
+        consumer_claude, framework_root, framework_claude, installed_at
+    )
+    print(f"  wrote {manifest_path.name} (framework provenance + file hashes)")
 
     print()
     print("Done. Next:")

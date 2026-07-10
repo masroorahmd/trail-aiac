@@ -3,6 +3,10 @@
 # gitignored; only this `.example` stub is safe to commit.
 # Secrets live in credentials.yaml (also gitignored).
 
+# Framework version. Recorded (with the framework git commit + a hash of
+# every installed deliverable) into `<consumer>/.claude/trail-manifest.yaml`
+# by `bin/install.py`, so a re-install knows which framework state produced
+# the current files and can warn before overwriting a consumer-side edit.
 framework:
   version: 0.1.0
 
