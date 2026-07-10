@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-tests:
+    name: plane-extras-mcp tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: pytest
+        working-directory: claude/mcp
+        run: uv run --extra test pytest -q
+
+  install-smoke:
+    name: install.py smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Stage-1 install + manifest assertions
+        run: |
+          set -euo pipefail
+          consumer="$(mktemp -d)"
+          uv run --no-project --with pyyaml python bin/install.py "$consumer"
+          test -f "$consumer/.claude/trail-manifest.yaml"        # manifest written
+          test -f "$consumer/.claude/commands/autopilot.md"      # deliverables copied
+          test -f "$consumer/.claude/agents/general-manager.md"  # 11-persona set present
+          echo "stage-1 smoke OK"
+
+      - name: Populated render — all eleven personas + no leftover placeholders
+        run: |
+          set -euo pipefail
+          personas="general-manager business-analyst requirements-engineer \
+            software-architect security-reviewer backend-developer ui-developer \
+            test-manager technical-writer release-manager marketing-manager"
+          consumer="$(mktemp -d)"
+          uv run --no-project --with pyyaml python bin/install.py "$consumer" >/dev/null
+          {
+            echo "plane:"
+            echo "  base-url: https://plane.acme.test"
+            echo "  workspace: acme"
+            echo "agents:"
+            for p in $personas; do echo "  $p:"; echo "    email: $p@acme.test"; done
+          } > "$consumer/.claude/config.yaml"
+          {
+            echo "plane:"
+            echo "  agent-tokens:"
+            for p in $personas; do echo "    $p: plane_api_tok_$p"; done
+          } > "$consumer/.claude/credentials.yaml"
+          out="$(uv run --no-project --with pyyaml python bin/install.py "$consumer")"
+          echo "$out"
+          echo "$out" | grep -q "rendered general-manager.md"
+          echo "$out" | grep -q "rendered marketing-manager.md"
+          test "$(grep -c PLANE_API_KEY_ "$consumer/.mcp.json")" = "11"
+          if grep -rq "__MODEL_\|__CHAT_LANGUAGE__\|__USER_NAME__" "$consumer/.claude/agents/"; then
+            echo "ERROR: unrendered placeholders remain" >&2
+            exit 1
+          fi
+          echo "render smoke OK: all eleven personas rendered, 11 MCP tokens"
