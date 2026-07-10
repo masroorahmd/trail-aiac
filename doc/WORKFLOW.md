@@ -442,17 +442,19 @@ for the full path and triggers. The quick lane does **not** run the
 Story lifecycle, so the ticket-lifecycle and description-once rules
 above simply do not apply to it.
 
-## The autopilot lane (unattended full spine)
+## The autopilot lane (unattended spine, lean by default)
 
 `/autopilot DEV-N` is the opposite trade from the quick lane. Where
-`/quick` *shrinks* the process for a tiny change, autopilot *keeps the
-entire spine* but removes the human from between its stages. One
+`/quick` *shrinks* the process for a tiny change, autopilot keeps the
+spine but removes the human from between its stages. One
 human-initiated turn (USER types `/autopilot DEV-N`) drives a single
 already-framed Story all the way to a closed ticket — RE → SA → SR →
 BD/UD → TM → TW → commit → RM → merge — without stopping to ask USER
-anything. On a clean run it ends with the feature branch merged into
-the default branch and deleted; on a STOP it hands back with the branch
-intact.
+anything. That chain is the *maximum* path: in **lean-lane mode** (the
+default) the orchestrator uses judgement to trim the ceremony a small
+Story doesn't need (see below). On a clean run it ends with the feature
+branch merged into the default branch and deleted; on a STOP it hands
+back with the branch intact.
 
 It does not weaken the user-triggered rule (see *Why the human is the
 dispatcher*): USER still triggers exactly one turn, and nothing in
@@ -485,6 +487,46 @@ How it stays safe and auditable:
   red suite up to `max_repair_iterations`, then stops. **Stopping is a
   success** — it means the change reached the edge of what may be done
   unattended and handed the wheel back, working tree and branch intact.
+- **Lean-lane discretion — right-size the ceremony (default on).** The
+  full spine is the maximum path, not a fixed liturgy: on a small,
+  low-risk Story, running every persona burns tokens on handovers that
+  carry no content. Under `autopilot.lean_lane: true` (the default) the
+  orchestrator may (a) **skip RE, SA, SR, TM, TW, or RM** when they add
+  no value for the Story — a Story already framed as crisp, testable AC
+  needs no Requirements Engineer to re-state it, a single-slice change
+  with one obvious module needs no Software Architect to decompose it (the
+  Story itself becomes the single work-item the one implementor and TM
+  work directly, no sub-work-items), a pure-logic refactor needs no
+  Security Reviewer, a docs- or config-only change with no runtime surface
+  needs no Test Manager, an internal-only change no Technical Writer, a
+  Story with no release ceremony no Release Manager; and (b) **collapse
+  or swap
+  the BD/UD implementors** when the cross-over work is small — one agent
+  covers both slices (no worktree), or a two-line backend tweak routes
+  entirely to `ui-developer` and vice versa. Five hard floors keep it
+  honest: **RE always runs whenever the Story is not already testable AC
+  or framing it might expose a risk-lane question** (a migration, a new
+  external contract or dependency, a security non-negotiable — when in
+  doubt, it runs, since RE is autopilot's first risk gate); **SA always
+  runs whenever the change spans more than one module or discipline or
+  needs a non-trivial decomposition** (when in doubt, it runs, since SA is
+  a risk gate too — it STOPs when a clean decomposition demands something
+  outside the lane); **TM always runs whenever the change has any runtime
+  surface** (only a docs/comment/non-behavioural-config change with
+  nothing to test may skip the quality gate — when in doubt, it runs);
+  **SR always runs whenever the change touches a `CM-N`
+  security non-negotiable** (auth/authz, secrets/crypto,
+  externally-controlled input, PII, a new dependency, a network/permission
+  boundary — when in doubt, it runs); and **skipping RE or RM leaves the
+  Plane Story in a non-terminal state** (`To Do` for a skipped RE,
+  typically `In Review` for a skipped RM) because the orchestrator has no
+  token to move it — flagged as a loose end in the summary, while the git
+  merge still runs. Every skip
+  and merge is logged as a numbered
+  `SKIP-N` decision — the orchestrator's analogue of a persona's `AS-N`
+  assumptions — and surfaced in full in the terminal summary, so nothing
+  is trimmed silently. Set `autopilot.lean_lane: false` to force the
+  full spine on every run (compliance-heavy projects).
 - **Git is the orchestrator's.** The two parallel implementors each run
   in their own throwaway `git worktree` (the one stage where two agents
   would otherwise share a tree); the orchestrator commits and merges
