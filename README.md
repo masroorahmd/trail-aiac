@@ -169,6 +169,23 @@ Typing `/<persona>` puts the main loop into that role until you say `done`
 or start a different `/<persona>`. You trigger every turn — agents do not
 auto-pick up tickets.
 
+Two more commands sit outside the eleven personas — both off-Plane,
+both still a single human-initiated turn:
+
+- **`/quick`** — the off-Plane *quick lane*. One main-loop turn, no
+  Story, no persona identity, no Plane MCP calls. Implements a small,
+  safe change and commits it; the commit is the only artefact. Gated
+  on six eligibility checks (no security surface, no new external
+  surface, no migration, no risky new dependency, bounded blast
+  radius, reversible) — anything that fails routes to `/ba` instead.
+- **`/autopilot`** — the *unattended lane*. One human-initiated turn
+  that drives an already-framed Story end-to-end through the spine
+  (RE → SA → SR → BD/UD → TM → TW → commit → RM → merge) with no
+  human in the loop, each persona running as a subagent under its own
+  Plane identity. Risk-capped (`autopilot.max_risk_lane`) and built to
+  stop and hand back — branch intact — the moment a change leaves its
+  lane.
+
 ### First run — seed the context
 
 ```bash
@@ -239,6 +256,18 @@ Pick the next item off `roadmap.md` instead of pasting a brief.
 ```
 Rework branch — same persona, same sub-work-item, but explicitly
 pointed at a known failure rather than a fresh pickup.
+
+```
+> /quick bump axios to 1.7.9
+```
+Small, safe, reversible — off-Plane in one turn, no Story needed.
+
+```
+> /autopilot DEV-42
+```
+DEV-42 is already framed (state `To Do`, assignee
+requirements-engineer) — drive it unattended through the whole spine
+to a closed ticket, or hand back the moment it leaves the risk lane.
 
 ### Switching and exiting
 
