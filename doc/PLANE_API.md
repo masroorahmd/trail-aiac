@@ -119,7 +119,7 @@ operations (e.g. listing all open tickets across projects).
 A user generates a Personal Access Token via Profile → Personal Access
 Tokens → Add. The token is per-Plane-user, so per-agent isolation
 requires one Plane user account per persona. Operators are expected to
-provision these ten accounts at kickoff (manually or via their own
+provision these eleven accounts at kickoff (manually or via their own
 config-management of choice — out of scope for this framework repo).
 
 ## Resource inventory (REST)

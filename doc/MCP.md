@@ -17,8 +17,8 @@ that performed it.
 
 > Earlier versions ran two servers per persona — upstream
 > `makeplane/plane-mcp-server` (via `uvx`) plus a supplementary
-> `plane-extras-mcp` for the comments gap. With ten personas that
-> meant ~22 stdio processes per Claude session and ~2 GB of RSS.
+> `plane-extras-mcp` for the comments gap. With eleven personas that
+> meant ~24 stdio processes per Claude session and ~2 GB of RSS.
 > The current single-process server folds in the upstream subset
 > the persona prompts actually call and drops the upstream
 > dependency. The internal package is still named
@@ -39,7 +39,8 @@ The framework's data model on Plane:
 
 | Artefact | Where it lives |
 |---|---|
-| Hypothesis framing (VA) | BIZ work-item *body*, written once at creation, plus optional comments for later annotation |
+| Founder operations (GM) | HQ-project work-item *body*, written once at creation, plus optional comments for later annotation |
+| Marketing / brand / SEO (MM) | MKT-project work-item *body*, written once at creation, plus optional comments for later annotation |
 | Story requirements (BA) | Dev-project Story work-item *body*, written once at creation |
 | Acceptance Criteria (RE) | *Comment* on the Story work-item (or omitted, when RE passthroughs because BA's spec is already AC-quality) |
 | Architecture per module slice (SA) | Each sub-work-item's *body*, written once at creation |

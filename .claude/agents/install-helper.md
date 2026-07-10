@@ -28,10 +28,10 @@ tree.
 
 Tight summary so you don't have to re-derive it:
 
-- **What it is.** Ten Claude Code subagents (General Manager, Business
+- **What it is.** Eleven Claude Code subagents (General Manager, Business
   Analyst, Requirements Engineer, Software Architect, Security Reviewer,
   Backend Developer, UI Developer, Test Manager, Technical Writer,
-  Release Manager) collaborating through a Plane workspace. The human
+  Release Manager, Marketing Manager) collaborating through a Plane workspace. The human
   triggers each turn (Anthropic ToS); agents hand work off via
   ticket assignee + state.
 - **What's installed.** `bin/install.py` copies the framework's
@@ -47,7 +47,7 @@ Tight summary so you don't have to re-derive it:
   re-templates `<consumer>/.claude/agents/*.md` with the
   per-persona inlined Plane tokens. Idempotent.
 - **Plane provisioning.** Optional. `ansible/plane.yml` brings up Plane
-  v1.3.0 on an SSH-reachable host and provisions the workspace, ten
+  v1.3.0 on an SSH-reachable host and provisions the workspace, eleven
   agent accounts, projects, modules, labels, ticket states, avatars,
   and per-agent API tokens. Outputs land in
   `ansible/out/plane-agent-{tokens,invitations}-<host>.yml` and
@@ -343,7 +343,7 @@ This will, on <host>:
   - apt-install docker + caddy if missing (sudo)
   - bring up Plane v1.3.0 in /opt/stacks/plane/
   - create one Caddy site block: /etc/caddy/sites.d/plane.caddy
-  - provision the workspace, ten agent accounts, and projects
+  - provision the workspace, eleven agent accounts, and projects
   - 10–15 minutes wall-clock on a fresh DB
 
 Proceed? (yes/no)
@@ -355,7 +355,7 @@ fails, surface the error and stop — do not retry blindly.
 After it succeeds, the controller has:
 
 - `ansible/vault/secrets.yml` (encrypted) — admin password.
-- `ansible/out/plane-agent-tokens-<host>.yml` — ten API tokens.
+- `ansible/out/plane-agent-tokens-<host>.yml` — eleven API tokens.
 - `ansible/out/plane-agent-invitations-<host>.yml` — invitation log
   (informational; the role auto-accepts on the agents' behalf).
 
@@ -371,7 +371,7 @@ Continue to Step 5.
 
 ### Scenario 2 — Existing Plane, no agents
 
-The Plane stack is already running. You only need to add the ten
+The Plane stack is already running. You only need to add the eleven
 agent accounts and bootstrap the workflow scaffolding (states +
 modules + labels).
 
@@ -410,7 +410,7 @@ Ready to run:
   ansible-playbook ansible/plane.yml --tags plane_users,plane_bootstrap
 
 This will, on the existing Plane at <domain_plane>:
-  - invite the ten persona accounts to workspace <slug>
+  - invite the eleven persona accounts to workspace <slug>
   - auto-accept their invitations (via ORM in the api container)
   - mint per-agent API tokens (label: ansible-agent)
   - upload avatars
@@ -461,7 +461,7 @@ named slots: `dev` (the nine implementor personas work here),
 
 Read back the resulting projects map to confirm before proceeding.
 
-**Batch C — Per-agent credentials.** Ten personas, each needs
+**Batch C — Per-agent credentials.** Eleven personas, each needs
 `email + API token`. Don't ask 20 questions in a row; produce a
 fillable template the user can paste back, e.g.:
 
@@ -475,7 +475,7 @@ general-manager:
 business-analyst:
   email: …
   token: …
-… (eight more)
+… (nine more, ending with marketing-manager)
 ```
 
 Parse what they paste; if any are still placeholders, list them and
@@ -518,7 +518,7 @@ The consumer needs two YAMLs filled in:
   - `plane.projects.hq` ← HQ project's identifier if you have one;
     otherwise omit the key
   - `agents.<persona>.email` ← `<persona>@<plane_agent_email_domain>`
-    for each of the ten personas
+    for each of the eleven personas
 
 - `<consumer>/.claude/credentials.yaml` — secrets:
   - `plane.agent-tokens.<persona>` ← token from
@@ -527,17 +527,18 @@ The consumer needs two YAMLs filled in:
 
 For scenarios 1 + 2, parse the YAML in `ansible/out/plane-agent-tokens-
 <host>.yml` and write the consumer's YAMLs in one shot. Do not echo
-the secrets to chat — say "wrote 10 agent tokens", nothing more.
+the secrets to chat — say "wrote 11 agent tokens", nothing more.
 
 For scenario 3, you already collected them in step 4 — just write the
 files.
 
-The ten persona usernames (canonical, do not change):
+The eleven persona usernames (canonical, do not change):
 
 ```
 general-manager, business-analyst, requirements-engineer,
 software-architect, security-reviewer, backend-developer,
-ui-developer, test-manager, technical-writer, release-manager
+ui-developer, test-manager, technical-writer, release-manager,
+marketing-manager
 ```
 
 After this step, persist (`last_step_completed: 6`).
@@ -581,7 +582,7 @@ Admin login (scenarios 1+2 only)
 
 Agent secrets (scenarios 1+2)
 -----------------------------
-  ansible/out/plane-agent-tokens-<host>.yml      — ten API tokens
+  ansible/out/plane-agent-tokens-<host>.yml      — eleven API tokens
   Mode 0600, gitignored. Has ALSO been written into
   <consumer>/.claude/credentials.yaml (also gitignored, mode 0600).
   Agent accounts are API-only; no UI passwords are persisted.

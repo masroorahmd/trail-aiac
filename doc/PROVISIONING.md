@@ -95,7 +95,7 @@ That's it. The playbook in order:
    `Instance` row (`plane`).
 3. Creates the instance admin + workspace + bootstrap API token, and
    sets `ENABLE_SIGNUP=0` (`plane_admin`).
-4. Provisions all ten agent accounts, auto-accepts their invitations
+4. Provisions all eleven agent accounts, auto-accepts their invitations
    (bots can't click email links), mints per-agent API tokens,
    uploads avatars, and disables their email notifications
    (`plane_users`).
@@ -125,7 +125,7 @@ everything you need:
 
   Open `https://<domain_plane>/`, sign in with that email + password,
   and you'll land in the `<plane_workspace.slug>` workspace with all
-  ten agents already members and all configured projects already
+  eleven agents already members and all configured projects already
   created.
 
 - **Agent API tokens** — one workspace-scoped token per persona,
@@ -149,7 +149,7 @@ Add humans by inviting them from *Workspace Settings → Members*.
 ## Kickoff — already have Plane, only need agent accounts
 
 If you run Plane elsewhere and just want this framework to provision
-the ten persona accounts (with avatars, API tokens, notification
+the eleven persona accounts (with avatars, API tokens, notification
 opt-out), skip everything host-related and decorate the existing
 workspace:
 

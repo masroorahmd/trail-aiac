@@ -1,6 +1,6 @@
 # Workflow — agent collaboration via Plane
 
-> **Purpose**: how the ten Trail personas collaborate through
+> **Purpose**: how the eleven Trail personas collaborate through
 > Plane work-items to take a feature from idea to release. Source of truth for
 > the ticket-level workflow; CLAUDE.md references it. Persona prompts encode
 > this workflow per agent.
@@ -35,7 +35,8 @@ the previous page-based design fragile. Everything now lives in
 
 | Artefact | Location | Notes |
 |---|---|---|
-| Hypothesis (VA) | BIZ work-item *body* | Optional embedded Lean Canvas; no separate page |
+| Founder operations (GM) | HQ-project work-item *body* | Behörden / Notar / Recht / Steuern / Staffing / Förderung / Compliance; no separate page |
+| Marketing & site (MM) | MKT-project work-item *body* | Brand voice, SEO, `.org` narrative / `.com` funnel; hands site code to UD |
 | Story requirements (BA) | Story work-item *body* | Problem / Target users / Success criteria / In scope / Out of scope |
 | Acceptance Criteria (RE) | Comment on the Story work-item | Or omitted if RE passthroughs |
 | Architecture per module slice (SA) | Each sub-work-item's *body* | Module / AC scenarios covered / Approach / Components / Trade-offs / Notes for SR |
@@ -305,8 +306,8 @@ Conventions:
 
 ## Slash commands and the main loop
 
-Each persona is invoked via a slash command — `/va`, `/ba`, `/re`,
-`/sa`, `/sr`, `/bd`, `/ud`, `/tm`, `/tw`, `/rm`. The slash command
+Each persona is invoked via a slash command — `/gm`, `/ba`, `/re`,
+`/sa`, `/sr`, `/bd`, `/ud`, `/tm`, `/tw`, `/rm`, `/mm`. The slash command
 puts the **main loop** into the persona's role for this and any
 follow-up turns; it does **not** spawn a Claude Code subagent. The
 main loop reads the persona's prompt file (`.claude/agents/<name>.md`)

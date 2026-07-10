@@ -35,8 +35,8 @@ drive by hand or troubleshoot.
 | Scenario | Plane already running? | Agent accounts already created? | What the install does |
 |---|---|---|---|
 | **1. Greenfield** | no | no | Provisions Plane v1.3.0 on a host you supply via Ansible, mints all secrets, copies them into the consumer's `.claude/`, runs `install.py`. |
-| **2. Existing Plane, no agents** | yes | no | Skips the Plane stack rollout; runs `--tags plane_users,plane_bootstrap` to add the ten persona accounts + workflow states/modules/labels; copies the resulting tokens + UI passwords into the consumer's `.claude/`, runs `install.py`. |
-| **3. Existing Plane, agents already there** | yes | yes | Pure framework install: you provide the ten API tokens + UI passwords (from your own provisioning), they go into `.claude/credentials.yaml`, then `install.py`. |
+| **2. Existing Plane, no agents** | yes | no | Skips the Plane stack rollout; runs `--tags plane_users,plane_bootstrap` to add the eleven persona accounts + workflow states/modules/labels; copies the resulting tokens + UI passwords into the consumer's `.claude/`, runs `install.py`. |
+| **3. Existing Plane, agents already there** | yes | yes | Pure framework install: you provide the eleven API tokens + UI passwords (from your own provisioning), they go into `.claude/credentials.yaml`, then `install.py`. |
 
 ## Prerequisites
 
@@ -92,7 +92,7 @@ After ~12 minutes, the controller has:
 
 - `ansible/vault/secrets.yml` — encrypted; contains the admin
   password.
-- `ansible/out/plane-agent-tokens-<host>.yml` — ten API tokens.
+- `ansible/out/plane-agent-tokens-<host>.yml` — eleven API tokens.
 
 Agent accounts are API-only — no UI password is persisted. If you
 ever need to log in as a specific agent (e.g. to inspect what it
@@ -147,7 +147,7 @@ consumer's `.claude/`, run `bin/install.py`.
 
 ## Scenario 3 — Existing Plane with agent accounts
 
-You already have the ten persona accounts in your Plane (any way you
+You already have the eleven persona accounts in your Plane (any way you
 got there — manual UI, your own provisioning, an earlier run of this
 playbook). All you need is to bring the framework into a consumer
 project:
@@ -199,6 +199,6 @@ docs. It runs in the main Claude Code loop (not a subagent) so you can
 confirm or edit each draft as it lands.
 
 After kickoff, dispatch the personas via slash commands or `@<name>`:
-`/ba`, `/re`, `/sa`, `/sr`, `/bd`, `/ud`, `/tm`, `/tw`, `/rm`, `/va`.
+`/gm`, `/ba`, `/re`, `/sa`, `/sr`, `/bd`, `/ud`, `/tm`, `/tw`, `/rm`, `/mm`.
 See [`WORKFLOW.md`](WORKFLOW.md) for the full ticket lifecycle and
 [`PERSONAS.md`](PERSONAS.md) for what each agent does.

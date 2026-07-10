@@ -1,7 +1,7 @@
 # ansible/ — Plane provisioning
 
 This directory provisions a **Plane Community v1.3.0** stack on an
-SSH-reachable host and configures the workspace, projects, ten agent
+SSH-reachable host and configures the workspace, projects, eleven agent
 accounts, modules, labels, ticket states, avatars, and per-agent API
 tokens the framework expects.
 
