@@ -251,15 +251,24 @@ def write_manifest(
 # Stage 1 — copy + seed
 # ---------------------------------------------------------------------------
 
+# Local dev/build cruft that must never be shipped into a consumer when a
+# deliverable dir (notably `claude/mcp/`) is copied wholesale.
+_COPY_IGNORE = shutil.ignore_patterns(
+    "__pycache__", "*.pyc", ".venv", ".pytest_cache", ".mypy_cache",
+    "*.egg-info", "*:Zone.Identifier",
+)
+
+
 def copy_deliverable(src: Path, dst: Path) -> None:
-    """Copy a file or directory, overwriting any existing target."""
+    """Copy a file or directory, overwriting any existing target. Local
+    build cruft (`.venv/`, `__pycache__/`, …) is filtered out."""
     if dst.exists():
         if dst.is_dir() and not dst.is_symlink():
             shutil.rmtree(dst)
         else:
             dst.unlink()
     if src.is_dir():
-        shutil.copytree(src, dst)
+        shutil.copytree(src, dst, ignore=_COPY_IGNORE)
     else:
         shutil.copy2(src, dst)
 
