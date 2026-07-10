@@ -7,24 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+This span covers the evolution from the initial **ten-persona,
+page-based, per-persona-MCP** design (0.1.0) to the current
+**eleven-persona, main-loop, single-MCP** architecture.
 
-- **Autopilot worktree isolation + auto-merge on completion.** Under
-  `/autopilot`, the parallel implementors (backend / UI developer) now
-  each run in their own throwaway `git worktree` off the feature branch
-  — the one spine stage where two agents would otherwise share a
-  working tree — and the orchestrator commits and merges each back. On
-  a clean `COMPLETED` run the orchestrator now also merges the feature
-  branch into the default branch (`--no-ff`) and deletes the branch +
-  worktrees; on `STOP` the branch is left intact for inspection.
-  Always-on within the autopilot lane (no config flag). Personas still
-  never touch git. (`claude/commands/autopilot.md`,
+### Added
+
+- **General Manager + Marketing Manager personas** (eleven personas
+  total). The General Manager runs founder operations — Behörden, Notar,
+  Recht, Steuern, Staffing, Förderung, Compliance — on a dedicated `HQ`
+  Plane project; the Marketing Manager owns the website (`.org` OSS
+  narrative + `.com` enterprise funnel), brand voice, and SEO on a
+  dedicated `MKT` Plane project. (`claude/agents/general-manager.md`,
+  `claude/agents/marketing-manager.md`, `claude/commands/{gm,mm}.md`,
+  avatars, `claude/config.yaml.example`, Ansible persona list)
+- **`/quick` lane** — an off-Plane fast lane for small, safe changes
+  that skips the full Story spine, each change tagged `Trail-Lane:
+  quick`. (`claude/commands/quick.md`)
+- **`/autopilot` lane** — an unattended, human-initiated run that drives
+  a framed Story (or each sub-Story of a parent work-item) through the
+  whole engineering spine to a merged branch, with no human between the
+  stages. The parallel implementors each run in an isolated `git
+  worktree` off the feature branch; the orchestrator owns all git and,
+  on a clean `COMPLETED` run, merges the feature branch into the default
+  branch (`--no-ff`) and deletes the branch + worktrees (on `STOP` the
+  branch is left intact). **Lean-lane discretion** lets the orchestrator
+  right-size the ceremony — skipping RE/SA/SR/TM/TW/RM when they add no
+  value and collapsing/swapping the BD/UD implementors when the
+  cross-over work is small — each choice logged as a `SKIP-N` decision
+  and guarded by hard floors (RE intake, SA decomposition, TM
+  runtime-surface, SR security). Personas never touch git.
+  (`claude/commands/autopilot.md`,
   `claude/agents/{backend,ui}-developer.md`, `doc/WORKFLOW.md`,
   `claude/config.yaml.example`)
+- **Configurable model lanes** — persona/command sources carry
+  `__MODEL_STANDARD__` / `__MODEL_FULL__` / `__MODEL_CODEGEN__`
+  placeholders resolved at install time from the consumer's
+  `config.yaml` (`model_lanes:`), so the lane→model mapping is config,
+  not hard-coded. (`claude/config.yaml.example`, `bin/install.py`)
+
+### Changed
+
+- **Personas run in the main loop, not as subagents.** Each
+  `/<persona>` slash command puts the main Claude Code loop into that
+  role for this and any follow-up turns, until USER exits or switches
+  persona. Identity separation in Plane is preserved by per-persona API
+  tokens routed inside the MCP server by the persona-prefixed tool name.
+- **Per-persona Plane MCP servers collapsed into one multi-tenant
+  process.** A single `plane` MCP server now holds every persona's token
+  and routes calls by the persona-prefixed tool name
+  (`business_analyst__list_states`, `release_manager__add_comment`, …),
+  replacing the earlier one-server-per-persona wiring.
+
+### Removed
+
+- **The Venture Advisor persona and its `/va` command**, superseded by
+  the General Manager (`/gm`). The lightweight strategy sanity-check VA
+  used to gate ideas now lives in the Business Analyst's prompt, and the
+  `BIZ` track is replaced by the `HQ` (founder-ops) and `MKT`
+  (marketing) tracks.
+- **Plane pages and the `write-spec-page` skill.** Plane v1.3.0's pages
+  sit on an internal Yjs/Tiptap collaborative-editor API that does not
+  reliably absorb API-side writes, so the framework no longer uses pages
+  — every persona artefact now lives in a work-item *body* (written once
+  at creation) or a *comment*. The page-oriented `plane-extras-mcp`
+  tools (`create_page`, `list_pages`, `retrieve_page`,
+  `update_page_description`, `delete_page`) were dropped accordingly;
+  the MCP now covers the comments gap only.
 
 ## [0.1.0] — 2026-05-08
 
-Initial public release of the Trail framework: ten
+> **Historical snapshot, superseded by [Unreleased].** The persona set
+> (ten, including a Venture Advisor), the subagent execution model, the
+> per-persona MCP topology, and the Plane-pages artefact model described
+> below have all since changed. This entry is preserved as the initial
+> tagged state; see [Unreleased] for what replaced each piece. (The
+> `v0.1.0` tag was never cut as a public release.)
+
+Initial tagged state of the Trail framework: ten
 Claude Code subagent personas (Venture Advisor, Business Analyst,
 Requirements Engineer, Software Architect, Security Reviewer, Backend
 Developer, UI Developer, Test Manager, Technical Writer, Release
