@@ -46,9 +46,10 @@ model_lanes:
 # engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM →
 # merge) with no human in the loop: personas make + log reasonable
 # assumptions instead of asking, and the orchestrator owns git — the
-# parallel implementors each run in their own throwaway git worktree,
-# and on a clean COMPLETED run the orchestrator merges the feature
-# branch into the default branch and deletes it. It is deliberately
+# implementors run one at a time directly in the feature tree (never
+# concurrently, never in a worktree), and on a clean COMPLETED run the
+# orchestrator merges the feature branch into the default branch and
+# deletes it. It is deliberately
 # the NARROW lane — it stops and hands back (branch intact, never
 # merged) the moment a change leaves the risk lane (a hard security
 # finding, a migration, a new external contract, a new dependency, or

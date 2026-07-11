@@ -470,9 +470,8 @@ How it stays safe and auditable:
   `plane__<persona>__*` identity**, so Plane attribution stays exactly
   as in the interactive flow. The orchestrator only reads each
   subagent's `AUTOPILOT-VERDICT` and decides PROCEED / STOP / REPAIR,
-  and it owns all git — the feature branch, the parallel implementors'
-  isolated worktrees, the commits, the push, and the final merge/delete
-  (personas never touch git).
+  and it owns all git — the feature branch, each implementor's commit,
+  the push, and the final merge/delete (personas never touch git).
 - **Assume-and-log, not ask.** Each persona, under the `AUTOPILOT-MODE`
   token, flips from "ask USER" to "pick the most reasonable assumption
   and record it as a numbered `AS-N` entry in an *Autopilot assumptions*
@@ -503,8 +502,8 @@ How it stays safe and auditable:
   Story with no release ceremony no Release Manager; and (b) **collapse
   or swap
   the BD/UD implementors** when the cross-over work is small — one agent
-  covers both slices (no worktree), or a two-line backend tweak routes
-  entirely to `ui-developer` and vice versa. Five hard floors keep it
+  covers both slices, or a two-line backend tweak routes entirely to
+  `ui-developer` and vice versa. Five hard floors keep it
   honest: **RE always runs whenever the Story is not already testable AC
   or framing it might expose a risk-lane question** (a migration, a new
   external contract or dependency, a security non-negotiable — when in
@@ -528,16 +527,16 @@ How it stays safe and auditable:
   assumptions — and surfaced in full in the terminal summary, so nothing
   is trimmed silently. Set `autopilot.lean_lane: false` to force the
   full spine on every run (compliance-heavy projects).
-- **Git is the orchestrator's.** The two parallel implementors each run
-  in their own throwaway `git worktree` (the one stage where two agents
-  would otherwise share a tree); the orchestrator commits and merges
-  each back into the feature branch. Every autopilot commit carries a
+- **Git is the orchestrator's.** When both BD and UD run, they do so
+  **one at a time, directly in the feature tree** — never concurrently,
+  never in a worktree — and the orchestrator commits each one's work
+  before spawning the next. Every autopilot commit carries a
   `Trail-Lane: autopilot (<DEV-N>)` trailer — the mirror of
   `Trail-Lane: quick`, so `git log --grep='Trail-Lane: autopilot'`
   lists every unattended change. On a **clean COMPLETED run** (all gates
   green) the orchestrator merges the feature branch into the default
-  branch with `--no-ff`, pushes it, and deletes the feature branch +
-  worktrees — the deliberate end of the unattended lane. If that merge
+  branch with `--no-ff`, pushes it, and deletes the feature branch —
+  the deliberate end of the unattended lane. If that merge
   or push can't land (conflict, branch protection), it stops with the
   branch intact for a human. It never uses `--force`, and on **STOP** it
   never merges or deletes — the branch stays for USER to inspect.

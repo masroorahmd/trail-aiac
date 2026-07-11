@@ -1,5 +1,5 @@
 ---
-description: Unattended lane — drive an already-framed Story (or, when handed a parent work-item, each of its sub-Stories in turn) end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → merge) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, the parallel implementors each run in their own git worktree, and the orchestrator owns git — including, on a clean COMPLETED run, merging the feature branch into the default branch and deleting it. In lean-lane mode (default) the orchestrator uses judgement to trim the ceremony — skipping RE/SA/SR/TM/TW/RM when they add no value and collapsing or swapping the BD/UD implementors when the cross-over work is small, logging each choice as a SKIP-N decision — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice or needs a real decomposition, TM always runs when the change has any runtime surface, and SR always runs when the change touches a security non-negotiable. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+description: Unattended lane — drive an already-framed Story (or, when handed a parent work-item, each of its sub-Stories in turn) end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → merge) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree), and the orchestrator owns git — including, on a clean COMPLETED run, merging the feature branch into the default branch and deleting it. In lean-lane mode (default) the orchestrator uses judgement to trim the ceremony — skipping RE/SA/SR/TM/TW/RM when they add no value and collapsing or swapping the BD/UD implementors when the cross-over work is small, logging each choice as a SKIP-N decision — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice or needs a real decomposition, TM always runs when the change has any runtime surface, and SR always runs when the change touches a security non-negotiable. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
 argument-hint: "<DEV-N — an existing Story (state `To Do`, assignee requirements-engineer), OR a parent work-item whose sub-Stories are driven in order>"
 ---
 
@@ -19,7 +19,7 @@ poll, no ticket-trigger.
 
 You are the **orchestrator**. You own three things and nothing else:
 1. **Control flow** — which persona runs next, and whether to PROCEED or STOP.
-2. **Git** — branch, worktrees, commit, push, merge, delete (personas
+2. **Git** — branch, commit, push, merge, delete (personas
    never touch git; you do). On a clean COMPLETED run you merge the
    feature branch into the default branch and delete it; on STOP you
    leave the feature branch intact for USER.
@@ -55,15 +55,12 @@ the orchestrator a token.
 4. **Git pre-flight.** Confirm a clean working tree (`git status`) and
    record the project's default branch. If dirty, stop and ask USER to
    stash/commit first — autopilot will not mix its changes with
-   pre-existing ones. Confirm `git worktree list` shows no stale
-   `autopilot/<DEV-N>-…` worktree from an aborted earlier run; if one
-   exists, stop and ask USER to clear it (`git worktree remove`) rather
-   than reusing it blind. Do **not** create the feature branch here —
+   pre-existing ones. Do **not** create the feature branch here —
    branch creation happens once per Story you actually drive (see
    *Triage* and *Driving the work list*), so a parent run gets one
-   branch per sub-Story instead of one shared branch. All sequential
-   persona work for a Story lands on that Story's branch; the parallel
-   implementors get their own throwaway worktrees off it (spine step 4).
+   branch per sub-Story instead of one shared branch. All persona work
+   for a Story — including both implementors, one at a time — lands
+   directly on that Story's branch; no worktree is ever created.
 
 5. **Permission-mode check.** "Unattended" presumes the session won't
    stop for an approval prompt mid-run. The framework's `settings.json`
@@ -112,11 +109,10 @@ literal token `AUTOPILOT-MODE` is what flips the persona's gated
 >    licence question, or ambiguity no reasonable assumption resolves).
 >    On STOP: do NOT transition state further; leave a comment
 >    explaining the blocker; return verdict STOP.
-> 6. Do NOT touch git (no add/commit/branch/push/merge/worktree). The
->    orchestrator owns git. You only edit files and write to Plane. If
->    the orchestrator hands you a WORKTREE path, make every file edit
->    inside that directory and nowhere else — it is your isolated copy
->    of the tree; the orchestrator commits and merges it for you.
+> 6. Do NOT touch git (no add/commit/branch/push/merge). The
+>    orchestrator owns git. You only edit files and write to Plane,
+>    directly in the feature tree the orchestrator points you at — the
+>    orchestrator commits your work for you.
 > 7. END your response with this block, nothing after it:
 >
 >    AUTOPILOT-VERDICT: PROCEED | STOP | REPAIR
@@ -245,8 +241,8 @@ real content. Use judgement. Three levers, each with a hard floor:
      are created**: the Story `<DEV-N>` itself is the single work-item you
      hand to the one implementor (step 4, single-implementor path) and to
      TM (step 5), and SR (if run) reviews the change against the Story —
-     a skipped SA therefore *implies* the single-implementor, no-worktree
-     shape from lever 2.
+     a skipped SA therefore *implies* the single-implementor shape from
+     lever 2.
    - **SR safety floor (never skippable through it).** SR **must** run
      whenever the change touches a *security non-negotiable* from
      `control-manifest.md` (CM-N) — anything under auth/authz, secrets
@@ -277,20 +273,21 @@ real content. Use judgement. Three levers, each with a hard floor:
      merge (spine step 9) still happens regardless of an RM skip.
 
 2. **Collapse or swap the BD/UD implementors when the cross-over work is
-   small.** The parallel two-implementor stage exists for Stories with a
-   real backend *and* a real frontend slice. When that's not the shape:
+   small.** Every implementor edits directly in the feature tree, one
+   at a time — the two-implementor stage never runs concurrently, so
+   there's no isolation to buy back by collapsing it, only a whole
+   subagent round-trip. Decide the shape:
    - **One module only** → spawn one implementor (already the rule).
    - **Two slices, one trivial** → hand *both* code sub-work-items to a
-     single implementor and let it implement both in one worktree (or,
-     since only one agent edits, directly in the feature tree — no
-     worktree). Saves a whole subagent and its worktree.
+     single implementor and let it implement both, one after the
+     other, in the feature tree. Saves a whole subagent round-trip.
    - **Slice in the wrong discipline's lane** → route it to whichever
      implementor fits: a mostly-frontend Story with a two-line backend
      tweak can go entirely to `ui-developer`, and vice versa. The
      implementor implements whatever sub-work-item(s) you hand it.
-   Only keep the true parallel split (both worktrees, spine step 4 as
-   written) when both slices are substantial enough that concurrency and
-   isolation actually pay for themselves.
+   Only run both implementors (sequentially, spine step 4 as written)
+   when the Story genuinely has both a real backend and a real frontend
+   slice.
 
 3. **Log every skip and merge as a `SKIP-N` decision.** These are the
    orchestrator's analogue of a persona's `AS-N` assumptions — the
@@ -349,46 +346,38 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    STOP. SR never self-clears a hard finding under autopilot. PROCEED
    only on a clean or low/info-only review → implementors.
 
-4. **Implementors (parallel, each in its own git worktree).**
+4. **Implementors (sequential, directly in the feature tree — never
+   concurrently, never in a worktree).**
    **Lean-lane first:** decide the implementor shape per *Lean-lane
-   discretion* lever 2 before you spawn anything. If you collapse to a
-   **single implementor** (one module, one trivial slice folded in, a
+   discretion* lever 2 before you spawn anything. On a **single
+   implementor** (one module, one trivial slice folded in, a
    cross-discipline route, or SA was skipped so the Story itself is the
-   single slice), skip the worktree machinery entirely — hand that one
-   agent the code sub-work-item (or, when SA was skipped, the Story
-   `<DEV-N>` itself as its work-item), let it edit **directly in the
-   feature tree**, and commit its work as in 4c, then jump to TM. The
-   parallel/worktree path below is
-   only for a **genuine two-slice split**, the one stage where two
-   agents would otherwise edit the same working tree at once, so each
-   implementor gets an **isolated worktree** — the orchestrator owns the
-   git around it:
-   a. **Before spawning**, for each code-module sub-work-item, create a
-      worktree off the feature branch on its own branch, e.g.
-      `git worktree add ../<repo>-<DEV-N>-backend -b autopilot/<DEV-N>-<slug>-backend <feature-branch>`
-      and likewise `…-frontend`. Use a **hyphen** sibling name, never a
-      `…/<slug>/backend` sub-path — that would D/F-conflict with the
-      `autopilot/<DEV-N>-<slug>` feature branch ref. Omit a module SA
-      didn't create.
-   b. **Spawn concurrently in a single message** — `backend-developer`
-      for the backend slice, `ui-developer` for the frontend slice —
-      each with the contract + persona + sub-work-item, and tell each
-      the **absolute WORKTREE path** it must edit in (contract point 6).
-      Each implements there, runs the suite locally **inside its
-      worktree**, posts Implementation notes, moves its item
-      `Todo → In Progress → In Review`. Collect every verdict; if any
-      implementor STOPs, the round STOPs (clean up worktrees per
-      *Hand-back on STOP*).
-   c. **On all-PROCEED, fold the worktrees back in (you, the
-      orchestrator).** In each worktree, stage + commit the implementor's
-      changes with a message naming its sub-work-item and the
-      `Trail-Lane: autopilot (<DEV-N>)` trailer. Merge each implementor
-      branch into the feature branch with `--no-ff`. A real merge
-      conflict between backend and frontend is outside the autopilot
-      lane → **STOP** (reason: "implementor worktree merge conflict").
-      Then `git worktree remove` each worktree and delete its branch.
-      The feature branch's main tree now holds the merged implementation;
-      TM (next) runs there.
+   single slice), hand that one agent the code sub-work-item (or, when
+   SA was skipped, the Story `<DEV-N>` itself as its work-item), let it
+   edit directly in the feature tree, commit its work (step b below),
+   then jump to TM. On a **genuine two-slice split**, run both
+   implementors one after the other — never concurrently, since two
+   agents editing the same working tree at once is exactly what this
+   avoids:
+   a. **Spawn the first implementor** — `backend-developer` for the
+      backend slice — with the contract + persona + sub-work-item, and
+      tell it the feature branch's working directory to edit in
+      directly (contract point 6). It implements, runs the suite
+      locally, posts Implementation notes, moves its item
+      `Todo → In Progress → In Review`. A STOP here halts the round —
+      nothing but the feature tree itself was touched, so there is
+      nothing to clean up.
+   b. **On PROCEED, commit it (you, the orchestrator)** onto the
+      feature branch with a message naming its sub-work-item and the
+      `Trail-Lane: autopilot (<DEV-N>)` trailer, before spawning the
+      next implementor — this keeps each implementor's diff separately
+      attributable instead of collapsing both into one commit.
+   c. **Spawn the second implementor** — `ui-developer` for the
+      frontend slice — the same way, now against the feature tree that
+      already carries the first implementor's committed work. Commit
+      its work the same way (step b) once it PROCEEDs.
+   Once every implementor has PROCEEDed and been committed, TM (next)
+   runs on the feature branch as it now stands.
 
 5. **Test Manager** — spawn with persona `test-manager` + the testing
    sub-work-item (or, when SA was skipped, the Story `<DEV-N>` itself).
@@ -403,10 +392,8 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    - TM PROCEEDs only with a **green suite**.
    - TM returns `REPAIR` for a fixable red suite (with `NEXT:` naming
      the implementor). That is the **repair loop**, not a STOP:
-     re-spawn that implementor with TM's failure detail — **directly in
-     the feature tree, with no worktree** (the round-4 worktrees are
-     gone, and only one agent edits at a time now, so isolation buys
-     nothing) — then run TM again. After the implementor's fix, commit
+     re-spawn that implementor with TM's failure detail directly in the
+     feature tree — then run TM again. After the implementor's fix, commit
      it onto the feature branch (same `Trail-Lane` trailer) before
      re-running TM. Repeat at most `max_repair_iterations` times. If
      still not
@@ -422,9 +409,9 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    `SKIP-N`.
 
 7. **Git — commit + push the feature branch (you, the orchestrator).**
-   Once the suite is green and all sub-work-items are `In Review` (the
-   implementor worktrees have already been folded into the feature
-   branch in step 4c):
+   Once the suite is green and all sub-work-items are `In Review` (each
+   implementor's work has already been committed onto the feature
+   branch in step 4b/4c):
    - Stage anything still uncommitted in the feature tree (TM's test
      additions, TW's doc edits). Commit with a message whose body lists
      the Story, the sub-work-items, and a one-line assumption count.
@@ -469,8 +456,7 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      needs a human/CI merge. The local merge is the durable artefact.
    - Only after a successful default-branch update: delete the feature
      branch locally (`git branch -d`) and on the remote (if it was
-     pushed), and `git worktree prune` to clear any residue. Report the
-     deletion in the summary.
+     pushed). Report the deletion in the summary.
 
 ## Hand-back on STOP (the safety valve)
 
@@ -480,12 +466,9 @@ commit a half-built change. Then:
 
 1. Leave the working tree and the feature branch as they are for USER
    to inspect: **do not revert, do not merge into the default branch,
-   do not delete the feature branch.** Do clean up the throwaway
-   implementor worktrees if any are still checked out (`git worktree
-   remove` / `git worktree prune`) — but only after committing or
-   confirming their in-progress edits are already on the feature
-   branch, so nothing USER might want is lost; if a worktree holds
-   unmerged work, leave it and name it in the summary.
+   do not delete the feature branch.** If the implementor that STOPped
+   left uncommitted edits in the feature tree, leave them as-is and
+   name it in the summary — do not commit a half-built change.
 2. Spawn no further personas. The Plane items stay in whatever state
    the last persona left them; that persona already left an explanatory
    comment.
@@ -524,7 +507,7 @@ covering:
 - Git (per driven Story): feature-branch name, commit hash(es), push
   result, and — on that Story's COMPLETED — the merge into the default
   branch (merge-commit hash, default-branch push result) and
-  confirmation the feature branch + implementor worktrees were deleted.
+  confirmation the feature branch was deleted.
   On STOPPED: that the stopped Story's branch is intact and where it is.
   Test command + result either way.
 - A one-line undo (one entry per driven Story — a parent run may list
