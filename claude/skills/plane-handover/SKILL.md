@@ -36,6 +36,40 @@ A persona invokes this skill when, and only when:
 If any of those four is false, **stop and ask the user** instead of
 calling this skill.
 
+## Before your first write: how Plane stores what you send
+
+Two properties of the Plane API decide whether a handover is readable
+or permanently broken. Both have burned personas across consumer
+projects repeatedly, so read them once and apply them to *every*
+`add_comment` and `create_work_item` call, not just to handovers.
+
+**1. `comment_html` and `description_html` take REAL HTML.**
+Whatever you pass is stored verbatim and rendered as markup.
+
+- Send real tags: `<p>`, `<strong>`, `<ul><li>`, `<code>`, `<h3>`.
+- Do **not** send Markdown. `**bold**` and `- item` are stored as
+  literal asterisks and hyphens; Plane does not convert them.
+- Do **not** entity-escape your own tags. `&lt;p&gt;` stores the
+  entities and the comment displays `<p>` as visible text. This is
+  the more common failure, because it looks like caution.
+- Entity-escape **only** characters that must appear *as characters*
+  in the rendered output — e.g. demonstrating `a &lt; b` or an XML
+  snippet inside a `<code>` block.
+- `<![CDATA[…]]>` does not work; it renders as literal text.
+
+**2. There is no comment edit and no comment delete.** The persona
+toolsets expose `add_comment` and nothing else. A mis-encoded comment
+is **permanent** — the only repair is a second comment that opens by
+superseding the first, and a human deleting the original in the Plane
+UI. So: get the encoding right on the first call, then **read the
+returned `comment_html` back**. If the echo contains `&lt;p&gt;`-style
+escaping, you double-encoded — repost immediately with a one-line
+supersede note rather than leaving it.
+
+On a batch of work-items, post/create **one** first, inspect the echo,
+and only then create the rest. Recovering a batch of mis-encoded
+bodies is far more expensive than one extra round-trip.
+
 ## What the skill does
 
 Three Plane API calls, in this order:
@@ -62,25 +96,48 @@ one request:
 - `assignee`: the next persona's workspace user, or USER for the
   Review handover.
 
+**Do not trust the PATCH echo.** `update_work_item` can answer
+HTTP 200 while its response body still carries the *old* state. The
+write usually landed anyway — but the echo is not evidence of it.
+Whenever the transition itself is the thing you are about to report
+(a handover, a close, a state you assert in a comment), confirm it
+with an independent `retrieve_work_item` call and report *that*
+reading. Never re-issue the PATCH on the strength of a stale echo; you
+will not learn anything new and you may fight a transition that
+already succeeded.
+
 ### 2. DoD handover comment
 
 Call the `plane` MCP server's `<persona_snake>__add_comment` tool on
-the same work item, posting a comment shaped exactly like:
+the same work item, posting a comment shaped exactly like this — and
+note that this is the **wire format**, real HTML, not a Markdown
+sketch of one:
 
-```markdown
-**Handover: <FROM-PERSONA> → <TO-PERSONA>**
+```html
+<p><strong>Handover: &lt;FROM-PERSONA&gt; → &lt;TO-PERSONA&gt;</strong></p>
 
-<one-sentence rationale — why this is ready / what was decided>
+<p>&lt;one-sentence rationale — why this is ready / what was decided&gt;</p>
 
-### Definition of Done (this slice)
-- [x] <criterion 1 — verifiable by the receiver>
-- [x] <criterion 2>
-- [x] <criterion N>
+<h3>Definition of Done (this slice)</h3>
+<ul>
+  <li>[x] &lt;criterion 1 — verifiable by the receiver&gt;</li>
+  <li>[x] &lt;criterion 2&gt;</li>
+  <li>[x] &lt;criterion N&gt;</li>
+</ul>
 
-### For the receiver
-- <pointer to artifacts: work-item IDs, comment IDs, file paths in the project repo>
-- <known unknowns the receiver should be aware of>
+<h3>For the receiver</h3>
+<ul>
+  <li>&lt;pointer to artifacts: work-item IDs, comment IDs, file paths in the project repo&gt;</li>
+  <li>&lt;known unknowns the receiver should be aware of&gt;</li>
+</ul>
 ```
+
+The `&lt;…&gt;` above are the *placeholders* — angle brackets that
+must render as visible characters, which is exactly the case where
+entity-escaping is correct. Your actual content replaces them and
+carries no escaping. Every other template in the persona prompts
+follows the same convention: the fence shows the **structure**, and it
+goes on the wire as HTML.
 
 The DoD bullets must be **verifiable by the receiver from the ticket
 alone** — no reliance on shared chat memory or assumed context. Every
