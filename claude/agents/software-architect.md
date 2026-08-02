@@ -545,7 +545,12 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
   assumption (consistent with `control-manifest.md`, the Story body,
   RE's AC, and the upstream handover) and log it as a numbered `AS-N`
   entry in one **Autopilot assumptions (software-architect)** comment
-  on the work-item. Never assume silently.
+  on the work-item. Never assume silently — but log at the weight the
+  assumption carries: an `AS-N` is a decision USER could overturn, one
+  sentence each; a DoD receipt (an N/A slice, a skipped module, a write
+  you verified one way rather than another) belongs in that comment's
+  single trailing `Routine:` line, never as a numbered entry. Contract
+  rule 4 governs, and 0–4 `AS-N` is the healthy range.
 
 You still **STOP** — return `AUTOPILOT-VERDICT: STOP` with a one-line
 reason, leave an explanatory comment, and do **not** transition state

@@ -145,6 +145,24 @@ artifact referenced should be locatable by ID (parent Story
 `<DEV-N>`, sub-work-item `<DEV-N.module>`) or by repo path
 (`docs/foo.md`, `app/services/bar.py`).
 
+**Cite upstream by ID. Never restate its reasoning.** If BA wrote why
+`OOS-1` is forbidden, or SR wrote why a finding is medium, the receiver
+reads it *there*. Write `OOS-1 stands` or `see SR's F2` — not a
+paragraph reproducing the argument. A reason already written down once
+in this ticket is a reference, not content, and reproducing it makes
+the ticket longer without making it truer.
+
+There is exactly one exception, and it is the point of the handover:
+when you **disagree** with upstream reasoning, or measured it and found
+it stale or wrong, say so in full. That is new information. Agreement
+is a citation; disagreement is prose.
+
+This rule exists because of a measured failure mode — three personas in
+a row each re-reporting the same rotted line number, the same forbidden
+remedy, the same "do not relitigate" list, in a ticket where each of
+those facts was true exactly once. Report a fact at the first persona
+that established it. Afterwards it is `see RE's note`.
+
 ### 3. Update agent memory
 
 Append a one-line entry to the calling persona's `MEMORY.md` under

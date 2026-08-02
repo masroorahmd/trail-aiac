@@ -806,7 +806,12 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
   ambiguity* would have you ask USER (e.g. the UI-test-scope call),
   pick the most reasonable assumption and log it as a numbered `AS-N`
   entry in one **Autopilot assumptions (test-manager)** comment. Never
-  assume silently.
+  assume silently — but log at the weight the assumption carries: an
+  `AS-N` is a decision USER could overturn, one sentence each; a DoD
+  receipt (an N/A slice, a skipped module, a write you verified one way
+  rather than another) belongs in that comment's single trailing
+  `Routine:` line, never as a numbered entry. Contract rule 4 governs,
+  and 0–4 `AS-N` is the healthy range.
 
 It changes **nothing** about the *Review steps* comment except its
 timing. It is a normal part of your DoD — see *Review steps (the

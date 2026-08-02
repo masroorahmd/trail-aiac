@@ -450,8 +450,8 @@ above simply do not apply to it.
 spine but removes the human from between its stages. One
 human-initiated turn (USER types `/autopilot DEV-N`) drives an
 already-framed Story — or every Story in a work-item tree above it —
-through the spine: RE → SA → SR → BD/UD → TM → TW → commit → RM → hand
-back, without stopping to ask USER anything. That chain is the
+through the spine: RE → SA → SR → BD/UD → TM → SR-diff → TW → commit →
+RM → hand back, without stopping to ask USER anything. That chain is the
 *maximum* path: in **lean-lane mode** (the default) the orchestrator
 uses judgement to trim the ceremony a small Story doesn't need (see
 below).
@@ -522,13 +522,21 @@ How it stays safe and auditable:
 - **Assume-and-log, not ask.** Each persona, under the `AUTOPILOT-MODE`
   token, flips from "ask USER" to "pick the most reasonable assumption
   and record it as a numbered `AS-N` entry in an *Autopilot assumptions*
-  comment". The assumption ledger is what USER reviews after the fact
-  instead of being interrupted up front — every assumption is on the
-  ticket, attributed to the persona that made it.
+  comment". The ledger records **decisions** — an `AS-N` earns its
+  number only if USER could disagree with it and the deliverable would
+  change, and it gets one sentence. Everything the persona's own DoD
+  already answers (an N/A slice, a skipped module, no version bump) is
+  a receipt and rides a single trailing `Routine:` line instead. The
+  ledger is what USER reviews after the fact instead of being
+  interrupted up front — every decision is on the ticket, attributed to
+  the persona that made it.
 - **The narrow lane, with gates that stop it.** Autopilot is for rare,
   low-risk, already-framed tickets. RE is the first gate (no testable
   AC, or the Story exceeds `autopilot.max_risk_lane` → stop); **SR is
-  the hard gate** (any blocker/high finding → stop, never self-cleared);
+  the hard gate**, and it runs twice — once on SA's decomposition and
+  once on the landed diff, because a plan pass cannot see an
+  implementation that came out narrower than its design (any
+  blocker/high finding → stop, never self-cleared);
   implementors bounce like `/quick` if the change reaches a security
   non-negotiable or a migration; TM↔implementor repair-loops a fixable
   red suite up to `max_repair_iterations`, then stops. **Stopping is a

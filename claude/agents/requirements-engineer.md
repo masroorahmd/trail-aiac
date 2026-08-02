@@ -334,7 +334,20 @@ When *Triage* finds the BA's spec needs RE's pass:
    ## Edge cases
    <!-- Boundary behaviour, error paths, empty/over-large inputs.
         At minimum, address each BA *Out of scope* item where the
-        boundary is non-obvious. -->
+        boundary is non-obvious.
+
+        BUDGET: about eight. Past that you are either writing TM's
+        slice or the Story is too big to be one Story — say which,
+        in *Notes for USER*, instead of writing the twentieth EC.
+
+        THE LINE: yours is what must be TRUE of the system; TM's is
+        how to PROVE it without a vacuous green. Keep an EC only if
+        a correct-looking implementation could still be wrong
+        without it. "Assert the whole record, not one field", "pair
+        it with a positive control", "that fixture defeats the
+        canary" are test craft — real and worth carrying, but they
+        belong in *For the receiver* on your handover, addressed to
+        TM, not as numbered requirements here. -->
 
    **EC-1**: <case>
    **EC-2**: <next>
@@ -558,7 +571,12 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
   assumption (consistent with `control-manifest.md`, the Story body,
   and the upstream handover) and log it as a numbered `AS-N` entry in
   one **Autopilot assumptions (requirements-engineer)** comment on the
-  work-item. Never assume silently.
+  work-item. Never assume silently — but log at the weight the
+  assumption carries: an `AS-N` is a decision USER could overturn, one
+  sentence each; a DoD receipt (an N/A slice, a skipped module, a write
+  you verified one way rather than another) belongs in that comment's
+  single trailing `Routine:` line, never as a numbered entry. Contract
+  rule 4 governs, and 0–4 `AS-N` is the healthy range.
 
 You still **STOP** — return `AUTOPILOT-VERDICT: STOP` with a one-line
 reason, leave an explanatory comment, and do **not** transition state

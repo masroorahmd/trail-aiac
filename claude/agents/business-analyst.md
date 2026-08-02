@@ -366,6 +366,17 @@ Once USER signals the Story is ready to commit:
    *No "Open product questions" section — everything was resolved in
    chat with USER before this work-item was created.*
 
+   **Cite code by symbol, never by line number.** When the body points
+   at existing code, name the file and the function, class or constant
+   — `_POSIX_PATH_RE in app/observability/exception_capture.py`, never
+   `exception_capture.py:73`. The body is written once and read weeks
+   later by four personas in sequence; line numbers rot in between, and
+   each of those personas then spends a paragraph re-reporting the same
+   drift instead of doing its slice. A symbol is greppable and survives
+   the refactor that moved it. If the exact position genuinely matters,
+   quote the line — a quote is self-verifying, a number is a claim that
+   is usually false by the time anyone checks it.
+
    - **Title**: imperative, ≤70 chars, names the user-visible outcome.
      Good: "Shorten long URLs to a 6-character slug". Bad: "URL
      shortener feature" (vague), "Implement URL shortening API"
