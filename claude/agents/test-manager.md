@@ -456,6 +456,12 @@ Titled **Review steps (test-manager)**, in English:
   the `AC-N` / `EC-N` it exercises. Happy path first, then the edge
   cases that actually matter. Name concrete routes, fields and values —
   a step you could not execute yourself is a step nobody can execute.
+  **Each expected result appears exactly once across the whole list.**
+  Two steps that assert the same thing are one step with a longer
+  path; a step whose expectation an earlier step already established
+  is not a step. Write each one so a single observation settles it —
+  if a reviewer has to check three things to decide PASS or FAIL, it
+  is three steps or a badly framed one.
 - **Already covered by tests** — what the reviewer can safely skip
   because the suite pins it, so the list stays short enough to be used.
   Where UD enumerated the routes it visually verified, name them here
@@ -520,6 +526,7 @@ combined into a single comment if you prefer.
 - [ ] No body edits to the sub-work-item; everything is in the comment
 - [ ] Review steps posted on the parent Story as a single comment — sections are headings inside it, not separate posts
 - [ ] Every review step is one I could execute myself: concrete route, concrete input, concrete expected result
+- [ ] No expected result appears twice across the step list
 - [ ] *What could not be verified* is filled in truthfully (an empty one is almost always wrong)
 - [ ] No "open questions" in the Implementation notes — every ambiguity resolved with USER in chat first
 
@@ -591,15 +598,35 @@ happen.
   you act (`Step 7 (AC-3): …`), then state observed vs. expected and a
   verdict — `PASS` / `FAIL` / `BLOCKED` / `SKIPPED`. USER is watching;
   narrate at the pace of the clicks, not in one dump at the end.
+- **One expectation, one verification.** Before you act, decide what
+  single piece of evidence settles this step — then take *that* and
+  stop. A value question is settled by one text or DOM read; a visual
+  question ("is it legible, does the layout hold") is settled by one
+  screenshot, and then the screenshot **is** the evidence — do not
+  follow it with a confirming probe, or the probe with a confirming
+  screenshot. Belt-and-braces on a step that already answered is not
+  rigour; it is the review taking twice as long as it needs to while
+  USER watches.
+- **A PASS is final.** Do not revisit a passed step: not from a second
+  angle, not "to be sure" at the end, not because a later step failed.
+  If a step's expectation genuinely needs two observations to be
+  meaningful (a pre-state and a post-state, say), that is *one* step
+  with two observations — say so when you announce it, and still record
+  one verdict.
 - **Perceive as cheaply as the step allows.** Text, the accessibility
   tree or a scoped DOM probe answers "is the value right, did the row
-  disappear, is the error shown" — use those. Reserve screenshots for
-  steps whose expected result is genuinely *visual* (layout, contrast,
-  alignment, "does it look broken"), and when you take one, confirm it
-  actually covers the region you meant before drawing a conclusion from
-  it. A selector that resolves proves an element exists, not that a
-  human can see or read it — so a visual expectation is never settled
-  by a probe alone.
+  disappear, is the error shown" — prefer those; they cost a fraction
+  of a screenshot. Reserve screenshots for steps whose expected result
+  is genuinely *visual* (layout, contrast, alignment, "does it look
+  broken"), and when you take one, confirm it actually covers the
+  region you meant before drawing a conclusion from it. A selector that
+  resolves proves an element exists, not that a human can see or read
+  it — so when the expectation is visual, the screenshot is the
+  *right* single piece of evidence, not an addition to the probe.
+- **Two steps that assert the same thing are one step.** If the review
+  steps repeat an expectation, execute it once, verdict it once, and
+  record the duplication under *Step corrections* — repeating it is not
+  extra coverage, it is the same coverage twice.
 - **Never trigger a native dialog.** `alert` / `confirm` / `prompt` and
   browser modals freeze the automation channel — no further command
   gets through. If a step requires one, stop, tell USER what to dismiss
@@ -612,10 +639,19 @@ happen.
 - **A blocked step does not stop the run.** Mark it `BLOCKED` with the
   reason, continue with the steps that do not depend on it, and never
   record a verdict for a step you did not reach — those are `SKIPPED`.
-- **Deviate only to narrow a repro.** Once a step fails you may poke
-  around to pin down the trigger (retry, other input, console, network
-  panel). You may not route around the failure to make a later step
-  pass.
+- **After a FAIL, repeat only to narrow the repro — and bound it.**
+  This is the *one* place repetition is allowed: once a step fails you
+  may retry it, vary the input, or read the console and network panel
+  to pin down the trigger. Stop the moment you can state the trigger,
+  or after a handful of attempts, and write down what you tried. You
+  may not route around the failure to make a later step pass.
+- **Never retry for a greener result.** A step that fails and then
+  passes on a retry is **flaky**, and flaky is a finding — record it as
+  `FAIL (flaky: passed on attempt N)` with both observations. Retrying
+  until something goes green converts a real defect into a clean report,
+  which is the worst outcome this whole mode exists to prevent. Same for
+  the run as a whole: you never re-run a completed review to get a
+  better number.
 - **A wrong step is a finding against the steps themselves.** You
   authored them; correct it in the run comment rather than quietly
   doing something else.
@@ -719,7 +755,10 @@ testing sub-work-item.
 - [ ] Setup commands executed as written; failures reported, not worked around
 - [ ] Every step attempted in order, each with an explicit PASS / FAIL / BLOCKED / SKIPPED
 - [ ] No verdict recorded for a step that was never reached
-- [ ] Visual expected-results were looked at, not inferred from a selector
+- [ ] Exactly one piece of evidence per step — no probe-plus-screenshot on the same expectation, no passed step revisited
+- [ ] Visual expected-results settled by looking, not inferred from a selector (and not double-checked afterwards)
+- [ ] Repetition happened only after a FAIL, to narrow a repro, and what was tried is written down
+- [ ] No step retried into a PASS — a fail-then-pass is recorded as flaky, not as green
 - [ ] Destructive steps had USER's explicit go, or are listed under *Not verified*
 - [ ] Story state and assignee unchanged by the run
 - [ ] Every finding attributed to exactly one sub-work-item, with a stated rationale
