@@ -68,8 +68,12 @@ trail-aiac/
 │   ├── config.yaml.example        seeds consumer's config.yaml
 │   ├── credentials.yaml.example   seeds consumer's credentials.yaml
 │   └── settings.json              persona permissions
-│                                  (Write/Edit on context/* and
-│                                  agent-memory/**)
+│                                  (Edit on context/* and
+│                                  agent-memory/**; `Edit(path)` rules
+│                                  cover every file-editing tool —
+│                                  `Write(path)` rules are NOT matched
+│                                  by file permission checks and make
+│                                  Claude Code warn at startup)
 │
 ├── ansible/                       Plane provisioning (optional)
 │   ├── plane.yml                 turn-key playbook

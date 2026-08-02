@@ -1,21 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Write(.claude/context/*.md)",
       "Edit(.claude/context/*.md)",
-      "Write(.claude/agent-memory/**)",
       "Edit(.claude/agent-memory/**)",
-      "Write(content/**)",
       "Edit(content/**)",
-      "Write(copy/**)",
       "Edit(copy/**)",
-      "Write(posts/**)",
       "Edit(posts/**)",
-      "Write(blog/**)",
       "Edit(blog/**)",
-      "Write(public/**)",
       "Edit(public/**)",
-      "Write(src/content/**)",
       "Edit(src/content/**)"
     ]
   },
