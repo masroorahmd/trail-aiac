@@ -98,9 +98,13 @@ full state spine.
 ## HTML body / comment authoring (gotchas)
 
 Plane stores work-item bodies and comments as HTML, exposed through
-`description_html` and `comment_html` on the MCP tools. Two traps
+`description_html` and `comment_html` on the MCP tools. These traps
 have re-burned multiple personas across consumer projects:
 
+- **Markdown is not converted.** `**bold**` and `- item` are stored
+  as literal asterisks and hyphens. The templates in the persona
+  prompts show the *structure* of a comment, not its wire format;
+  what goes on the wire is HTML.
 - **CDATA does not work.** `<![CDATA[...]]>` wrappers render as
   literal text inside the body or comment — they are not interpreted.
   To embed `<` and `>` characters (e.g. demonstrating XML or shell
@@ -117,6 +121,31 @@ have re-burned multiple personas across consumer projects:
 
 Rule of thumb: every `_html` MCP field accepts raw HTML; if a
 character is special to HTML, encode it before sending.
+
+**Why this matters more than a normal typo: comments are
+write-once.** No persona toolset exposes a comment edit or delete
+verb — `add_comment` is the whole surface. A mis-encoded comment is
+therefore permanent noise on the ticket; the only remedy is a second
+comment that opens by superseding the first, plus a human deleting
+the original in the Plane UI. Personas are instructed to read the
+returned `comment_html` back and repost immediately if the echo shows
+`&lt;p&gt;`-style escaping, and to write **one** item of a batch first
+and check its echo before creating the rest.
+
+Work-item *bodies* have the same one-shot property for a different
+reason: the framework's description-once rule means a body is written
+at creation and never edited, so a mis-encoded body can only be
+annotated by a follow-up comment.
+
+## Stale PATCH echoes
+
+`update_work_item` can answer HTTP 200 while the response body still
+carries the work-item's *previous* state. The write itself has
+normally landed — the echo simply isn't evidence of it. Personas are
+instructed to confirm any transition they are about to *report* (a
+handover, a close) with an independent `retrieve_work_item` call and
+to report that reading, rather than re-issuing the PATCH against a
+stale echo.
 
 ## TLS / private-CA hosts
 

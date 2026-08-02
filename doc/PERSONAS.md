@@ -31,7 +31,7 @@ command.
 | <img src="../avatars/software-architect.png" width="60"/>    | `software-architect`    | `/sa` | Designs the solution and decomposes the Story into 1–4 sub-work-items in `frontend / backend / testing / documentation` modules; the architecture slice for each module lives in that sub-work-item's body. | After RE — `/sa <STORY-ID>`. |
 | <img src="../avatars/security-reviewer.png" width="60"/>     | `security-reviewer`     | `/sr` | Strict, non-negotiable gate over every sub-work-item. Posts a security-review comment per child. Maintains project-level security state. | After SA — `/sr <STORY-ID>`. |
 | <img src="../avatars/backend-developer.png" width="60"/>     | `backend-developer`     | `/bd` | Implements the `backend`-module sub-work-item; posts an Implementation notes comment. | After SR — `/bd <SUBTASK-ID>`. |
-| <img src="../avatars/ui-developer.png" width="60"/>          | `ui-developer`          | `/ud` | Implements the `frontend`-module sub-work-item; posts an Implementation notes comment. | After SR — `/ud <SUBTASK-ID>`. |
+| <img src="../avatars/ui-developer.png" width="60"/>          | `ui-developer`          | `/ud` | Implements the `frontend`-module sub-work-item; visually verifies **every** route the change touched in a browser before handing back, and enumerates them in the Implementation notes. | After SR — `/ud <SUBTASK-ID>`. |
 | <img src="../avatars/test-manager.png" width="60"/>          | `test-manager`          | `/tm` | Implements the `testing`-module sub-work-item; owns test strategy and verification across the Story. | After SR — `/tm <SUBTASK-ID>`. |
 | <img src="../avatars/technical-writer.png" width="60"/>      | `technical-writer`      | `/tw` | Implements the `documentation`-module sub-work-item; edits files in the project repo's docs directory. | After SR — `/tw <SUBTASK-ID>`. |
 | <img src="../avatars/release-manager.png" width="60"/>       | `release-manager`       | `/rm` | Drives versioning, tagging, and release. Runs outside the Story workflow. | When you're cutting a release — `/rm`. |
@@ -80,6 +80,20 @@ required.
 The framework does **not** use Plane pages. Every persona artefact
 lives in either a Plane work-item **body** (written once at creation)
 or a **comment**. See [`WORKFLOW.md`](WORKFLOW.md) for the full table.
+
+Both are effectively **write-once**: bodies by the description-once
+rule, comments because the Plane API exposes no edit or delete verb.
+Personas are told to check the echoed `comment_html` after posting and
+to repost with a supersede note if it came back double-encoded — see
+[`MCP.md`](MCP.md) § *HTML body / comment authoring*.
+
+On the filesystem side, a persona's `.claude/context/*.md` and
+`.claude/agent-memory/**` are ordinary files in a single-consumer
+install, but **symlinks into a shared `claude-context` repo** in a
+multi-consumer setup linked by `bin/link-shared.py`. `Edit` refuses a
+symlink, so every persona is instructed to resolve the path and edit
+the target — and to treat a write there as landing in a *second*
+repository's working tree, which it never commits.
 
 ## Persona file anatomy
 
