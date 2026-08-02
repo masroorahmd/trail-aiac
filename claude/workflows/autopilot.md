@@ -1,14 +1,15 @@
 # Workflow: autopilot (unattended full spine)
 
 **Trigger:** A rare, low-risk, **already-framed** Story that USER wants
-taken all the way to a closed ticket without sitting between every
-stage. USER types `/autopilot DEV-N` once; the whole engineering spine
-runs unattended.
+implemented without sitting between every stage — or a whole work-item
+tree above one (Epic → Story → module children, nested to any depth).
+USER types `/autopilot DEV-N` once; the whole engineering spine runs
+unattended and hands the result back for review.
 
 This is the mirror image of the [quick lane](quick-lane.md). The quick
 lane *shrinks the process* for a tiny change. Autopilot *keeps the
-whole process* (RE → SA → SR → BD/UD → TM → TW → commit/push → RM) but
-removes the human from between its stages — every persona makes and
+whole process* (RE → SA → SR → BD/UD → TM → TW → commit/push → RM →
+hand back) but removes the human from between its stages — every persona makes and
 **logs** reasonable assumptions instead of asking, and an orchestrator
 threads them together.
 
@@ -23,7 +24,12 @@ supervised-by-design run.
   `/quick`. It is the **orchestrator**.
 - It owns exactly three things: **control flow** (which persona runs
   next; PROCEED / STOP / REPAIR), **git** (feature branch, commit,
-  push), and **the terminal summary** to USER.
+  push — never merge, never delete), and **the terminal summary** to
+  USER.
+- **It does not finish the work — it hands it back.** Every Story ends
+  `In Review`, assigned to USER, with a **manual test guide** comment,
+  on a branch that is pushed and left standing. USER merges, USER
+  closes.
 - Every spine persona runs as a **subagent under its own
   `plane__<persona>__*` identity**, so Plane attribution is identical
   to the interactive flow. The orchestrator never reads or writes Plane
@@ -32,12 +38,16 @@ supervised-by-design run.
 ## Pre-flight gate (before any subagent is spawned)
 
 1. `autopilot.enabled: true` in `config.yaml` — else refuse.
-2. Exactly one Story ID in the argument (the only question autopilot
-   may ask USER is "which ticket?" when it's missing).
+2. Exactly one work-item ID in the argument — a Story, or any
+   container above one; a read-only triage subagent walks the tree and
+   returns the drivable Stories plus the containers above them. (The
+   only question autopilot may ask USER is "which ticket?" when it's
+   missing.)
 3. `control-manifest.md` + `stack.md` loaded (guardrails + how to test
    + default branch).
-4. Clean working tree; create feature branch
-   `autopilot/<DEV-N>-<slug>` off the default branch.
+4. Clean working tree. One feature branch **per Story**,
+   `autopilot/<DEV-N>-<slug>`, shared by that Story's module children;
+   a tree with several Stories gets several branches.
 
 ## The persona path
 
@@ -53,10 +63,12 @@ the persona file, the ticket, and the upstream handover.
    if a clean decomposition needs something outside the lane.
 3. **security-reviewer** — **hard gate**: any `blocker`/`high` finding
    → STOP (never self-cleared). Clean or `low`/`info` only → PROCEED.
-4. **implementors (parallel)** — `backend-developer` and/or
-   `ui-developer`, spawned concurrently, one per code sub-work-item.
-   Each implements, runs the suite, posts Implementation notes, moves
-   its item to `In Review`. Bounce rule (as `/quick`) → STOP.
+4. **implementors (sequential)** — `backend-developer` and/or
+   `ui-developer`, spawned **one at a time**, directly in the feature
+   tree (never concurrently, never in a worktree); the orchestrator
+   commits each one's work before spawning the next. Each implements,
+   runs the suite, posts Implementation notes, moves its item to
+   `In Review`. Bounce rule (as `/quick`) → STOP.
 5. **test-manager** — writes/extends tests, runs the full suite.
    - green → PROCEED.
    - fixable red → **REPAIR**: orchestrator re-spawns the named
@@ -70,8 +82,18 @@ the persona file, the ticket, and the upstream handover.
    `Trail-Lane: autopilot (<DEV-N>)` trailer, push the **feature
    branch** (never default, never `--force`; push failure is recorded,
    not fatal).
-8. **release-manager** — performs the project's close/release step.
-   Honours its own tag-push human gate — STOP rather than push a tag.
+8. **release-manager** — performs the project's release ceremony
+   (lean-lane-trimmable) and then the **hand-back, which never skips**:
+   the Story goes `In Review` + assignee USER with a *Manual test
+   guide* comment — setup commands from `stack.md`, numbered steps with
+   expected results tied to `AC-N`, what could not be verified, and the
+   assumptions worth watching while testing. Sets **nothing** to
+   `Done`. Honours its own tag-push human gate — STOP rather than push
+   a tag.
+9. **container hand-back** — after the last Story, the containers from
+   triage are handed back the same way, innermost first, each with a
+   roll-up comment: which Stories ran, their branches, and the order to
+   merge them.
 
 ## The `AUTOPILOT-VERDICT` protocol
 
@@ -124,8 +146,21 @@ Personas never touch git under autopilot — they edit the working tree
 and write to Plane only. The orchestrator branches, commits (with the
 `Trail-Lane: autopilot` trailer, so
 `git log --grep='Trail-Lane: autopilot'` is the full unattended-change
-log), and pushes the feature branch. To undo a completed run: revert
-the commit, delete the branch.
+log), and pushes each Story's branch. It stops there: **no merge, no
+branch deletion, on any outcome.** To take a completed run: `git merge
+--no-ff autopilot/<DEV-N>-…` from the default branch. To discard it:
+`git branch -D` the branch.
+
+## Rework goes back into the handed-back ticket
+
+When USER tests the guide and finds a defect, the fix belongs *inside*
+the work-item that is already `In Review` — not a new ticket and not a
+new autopilot run. USER resumes the responsible persona interactively
+(`/ud <ID>`); it moves the item `In Review → In Progress`, fixes it on
+the same still-standing branch, posts a **Rework notes** comment rather
+than editing the original Implementation notes, and returns it to
+`In Review` + USER. A new work-item is right only when the finding is
+genuinely new scope — USER's call, BA's lane to file.
 
 ## Example trigger
 
@@ -134,7 +169,7 @@ the commit, delete the branch.
 > /autopilot DEV-42
 ```
 
-Reach for it only on tickets you would be comfortable reviewing **after**
-they ship to a feature branch — small, well-specified, security-neutral
-work. Anything else: run the normal spine, or let autopilot start and
+Reach for it only on tickets you are comfortable reviewing **after**
+the fact, from a feature branch and a test guide — small,
+well-specified, security-neutral work. Anything else: run the normal spine, or let autopilot start and
 hand it back the moment a gate trips.

@@ -448,14 +448,28 @@ above simply do not apply to it.
 `/autopilot DEV-N` is the opposite trade from the quick lane. Where
 `/quick` *shrinks* the process for a tiny change, autopilot keeps the
 spine but removes the human from between its stages. One
-human-initiated turn (USER types `/autopilot DEV-N`) drives a single
-already-framed Story all the way to a closed ticket — RE → SA → SR →
-BD/UD → TM → TW → commit → RM → merge — without stopping to ask USER
-anything. That chain is the *maximum* path: in **lean-lane mode** (the
-default) the orchestrator uses judgement to trim the ceremony a small
-Story doesn't need (see below). On a clean run it ends with the feature
-branch merged into the default branch and deleted; on a STOP it hands
-back with the branch intact.
+human-initiated turn (USER types `/autopilot DEV-N`) drives an
+already-framed Story — or every Story in a work-item tree above it —
+through the spine: RE → SA → SR → BD/UD → TM → TW → commit → RM → hand
+back, without stopping to ask USER anything. That chain is the
+*maximum* path: in **lean-lane mode** (the default) the orchestrator
+uses judgement to trim the ceremony a small Story doesn't need (see
+below).
+
+**It never merges and never closes.** Autopilot's terminal state is a
+reviewable hand-back: each Story ends `In Review`, assigned to USER,
+carrying a **manual test guide** comment — setup commands, numbered
+steps with expected results tied to `AC-N`, what could not be verified
+— on a feature branch that is pushed and left standing. Merging into
+the default branch and closing the tickets are USER's, always. On a
+STOP it hands back the same way, minus the guide.
+
+**One branch per Story.** The branch hangs on the Story whose children
+are the module slices (`backend` / `frontend` / `testing` /
+`documentation`); those children all share it. Hand autopilot an Epic —
+or a tree nested deeper than that — and it drives each Story underneath
+on its own branch, then hands the containers back too, innermost first,
+with a roll-up comment naming every branch and the order to merge them.
 
 It does not weaken the user-triggered rule (see *Why the human is the
 dispatcher*): USER still triggers exactly one turn, and nothing in
@@ -470,8 +484,9 @@ How it stays safe and auditable:
   `plane__<persona>__*` identity**, so Plane attribution stays exactly
   as in the interactive flow. The orchestrator only reads each
   subagent's `AUTOPILOT-VERDICT` and decides PROCEED / STOP / REPAIR,
-  and it owns all git — the feature branch, each implementor's commit,
-  the push, and the final merge/delete (personas never touch git).
+  and it owns all git — the feature branch, each implementor's commit
+  and the push (personas never touch git). It does **not** merge and
+  does **not** delete branches, on any outcome.
 - **Assume-and-log, not ask.** Each persona, under the `AUTOPILOT-MODE`
   token, flips from "ask USER" to "pick the most reasonable assumption
   and record it as a numbered `AS-N` entry in an *Autopilot assumptions*
@@ -491,8 +506,9 @@ How it stays safe and auditable:
   full spine is the maximum path, not a fixed liturgy: on a small,
   low-risk Story, running every persona burns tokens on handovers that
   carry no content. Under `autopilot.lean_lane: true` (the default) the
-  orchestrator may (a) **skip RE, SA, SR, TM, TW, or RM** when they add
-  no value for the Story — a Story already framed as crisp, testable AC
+  orchestrator may (a) **skip RE, SA, SR, TM, TW, or RM's release
+  ceremony** when they add no value for the Story — a Story already
+  framed as crisp, testable AC
   needs no Requirements Engineer to re-state it, a single-slice change
   with one obvious module needs no Software Architect to decompose it (the
   Story itself becomes the single work-item the one implementor and TM
@@ -517,12 +533,12 @@ How it stays safe and auditable:
   **SR always runs whenever the change touches a `CM-N`
   security non-negotiable** (auth/authz, secrets/crypto,
   externally-controlled input, PII, a new dependency, a network/permission
-  boundary — when in doubt, it runs); and **skipping RE or RM leaves the
-  Plane Story in a non-terminal state** (`To Do` for a skipped RE,
-  typically `In Review` for a skipped RM) because the orchestrator has no
-  token to move it — flagged as a loose end in the summary, while the git
-  merge still runs. Every skip
-  and merge is logged as a numbered
+  boundary — when in doubt, it runs); and **RM's hand-back never
+  skips** — the Story reaches USER `In Review` with its test guide, or
+  the run did not finish, since the orchestrator has no token to move a
+  stranded Story itself. (Skipping RE does leave the Story in `To Do`
+  for the same token reason — flagged as a loose end in the summary.)
+  Every skip and implementor merge is logged as a numbered
   `SKIP-N` decision — the orchestrator's analogue of a persona's `AS-N`
   assumptions — and surfaced in full in the terminal summary, so nothing
   is trimmed silently. Set `autopilot.lean_lane: false` to force the
@@ -533,13 +549,21 @@ How it stays safe and auditable:
   before spawning the next. Every autopilot commit carries a
   `Trail-Lane: autopilot (<DEV-N>)` trailer — the mirror of
   `Trail-Lane: quick`, so `git log --grep='Trail-Lane: autopilot'`
-  lists every unattended change. On a **clean COMPLETED run** (all gates
-  green) the orchestrator merges the feature branch into the default
-  branch with `--no-ff`, pushes it, and deletes the feature branch —
-  the deliberate end of the unattended lane. If that merge
-  or push can't land (conflict, branch protection), it stops with the
-  branch intact for a human. It never uses `--force`, and on **STOP** it
-  never merges or deletes — the branch stays for USER to inspect.
+  lists every unattended change. It pushes each Story's branch and
+  **stops there** — no merge, no branch deletion, on any outcome, and
+  never `--force`. If the push can't land (no remote, branch
+  protection), the local branch is the durable artefact and the
+  hand-back names it as local-only. Every branch waits for USER.
+- **Rework lands in the ticket that was handed back.** When USER tests
+  the guide and finds a defect, the fix belongs *inside* the
+  work-item that is already `In Review` — USER resumes the responsible
+  persona interactively (`/ud <ID>`), that persona moves the item
+  `In Review → In Progress`, fixes it **on the same still-standing
+  branch**, posts a **Rework notes** comment (rather than editing the
+  original Implementation notes, which record what was believed at
+  hand-back), and returns it to `In Review` + USER. A new work-item is
+  right only when the finding is genuinely new scope — USER's call,
+  BA's lane to file.
 
 Gated off by default: `/autopilot` refuses to run unless
 `autopilot.enabled: true` in `config.yaml`. See

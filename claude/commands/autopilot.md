@@ -1,6 +1,6 @@
 ---
-description: Unattended lane — drive an already-framed Story (or, when handed a parent work-item, each of its sub-Stories in turn) end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → merge) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree), and the orchestrator owns git — including, on a clean COMPLETED run, merging the feature branch into the default branch and deleting it. In lean-lane mode (default) the orchestrator uses judgement to trim the ceremony — skipping RE/SA/SR/TM/TW/RM when they add no value and collapsing or swapping the BD/UD implementors when the cross-over work is small, logging each choice as a SKIP-N decision — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice or needs a real decomposition, TM always runs when the change has any runtime surface, and SR always runs when the change touches a security non-negotiable. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
-argument-hint: "<DEV-N — an existing Story (state `To Do`, assignee requirements-engineer), OR a parent work-item whose sub-Stories are driven in order>"
+description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with a step-by-step manual test guide; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each>"
 ---
 
 You are running `/autopilot` directly in the **main loop** of this
@@ -9,8 +9,9 @@ it has **no Plane identity, no token, and makes no Plane MCP calls
 whatsoever**. It is the framework's deliberate **unattended lane**: a
 single human-initiated session (USER typed `/autopilot DEV-N`) that
 orchestrates the *whole* engineering spine for one Story — or, when
-handed a parent work-item, for each of its sub-Stories in turn — and
-runs it to a closed ticket without stopping to ask USER anything.
+handed a container above one, for every Story in the tree beneath it —
+and runs each to a **reviewable hand-back** without stopping to ask
+USER anything.
 
 This does **not** break the framework's user-triggered rule. USER
 triggered exactly one turn. Nothing in Plane drives Claude Code; *you*
@@ -19,11 +20,16 @@ poll, no ticket-trigger.
 
 You are the **orchestrator**. You own three things and nothing else:
 1. **Control flow** — which persona runs next, and whether to PROCEED or STOP.
-2. **Git** — branch, commit, push, merge, delete (personas
-   never touch git; you do). On a clean COMPLETED run you merge the
-   feature branch into the default branch and delete it; on STOP you
-   leave the feature branch intact for USER.
+2. **Git** — branch, commit, push (personas never touch git; you do).
+   **You never merge and you never delete a branch**, on any outcome.
+   One feature branch per Story, pushed and left standing. Merging into
+   the default branch is USER's, always.
 3. **The audit summary** — the final report to USER.
+
+Autopilot's terminal state is a **reviewable hand-back**, not a closed
+ticket: every Story it drove ends `In Review`, assigned to USER, with a
+manual test guide on it, and its branch waiting. USER merges and USER
+closes. No persona under autopilot sets anything to `Done`.
 
 **All Plane I/O happens inside the persona subagents**, each under its
 own `plane__<persona>__*` identity. You never read or write Plane
@@ -42,11 +48,12 @@ the orchestrator a token.
    discretion* section below; when `false`, run the full spine every
    time and skip nothing).
 2. **Argument check.** `$ARGUMENTS` must name exactly one work-item ID
-   (e.g. `DEV-42`) — either a leaf Story to drive, or a parent
-   work-item whose sub-Stories autopilot will drive in order (the
-   *Triage* step below decides which). If empty or ambiguous, ask USER
-   for the single work-item ID and WAIT — this is the *one* question
-   autopilot is allowed.
+   (e.g. `DEV-42`) — a Story to drive, or any container above one
+   (Epic, sub-Epic, nested to any depth) whose Stories autopilot will
+   drive in order. *Triage* below resolves which. One ID is enough for
+   a whole tree; if empty or ambiguous, ask USER for the single
+   work-item ID and WAIT — this is the *one* question autopilot is
+   allowed.
 3. **Standards load.** Read `.claude/context/control-manifest.md` (the
    `CM-N` guardrails — you need the *Security non-negotiables*,
    *Compliance / legal*, and *Architectural invariants* sections to
@@ -55,12 +62,13 @@ the orchestrator a token.
 4. **Git pre-flight.** Confirm a clean working tree (`git status`) and
    record the project's default branch. If dirty, stop and ask USER to
    stash/commit first — autopilot will not mix its changes with
-   pre-existing ones. Do **not** create the feature branch here —
-   branch creation happens once per Story you actually drive (see
-   *Triage* and *Driving the work list*), so a parent run gets one
-   branch per sub-Story instead of one shared branch. All persona work
-   for a Story — including both implementors, one at a time — lands
-   directly on that Story's branch; no worktree is ever created.
+   pre-existing ones. Do **not** create a feature branch here — branch
+   creation happens once per **Story** you actually drive (see *Triage*
+   and *Driving the work list*). A Story's module children (backend,
+   frontend, testing, documentation) all share that one branch; a run
+   over an Epic produces one branch per Story underneath it. All
+   persona work for a Story — including both implementors, one at a
+   time — lands directly on that branch; no worktree is ever created.
 
 5. **Permission-mode check.** "Unattended" presumes the session won't
    stop for an approval prompt mid-run. The framework's `settings.json`
@@ -134,13 +142,26 @@ block**. `PROCEED` → advance to the next stage. `STOP` → jump to
 repair loop in spine step 5. A subagent that returns no parseable
 verdict is treated as STOP (reason: "no verdict — subagent aborted").
 
-## Triage — leaf Story or parent work-item? (run once, before the spine)
+## Triage — find the Stories in the tree (run once, before the spine)
 
-Autopilot's spine drives **one Story**. But USER may hand you a **parent
-work-item** whose real work lives in its sub-Stories. You (the
-orchestrator) never call Plane, so you cannot tell a leaf from a parent
-yourself — spawn **one read-only triage subagent** to classify
-`$ARGUMENTS` before you create any branch or run any spine.
+Autopilot's spine drives **one Story**, and a Story is the level whose
+children are *implementation slices*. USER may hand you anything above
+that: a Story directly, or a container (Epic, sub-Epic) nested
+arbitrarily deep. You (the orchestrator) never call Plane, so you
+cannot see the shape yourself — spawn **one read-only triage subagent**
+to walk the tree under `$ARGUMENTS` before you create any branch or run
+any spine.
+
+The two levels the triage must separate:
+
+- A **Story** is a work-item that either has no children at all, or
+  whose children are **module sub-work-items** (`backend`, `frontend`,
+  `testing`, `documentation`). This is what the spine drives and what a
+  feature branch is named after.
+- A **container** is a work-item whose children are themselves Stories
+  or further containers. Containers get no branch and no spine — they
+  are handed back to USER at the very end, after every Story beneath
+  them is done. Recurse through as many container levels as exist.
 
 Spawn it via the `Agent` tool (`subagent_type: general-purpose`) with a
 prompt that opens with the Autopilot contract block and adopts the
@@ -150,28 +171,41 @@ self-finalizes by *reporting only* (transitioning nothing) and ends with
 the `TRIAGE-VERDICT` block below instead of the usual `AUTOPILOT-VERDICT`:
 
 > TRIAGE ONLY — do not transition any state, do not post any comment,
-> do not create or edit anything. Read work-item `$ARGUMENTS` and its
-> sub-work-items, then classify it:
-> - **LEAF** — it has no sub-work-items; it is itself the Story to drive.
-> - **PARENT** — it has sub-work-items; list every child Story ID in
->   ascending sequence order (the order they should be built), and note
->   which children are already in a terminal/done state.
+> do not create or edit anything. Read work-item `$ARGUMENTS` and walk
+> its sub-work-items **recursively, to full depth**. Classify every
+> node:
+> - A **Story** — no children at all, or children that are module
+>   sub-work-items (`backend` / `frontend` / `testing` /
+>   `documentation`). These are the drivable units.
+> - A **container** — children that are themselves Stories or further
+>   containers. Recurse into it; it is not drivable itself.
+>
+> Report every Story in the order it should be built (ascending
+> sequence, and where a Story plainly depends on an earlier sibling's
+> output, say so in NOTES). Note which Stories are already in a
+> terminal/done state. List the containers innermost first, so the last
+> entry is the item USER named.
 > End with this block and nothing after it:
 >
->     TRIAGE-VERDICT: LEAF | PARENT
+>     TRIAGE-VERDICT: LEAF | NESTED
 >     STORIES: <ordered, comma-separated Story IDs to drive — the item
->              itself if LEAF; every not-yet-done child if PARENT>
->     SKIPPED: <children already done, comma-separated, or none>
->     NOTES: <one line — e.g. parent title, or why a child was skipped>
+>              itself if LEAF; every not-yet-done Story in the tree
+>              if NESTED>
+>     CONTAINERS: <comma-separated container IDs, innermost first
+>                  (outermost last), or none>
+>     SKIPPED: <Stories already done, comma-separated, or none>
+>     NOTES: <one line — tree shape, depth, any build-order dependency>
 
 Parse the block to build your **work list** — the ordered Story IDs the
 spine will drive:
-- **LEAF** → a one-element list: `[$ARGUMENTS]`. Drive it exactly as
-  before — no behaviour change from the original single-Story autopilot.
-- **PARENT** → the `STORIES` list, in order. You drive the **children**,
-  never the parent itself: the parent is a container and gets no branch,
-  no spine, and no state change from autopilot. Report the `SKIPPED`
-  children in the summary so USER sees nothing was silently dropped.
+- **LEAF** → a one-element list: `[$ARGUMENTS]`, and `CONTAINERS: none`.
+  Drive it exactly as a single-Story run.
+- **NESTED** → the `STORIES` list, in order, however many container
+  levels sit above them. You drive the **Stories**, never a container:
+  a container gets no branch and no spine. It does get handed back to
+  USER at the end — see *Hand-back* in spine step 9. Report the
+  `SKIPPED` Stories in the summary so USER sees nothing was silently
+  dropped.
 - A triage subagent that returns no parseable verdict is treated as
   STOP (reason: "triage failed — could not classify the work-item").
 
@@ -182,21 +216,37 @@ order, each to completion before the next begins.** For each Story in
 turn (call it `<DEV-N>` throughout the spine):
 
 1. Create and switch to its feature branch
-   `autopilot/<DEV-N>-<short-slug>` off the **current** default branch,
-   then run spine steps 1–9 for it. Driving children in order off the
-   current default means a later child branches off a default that
-   already carries the merged work of the earlier children — natural
-   dependency ordering.
-2. **On a clean COMPLETED** (spine step 9 merged it into default): move
-   to the next Story in the list.
+   `autopilot/<DEV-N>-<short-slug>`, then run spine steps 1–9 for it.
+   **Every module child of that Story lands on this one branch** — both
+   implementors, TM's tests, TW's docs.
+
+   **What to branch off.** Normally the **current default branch**.
+   Because you no longer merge, a later Story's branch does *not*
+   inherit an earlier Story's work — so when triage's `NOTES`, SA's
+   decomposition, or the Story bodies make it clear that Story B builds
+   on Story A's output, branch **B off A's branch** instead of off
+   default, and record the resulting merge order in the summary. When
+   in doubt, branch off default and say in the summary that the Stories
+   are independent as far as you could tell.
+
+2. **On a clean COMPLETED** (spine step 9 handed the Story back to
+   USER): move to the next Story in the list. Nothing is merged and
+   nothing is deleted; the branch stays.
 3. **On STOP** for any Story: **halt the whole work list.** Do not start
    the remaining Stories. Hand back per *Hand-back on STOP*, and in the
    summary record which Stories COMPLETED, which one STOPPED and why, and
    which are still PENDING (untouched) — so USER can fix the blocker and
    re-run autopilot on just the remainder (or on the individual Story).
 
-For a LEAF work list this loop runs exactly once and is identical to the
-original single-Story run. For a PARENT it is the same spine, looped.
+**After the last Story completes**, and only if *every* Story in the
+work list COMPLETED, hand back the **containers** from triage —
+innermost first, outermost (the item USER named) last. See spine step 9.
+On a STOP, containers are not handed back: the tree is not finished, and
+moving it to `In Review` would say it is.
+
+For a LEAF work list this loop runs exactly once, with no containers.
+For a NESTED tree it is the same spine, looped once per Story, with the
+container hand-back appended.
 
 ## Lean-lane discretion (skip and merge stages to fit the work)
 
@@ -265,12 +315,15 @@ real content. Use judgement. Three levers, each with a hard floor:
      are unsure whether the change has a runtime surface, you are not sure
      enough to skip: **run TM.** A skipped TM means no independent green
      gate ran; name it as a caveat in the summary.
-   - **Skipping RM leaves the Plane Story where the last persona left
-     it** (typically `In Review`) — you have no Plane token and cannot
-     close it yourself. That is an accepted trade for the token saving;
-     name it as a loose end in the summary (`Story left In Review — no
-     release ceremony run; close in Plane or re-run /rm`). The git
-     merge (spine step 9) still happens regardless of an RM skip.
+   - **RM hand-back floor (never skippable).** RM is no longer on the
+     skip list. Its *release ceremony* (CHANGELOG reconciliation,
+     release-trail entry) is lean-lane-trimmable — log a `SKIP-N` for
+     that part when the Story carries no real release ceremony — but the
+     **hand-back in spine step 9 always runs**: the Story reaches USER
+     `In Review`, assigned, with a manual test guide, or the run did not
+     finish. You have no Plane token, so a skipped hand-back would leave
+     the Story stranded mid-spine with no one holding it. That is the
+     one outcome autopilot must never produce.
 
 2. **Collapse or swap the BD/UD implementors when the cross-over work is
    small.** Every implementor edits directly in the feature tree, one
@@ -386,8 +439,9 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    with no `testing` sub-work-item (log a `SKIP-N`); the TM
    runtime-surface floor above governs when a skip is *not* allowed —
    when in doubt, run it. On a skip there is no independent green-suite
-   gate, so step 9 merges on the implementor's own local suite run alone;
-   flag that caveat in the summary. When you do run it, TM writes/extends
+   gate, so the hand-back rests on the implementor's own local suite run
+   alone; flag that caveat in the summary *and* in the manual test guide,
+   since it changes how much USER's own testing has to carry. When you do run it, TM writes/extends
    tests and runs the full suite.
    - TM PROCEEDs only with a **green suite**.
    - TM returns `REPAIR` for a fixable red suite (with `NEXT:` naming
@@ -424,39 +478,72 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    - Push the **feature branch** (never `--force`). If push fails (no
      remote, branch protection), record the failure in the summary and
      continue — the local commits are the durable artefact, and the
-     step-9 merge is local-first regardless.
+     hand-back names a local branch just as well as a pushed one. Say
+     in the manual test guide that the branch is local-only, so USER
+     doesn't look for it on the remote.
 
-8. **Release Manager** — spawn with persona `release-manager` + the
-   commit/branch. RM performs the project's release/close step for the
-   Story per its DoD (it will not push tags without the gate its
-   persona defines; respect that). RM STOPs if release preconditions
-   aren't met. **Lean-lane:** you may skip RM when the Story carries no
-   real release/close ceremony — log a `SKIP-N` and remember that the
-   Plane Story then stays where the last persona left it (you have no
-   token to close it); flag that loose end in the summary. The step-9
-   git merge is independent of RM and still runs.
+8. **Release Manager — release ceremony** — spawn with persona
+   `release-manager` + the commit/branch. RM performs the project's
+   release/close step for the Story per its DoD (it will not push tags
+   without the gate its persona defines; respect that). RM STOPs if
+   release preconditions aren't met. **Lean-lane:** you may skip this
+   *ceremony* when the Story carries no real release content — log a
+   `SKIP-N`. You may **not** skip step 9. When both run, spawn RM once
+   and give it both tasks; the hand-back is the second half of the same
+   turn.
 
-9. **Git — merge into default + delete the branch (you, the
-   orchestrator).** This step runs **only** on a clean COMPLETED run:
-   every gate green (RE/SA/SR/implementors/TM/TW/RM all PROCEEDed — a
-   *skipped* lean-lane stage is not a STOP — suite green where TM ran,
-   SR clean). It is the deliberate end of the unattended lane —
-   what was previously a human's merge.
-   - Fast-forward the feature branch onto the current default branch
-     tip first (`git merge <default>` *into* the feature branch, or
-     rebase) so the merge is clean; a conflict here is outside the lane
-     → fall through to *Hand-back on STOP* (the branch survives for USER).
-   - Check out the default branch and merge the feature branch with
-     `--no-ff` (a single merge commit makes `git revert -m 1 <hash>`
-     the one-line undo). Never `--force`.
-   - Push the default branch. If the push is rejected (branch
-     protection, non-fast-forward, no remote), **do not** retry with
-     force and **do not** delete the branch: record it in the summary,
-     leave the local merge in place, and tell USER the branch still
-     needs a human/CI merge. The local merge is the durable artefact.
-   - Only after a successful default-branch update: delete the feature
-     branch locally (`git branch -d`) and on the remote (if it was
-     pushed). Report the deletion in the summary.
+   Under autopilot RM **never sets anything to `Done`** — not a
+   sub-work-item, not the Story, not a container. Closing is USER's.
+
+9. **Hand back to USER (mandatory — the end of the unattended lane).**
+   This runs on a clean COMPLETED Story: every gate green
+   (RE/SA/SR/implementors/TM/TW all PROCEEDed — a *skipped* lean-lane
+   stage is not a STOP — suite green where TM ran, SR clean).
+
+   **You do not merge and you do not delete.** The branch is pushed
+   (step 7) and stays. What ends the Story is a hand-back in Plane, so
+   spawn `release-manager` with the task below (folded into step 8's
+   spawn when the ceremony ran too):
+
+   > Hand `<DEV-N>` back to USER. Set state `In Review` and assignee
+   > USER. Set **nothing** to `Done` — neither this Story nor any of its
+   > sub-work-items. Then post ONE comment titled **Manual test guide
+   > (autopilot hand-back)**, in English, containing:
+   >
+   > - **Branch** — `autopilot/<DEV-N>-<slug>`, and what it is based on
+   >   (the default branch, or the sibling Story's branch it builds on).
+   > - **Setup** — the commands to get it running, taken from
+   >   `stack.md`: checkout, install/build if needed, how to start the
+   >   app, any seed/fixture step. Real commands, not a description.
+   > - **Steps** — a numbered walkthrough a human can follow without
+   >   reading the diff. Each step is one action plus the **expected
+   >   result**, and cites the `AC-N` / `EC-N` it exercises where
+   >   acceptance criteria exist. Cover the happy path first, then the
+   >   edge cases that matter. Keep it to what genuinely needs eyes —
+   >   this is a test plan, not a changelog.
+   > - **What I could not verify** — anything the suite and the
+   >   implementors could not reach (an external service, a device
+   >   viewport, a real payment), so USER knows where the coverage ends.
+   > - **Watch out for** — every `AS-N` assumption whose wrongness USER
+   >   would notice while testing, and any known-red test with its
+   >   attribution.
+   >
+   > Then return the usual `AUTOPILOT-VERDICT` block.
+
+   A Story is only COMPLETED once this hand-back has landed. If RM
+   returns STOP here, treat the Story as STOPPED — an unhanded-back
+   Story is not finished.
+
+   **Container hand-back.** After the *last* Story in the work list
+   completes, walk triage's `CONTAINERS` innermost → outermost and spawn
+   `release-manager` once for them with the same rules (`In Review`,
+   assignee USER, nothing set to `Done`). Their comment is a **roll-up**
+   rather than a test plan: which Stories were driven, each one's branch,
+   the order the branches should be merged, which Stories were skipped as
+   already done, and a pointer to each Story's own manual test guide.
+   Where the Stories add up to one user-visible capability, add a short
+   end-to-end path across them — that is the test the per-Story guides
+   cannot give USER.
 
 ## Hand-back on STOP (the safety valve)
 
@@ -481,6 +568,34 @@ Autopilot is the **narrow** lane. Stopping is a success, not a failure:
 it means the change reached the edge of what may be done unattended and
 correctly handed the steering wheel back.
 
+## Rework after a hand-back (what USER does next, and what it must not become)
+
+A hand-back is an invitation to find things. When USER tests the guide
+and reports a defect, **the fix belongs inside the work-item that is
+already `In Review`** — not in a new ticket, and not in a new autopilot
+run.
+
+USER resumes the responsible persona interactively (`/ud <DEV-N.frontend>`,
+`/bd …`, `/tm …`) and that persona:
+
+- works on **that same work-item** — it does not create a follow-up
+  item, and it does not ask USER to file one;
+- moves it `In Review → In Progress` while working, then back to
+  `In Review` + assignee USER when done;
+- posts a **Rework notes** comment rather than editing the original
+  Implementation notes — description-once applies to bodies, and the
+  original notes are the record of what was believed at hand-back;
+- commits onto the **same feature branch**, which is still standing
+  precisely so rework has somewhere to land;
+- re-runs the parts of the manual test guide its fix touches, and says
+  in the Rework notes which steps it re-verified.
+
+The Story and any container above it stay `In Review` throughout — they
+were already handed to USER and the rework does not change who holds
+them. A new work-item is only correct when USER's finding is genuinely
+*new scope* rather than a defect in what was delivered; that call is
+USER's, and BA's lane to file.
+
 ## Terminal summary (always — STOPPED or COMPLETED)
 
 End the run with a single report to USER, in **__CHAT_LANGUAGE__**,
@@ -497,24 +612,25 @@ covering:
   asked up front.
 - Each gate decision (SR verdict, repair iterations used).
 - **Every `SKIP-N` lean-lane decision** — each stage you skipped
-  (RE/SA/SR/TM/TW/RM) or implementor you merged/swapped (BD↔UD), with its
-  one-line reason. If you skipped RE or RM, restate the resulting loose
-  end (the Plane Story left in its non-terminal state — `To Do` for a
-  skipped RE, wherever the last persona left it for a skipped RM). If you
-  skipped TM, restate the quality caveat (no independent green-suite gate
-  ran; the merge rests on the implementor's own local suite run). If
+  (RE/SA/SR/TM/TW or RM's release ceremony) or implementor you
+  merged/swapped (BD↔UD), with its one-line reason. If you skipped RE,
+  restate the loose end (the Story left in `To Do`). If you skipped TM,
+  restate the quality caveat (no independent green-suite gate ran; the
+  hand-back rests on the implementor's own local suite run). If
   `lean_lane` was `false`, say so and note nothing was skipped.
-- Git (per driven Story): feature-branch name, commit hash(es), push
-  result, and — on that Story's COMPLETED — the merge into the default
-  branch (merge-commit hash, default-branch push result) and
-  confirmation the feature branch was deleted.
-  On STOPPED: that the stopped Story's branch is intact and where it is.
-  Test command + result either way.
-- A one-line undo (one entry per driven Story — a parent run may list
-  several):
-  - COMPLETED + merged → `git revert -m 1 <merge-hash>`.
-  - COMPLETED but merge/push couldn't land (e.g. branch protection) →
-    the branch still exists; name it and how to merge it by hand.
+- Git (per driven Story): feature-branch name, what it is based on,
+  commit hash(es), push result. **State plainly that nothing was merged
+  and no branch was deleted** — every branch is waiting for USER.
+- **The merge order** across branches when more than one Story ran, and
+  which branches are independent of each other.
+- **The hand-back roster** — for every Story and container: its ID, that
+  it is `In Review` and assigned to USER, and that its manual test guide
+  (or roll-up) is posted. This is the actionable part of the summary:
+  what USER should test, in what order, on which branch.
+- A one-line disposal per driven Story:
+  - COMPLETED → merge it yourself with
+    `git checkout <default> && git merge --no-ff autopilot/<DEV-N>-…`;
+    to discard instead, `git branch -D autopilot/<DEV-N>-…`.
   - STOPPED → `git branch -D autopilot/<DEV-N>-…` to discard, or resume
     with the recommended `/<persona>`.
 

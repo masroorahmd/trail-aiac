@@ -220,6 +220,22 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
    `update_work_item` call. The state transition signals you are
    working; `start_date` records when the work actually began
    (distinct from the dispatch moment Plane records as `created_at`).
+
+   **Rework path — the work-item you already delivered.** If the item
+   is already `In Review` and USER is handing it back with a defect
+   found in their own testing (typically after an `/autopilot`
+   hand-back), this is **not** a new work-item and you do not ask for
+   one. Move it `In Review → In Progress`, fix it on the **same feature
+   branch** — it is still standing precisely so rework has somewhere to
+   land — and return it to `In Review` + assignee USER when done.
+   `start_date` stays as it was; it records when the work began, not
+   when it resumed. Post a **Rework notes** comment — what USER
+   reported, what you changed, and which steps of the manual test guide
+   you re-verified — rather than editing your original Implementation
+   notes, which stand as the record of what was believed at hand-back.
+   A new work-item is right only when USER's finding is genuinely *new
+   scope* rather than a defect in what you delivered; that call is
+   USER's, and BA files it.
 2. Read the sub-work-item body (SA's slice) — pay attention to which
    UI surfaces (templates, components) are touched.
 3. Read SR's findings — XSS, CSP, auth-context concerns are typical
