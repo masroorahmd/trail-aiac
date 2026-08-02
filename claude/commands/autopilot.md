@@ -320,8 +320,9 @@ real content. Use judgement. Three levers, each with a hard floor:
      release-trail entry) is lean-lane-trimmable — log a `SKIP-N` for
      that part when the Story carries no real release ceremony — but the
      **hand-back in spine step 9 always runs**: the Story reaches USER
-     `In Review`, assigned, with a manual test guide, or the run did not
-     finish. You have no Plane token, so a skipped hand-back would leave
+     `In Review`, assigned, with a manual test guide — TM's, or RM's
+     fallback when lean-lane skipped TM — or the run did not finish.
+     You have no Plane token, so a skipped hand-back would leave
      the Story stranded mid-spine with no one holding it. That is the
      one outcome autopilot must never produce.
 
@@ -440,9 +441,12 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    runtime-surface floor above governs when a skip is *not* allowed —
    when in doubt, run it. On a skip there is no independent green-suite
    gate, so the hand-back rests on the implementor's own local suite run
-   alone; flag that caveat in the summary *and* in the manual test guide,
-   since it changes how much USER's own testing has to carry. When you do run it, TM writes/extends
-   tests and runs the full suite.
+   alone **and no manual test guide gets authored here** — RM writes the
+   fallback one at step 9. Flag that caveat in the summary. When you do
+   run it, TM writes/extends tests, runs the full suite, and — on its
+   final green pass — posts the **Manual test guide (test-manager)**
+   comment on the parent Story that step 9 hands back. Remind it of that
+   deliverable in the spawn prompt.
    - TM PROCEEDs only with a **green suite**.
    - TM returns `REPAIR` for a fixable red suite (with `NEXT:` naming
      the implementor). That is the **repair loop**, not a STOP:
@@ -507,26 +511,29 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
 
    > Hand `<DEV-N>` back to USER. Set state `In Review` and assignee
    > USER. Set **nothing** to `Done` — neither this Story nor any of its
-   > sub-work-items. Then post ONE comment titled **Manual test guide
-   > (autopilot hand-back)**, in English, containing:
+   > sub-work-items.
    >
-   > - **Branch** — `autopilot/<DEV-N>-<slug>`, and what it is based on
-   >   (the default branch, or the sibling Story's branch it builds on).
-   > - **Setup** — the commands to get it running, taken from
-   >   `stack.md`: checkout, install/build if needed, how to start the
-   >   app, any seed/fixture step. Real commands, not a description.
-   > - **Steps** — a numbered walkthrough a human can follow without
-   >   reading the diff. Each step is one action plus the **expected
-   >   result**, and cites the `AC-N` / `EC-N` it exercises where
-   >   acceptance criteria exist. Cover the happy path first, then the
-   >   edge cases that matter. Keep it to what genuinely needs eyes —
-   >   this is a test plan, not a changelog.
-   > - **What I could not verify** — anything the suite and the
-   >   implementors could not reach (an external service, a device
-   >   viewport, a real payment), so USER knows where the coverage ends.
+   > The manual test guide is **TM's**, not yours: it posted a
+   > *Manual test guide (test-manager)* comment on this Story with the
+   > setup commands, the numbered steps and the coverage boundary.
+   > Confirm that comment is there, then post ONE comment titled
+   > **Autopilot hand-back**, in English, adding only what is yours:
+   >
+   > - **Branch** — `autopilot/<DEV-N>-<slug>`, what it is based on (the
+   >   default branch, or the sibling Story's branch it builds on), and
+   >   whether it is pushed or local-only.
+   > - **Merge order** — when several Story branches are in play, the
+   >   order they must land in; otherwise "independent".
+   > - **Test guide** — a pointer to TM's comment ("see *Manual test
+   >   guide (test-manager)* above").
    > - **Watch out for** — every `AS-N` assumption whose wrongness USER
    >   would notice while testing, and any known-red test with its
    >   attribution.
+   >
+   > **If no TM guide comment exists** (lean-lane skipped TM), write a
+   > short guide yourself from the AC and the implementors'
+   > Implementation notes — nothing beyond what those two sources
+   > support — and open it by saying no independent test gate ran.
    >
    > Then return the usual `AUTOPILOT-VERDICT` block.
 

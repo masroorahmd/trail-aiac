@@ -69,7 +69,12 @@ the persona file, the ticket, and the upstream handover.
    commits each one's work before spawning the next. Each implements,
    runs the suite, posts Implementation notes, moves its item to
    `In Review`. Bounce rule (as `/quick`) → STOP.
-5. **test-manager** — writes/extends tests, runs the full suite.
+5. **test-manager** — writes/extends tests, runs the full suite, and
+   on its final green pass posts the **Manual test guide
+   (test-manager)** comment on the parent Story: setup commands from
+   `stack.md`, numbered steps with expected results tied to `AC-N`,
+   what the suite already covers (so USER can skip it), and what could
+   not be verified.
    - green → PROCEED.
    - fixable red → **REPAIR**: orchestrator re-spawns the named
      implementor with TM's failure detail, then TM again, up to
@@ -84,12 +89,14 @@ the persona file, the ticket, and the upstream handover.
    not fatal).
 8. **release-manager** — performs the project's release ceremony
    (lean-lane-trimmable) and then the **hand-back, which never skips**:
-   the Story goes `In Review` + assignee USER with a *Manual test
-   guide* comment — setup commands from `stack.md`, numbered steps with
-   expected results tied to `AC-N`, what could not be verified, and the
-   assumptions worth watching while testing. Sets **nothing** to
-   `Done`. Honours its own tag-push human gate — STOP rather than push
-   a tag.
+   the Story goes `In Review` + assignee USER, with an *Autopilot
+   hand-back* comment carrying the branch, its base, the merge order
+   and the assumptions worth watching while testing — and pointing at
+   the *Manual test guide (test-manager)* comment TM posted at step 5.
+   RM does **not** author that guide; if lean-lane skipped TM there is
+   none, and RM writes a short fallback saying no independent test gate
+   ran. Sets **nothing** to `Done`. Honours its own tag-push human gate
+   — STOP rather than push a tag.
 9. **container hand-back** — after the last Story, the containers from
    triage are handed back the same way, innermost first, each with a
    roll-up comment: which Stories ran, their branches, and the order to

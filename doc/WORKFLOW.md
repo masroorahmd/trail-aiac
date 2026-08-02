@@ -459,10 +459,22 @@ below).
 **It never merges and never closes.** Autopilot's terminal state is a
 reviewable hand-back: each Story ends `In Review`, assigned to USER,
 carrying a **manual test guide** comment — setup commands, numbered
-steps with expected results tied to `AC-N`, what could not be verified
-— on a feature branch that is pushed and left standing. Merging into
-the default branch and closing the tickets are USER's, always. On a
-STOP it hands back the same way, minus the guide.
+steps with expected results tied to `AC-N`, what the suite already
+covers, and what could not be verified — on a feature branch that is
+pushed and left standing. Merging into the default branch and closing
+the tickets are USER's, always. On a STOP it hands back the same way,
+minus the guide.
+
+**The Test Manager writes that guide**, as an extra deliverable on its
+final green pass, because it is the one persona that read the AC as
+specs, read both implementors' notes, and ran the suite — the guide is
+precisely the verification the suite does *not* do. The Release
+Manager performs the hand-back itself (state, assignee, branch, merge
+order) and points at TM's comment; its own reading lane deliberately
+excludes `stack.md`, `testing.md` and `ui.md`, so it is the wrong
+persona to source setup commands or a coverage boundary from. When
+lean-lane skipped TM, RM writes a short fallback guide and opens it by
+saying no independent test gate ran.
 
 **One branch per Story.** The branch hangs on the Story whose children
 are the module slices (`backend` / `frontend` / `testing` /
