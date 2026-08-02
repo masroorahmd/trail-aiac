@@ -160,6 +160,13 @@ branch deletion, on any outcome.** To take a completed run: `git merge
 
 ## Rework goes back into the handed-back ticket
 
+USER can also hand the clicking back to TM: `/tm run manual test guide
+for <DEV-N>` has the Test Manager drive its own guide in a live browser,
+post a **Manual test run** comment on the Story, and file a **Rework
+request** comment on each owning persona's sub-work-item (setting that
+item's assignee back to the owning persona, state untouched). It does
+not fix anything — it only routes the finding.
+
 When USER tests the guide and finds a defect, the fix belongs *inside*
 the work-item that is already `In Review` — not a new ticket and not a
 new autopilot run. USER resumes the responsible persona interactively
