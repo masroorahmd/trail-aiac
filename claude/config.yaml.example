@@ -53,7 +53,7 @@ model_lanes:
 # Story's module children, and it NEVER merges and NEVER deletes a
 # branch: every branch is pushed and left standing, and every Story
 # (then every container above it) is handed back `In Review` +
-# assigned to USER with a step-by-step manual test guide. USER merges
+# assigned to USER with step-by-step review steps. USER merges
 # and USER closes; rework goes back into the same ticket on the same
 # branch. It is deliberately the NARROW lane — it stops and hands back
 # the moment a change leaves the risk lane (a hard security finding, a
@@ -80,7 +80,7 @@ model_lanes:
 #                           the change touches a security non-negotiable
 #                           (CM-N), and RM's HAND-BACK never skips — a
 #                           Story always reaches USER `In Review` with its
-#                           manual test guide. Set false to force the full
+#                           review steps. Set false to force the full
 #                           spine every run (compliance-heavy projects).
 #                           Default true.
 autopilot:

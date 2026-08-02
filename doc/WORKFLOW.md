@@ -458,30 +458,36 @@ below).
 
 **It never merges and never closes.** Autopilot's terminal state is a
 reviewable hand-back: each Story ends `In Review`, assigned to USER,
-carrying a **manual test guide** comment — setup commands, numbered
+carrying a **review steps** comment — setup commands, numbered
 steps with expected results tied to `AC-N`, what the suite already
 covers, and what could not be verified — on a feature branch that is
 pushed and left standing. Merging into the default branch and closing
 the tickets are USER's, always. On a STOP it hands back the same way,
-minus the guide.
+minus the steps.
 
-**The Test Manager writes that guide**, as an extra deliverable on its
-final green pass, because it is the one persona that read the AC as
-specs, read both implementors' notes, and ran the suite — the guide is
-precisely the verification the suite does *not* do. The Release
-Manager performs the hand-back itself (state, assignee, branch, merge
-order) and points at TM's comment; its own reading lane deliberately
-excludes `stack.md`, `testing.md` and `ui.md`, so it is the wrong
-persona to source setup commands or a coverage boundary from. When
-lean-lane skipped TM, RM writes a short fallback guide and opens it by
-saying no independent test gate ran.
+**The Test Manager writes those steps**, and not only here: they are
+part of its normal Definition of Done, posted every time it hands a
+Story's verification to `In Review` — interactively as much as under
+autopilot. That transition *is* the moment someone has to review the
+Story and needs to know how. TM owns them because it is the one persona
+that read the AC as specs, read both implementors' notes, and ran the
+suite, so it alone knows where the suite's coverage stops. It is always
+**one comment**, sections as headings inside it — never a post per
+section. The Release Manager performs the hand-back itself (state,
+assignee, branch, merge order) and points at TM's comment; its own
+reading lane deliberately excludes `stack.md`, `testing.md` and
+`ui.md`, so it is the wrong persona to source setup commands or a
+coverage boundary from. When lean-lane skipped TM, RM writes a short
+fallback set and opens it by saying no independent test gate ran.
 
-**USER may hand the clicking back.** `/tm run manual test guide for
-<DEV-N>` puts the Test Manager into its second mode: it reads the guide
-off the Story, confirms the working tree is on the branch RM named, and
-*executes* the steps in a browser USER can watch live — one step at a
+**USER may hand the clicking back.** `/tm run review steps for
+<DEV-N>` puts the Test Manager into its second mode: it reads the steps
+off the Story, confirms the working tree is on the branch RM named,
+picks the fastest *watchable* driver — the project's own browser harness
+run headed, one test per numbered step, before any model-in-the-loop
+browser MCP — and *executes* them while USER watches, one step at a
 time, each with an explicit PASS / FAIL / BLOCKED / SKIPPED. The run is
-reported as one **Manual test run (test-manager)** comment on the Story,
+reported as one **Review run (test-manager)** comment on the Story,
 including what could **not** be verified, and every defect is filed as a
 **Rework request (test-manager)** comment on the sub-work-item that owns
 the surface, with that item's assignee set back to the owning persona
@@ -560,7 +566,7 @@ How it stays safe and auditable:
   security non-negotiable** (auth/authz, secrets/crypto,
   externally-controlled input, PII, a new dependency, a network/permission
   boundary — when in doubt, it runs); and **RM's hand-back never
-  skips** — the Story reaches USER `In Review` with its test guide, or
+  skips** — the Story reaches USER `In Review` with its review steps, or
   the run did not finish, since the orchestrator has no token to move a
   stranded Story itself. (Skipping RE does leave the Story in `To Do`
   for the same token reason — flagged as a loose end in the summary.)
@@ -580,8 +586,8 @@ How it stays safe and auditable:
   never `--force`. If the push can't land (no remote, branch
   protection), the local branch is the durable artefact and the
   hand-back names it as local-only. Every branch waits for USER.
-- **Rework lands in the ticket that was handed back.** When USER tests
-  the guide and finds a defect, the fix belongs *inside* the
+- **Rework lands in the ticket that was handed back.** When the review
+  finds a defect, the fix belongs *inside* the
   work-item that is already `In Review` — USER resumes the responsible
   persona interactively (`/ud <ID>`), that persona moves the item
   `In Review → In Progress`, fixes it **on the same still-standing
