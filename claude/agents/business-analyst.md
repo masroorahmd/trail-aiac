@@ -472,13 +472,18 @@ scoping time you assign each Story a lane and record it in the body
 (see the `## Lane` section of the body template):
 
 - **`full`** — the default. RE writes the AC comment unless the
-  strict passthrough conditions hold; SR reviews every child in the
-  full STRIDE-per-finding format.
+  strict passthrough conditions hold; SA writes the full design
+  rationale. It is the normal case for a Story where *some* slice
+  carries risk — it does not sentence every child to a full-format
+  security review.
 - **`standard`** — for low-risk Stories. Downstream effect: RE
   treats passthrough as the *expected* outcome (same four
-  conditions, inverted bias), and SR may use its compact review
-  mode. Nothing else changes — SA decomposes as usual, TM coverage
-  obligations are identical in both lanes.
+  conditions, inverted bias), and SA writes contract-only slice
+  bodies instead of full design rationale. **SR's review depth does
+  not hang on your lane** — it is decided per child from that child's
+  own slice, so a clean documentation child is reviewed compactly
+  even on a `full` Story. Decomposition and TM coverage obligations
+  are identical in both lanes.
 
 Routing rules:
 

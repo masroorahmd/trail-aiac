@@ -385,25 +385,46 @@ Once USER signals the review is ready to commit:
 
 ## Review discipline
 
-- **Lane-aware depth (compact mode).** When the parent Story body
-  carries `Lane: standard` AND none of the escalation triggers in
-  control-manifest §*Risk lanes* fires for a child, that child's
-  review comment may be **compact**: the one-sentence summary, a
-  one-paragraph *Threat picture*, and the *No-concerns checks*
-  block. The full `F-N` format (severity / STRIDE / Attack scenario
-  / Already addressed / Recommendation) is then required only for
-  actual findings — you do not write three-page STRIDE prose to say
-  "integers and static labels, autoescape holds". Hard rules:
+- **Depth is per child, judged from that child's own slice.** Ask of
+  each child separately: does any escalation trigger in
+  control-manifest §*Risk lanes* fire **in this slice**? If none does,
+  that child's review comment may be **compact** — the one-sentence
+  summary, a one-paragraph *Threat picture*, and the *No-concerns
+  checks* block. The full `F-N` format (severity / STRIDE / Attack
+  scenario / Already addressed / Recommendation) is then required only
+  for actual findings; you do not write three-page STRIDE prose to say
+  "integers and static labels, autoescape holds".
+
+  **The Story lane sets the presumption, not the verdict.** A `full`
+  Story is the normal case where a trigger fires *somewhere* — but a
+  trigger in the backend slice is not a trigger in the documentation
+  slice. Establish it per child and say which way it went; do not let
+  one risky sibling drag three clean ones into full prose. It runs the
+  other way too: a child that fires a trigger gets the full format even
+  on a `standard` Story.
+
+  Hard rules:
   - Compact mode never skips a child, never skips the *Threat
     picture*, never skips the *No-concerns checks*, and never
     weakens a finding's format — only the no-finding prose shrinks.
-  - **Any escalation trigger → full format for that child**, and
-    you post one line on the parent: `Escalated to full lane:
-    <trigger>`. You may escalate; you never downgrade `full` to
-    compact, and you never honour a `standard` lane the manifest
-    wouldn't have granted — flag the mismatch to USER instead.
-  - On `Lane: full`, or when the body has no Lane section, or when
-    the manifest has no §Risk lanes policy: full format, unchanged.
+  - **Record the depth on every child**, with its reason:
+    `Depth: compact — no §Risk-lanes trigger in this slice` /
+    `Depth: full — <trigger>`. An unexplained compact review is
+    indistinguishable from a lazy one.
+  - **A trigger that changes the Story's risk picture also escalates
+    the lane**, not just this child's depth: post one line on the
+    parent — `Escalated to full lane: <trigger>` — because RE's
+    passthrough bias hangs on the lane too. You may escalate; you
+    never downgrade a `full` Story to `standard`, and you never
+    honour a `standard` lane the manifest wouldn't have granted —
+    flag the mismatch to USER instead.
+  - **When the manifest has no §Risk lanes policy**, or its policy
+    explicitly ties compact mode to the Story lane: follow the
+    manifest, full format throughout, and say in your handover that
+    the manifest is what set the depth. The manifest outranks this
+    paragraph, always.
+  - When in doubt about a slice, it is full. The tie breaks toward
+    depth, never away from it.
 - **Threat picture is mandatory, not optional.** Every per-child
   comment opens with the *Threat picture* paragraph naming the
   STRIDE classes this slice exposes — even when there are no
@@ -474,6 +495,7 @@ post a single comment on the **parent** Story containing exactly:
 - [ ] Every finding has STRIDE category, *Attack scenario* (concrete walkthrough, not theoretical), and *Already addressed in design?*
 - [ ] Each blocker finding has a concrete recommendation, not just an alarm
 - [ ] *No-concerns checks* present on every comment, even when there are findings
+- [ ] Depth decided per child from that child's own slice — not inherited from the Story lane — and recorded with its reason on each comment
 - [ ] Audit logging considered for every authn/authz path
 - [ ] No "open questions" in any per-child comment — every uncertainty resolved with USER first
 - [ ] Cross-cutting threats called out where they exist (Cross-cutting context section)
