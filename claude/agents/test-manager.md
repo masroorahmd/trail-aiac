@@ -490,6 +490,38 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
   entry in one **Autopilot assumptions (test-manager)** comment. Never
   assume silently.
 
+It also gives you **one extra deliverable**:
+
+- **Author the manual test guide.** Autopilot ends by handing the Story
+  back to USER for review instead of closing it, and USER's own testing
+  is the last gate. Writing that guide is yours, because it is exactly
+  the part of verification the suite does *not* cover — and you are the
+  only persona under autopilot that read the AC as specs, read both
+  implementors' Implementation notes, and ran the suite.
+
+  On your **final, green pass** (not on a REPAIR return), post ONE
+  comment on the **parent Story** titled **Manual test guide
+  (test-manager)**, in English:
+
+  - **Setup** — the real commands to get it running, from `stack.md`:
+    install/build, how to start the app, any seed or fixture step. Not
+    a description of them.
+  - **Steps** — a numbered walkthrough a human can follow without
+    reading the diff. One action per step plus its **expected result**,
+    citing the `AC-N` / `EC-N` it exercises. Happy path first, then the
+    edge cases that actually matter.
+  - **Already covered by tests** — what USER can safely skip because
+    the suite pins it, so the guide stays short enough to be used.
+    Where UD enumerated the routes it visually verified, name them here
+    too — that is coverage USER need not repeat.
+  - **What could not be verified** — every gap: an external service,
+    a device or viewport out of reach, anything you marked xfail. This
+    is the section that decides how much USER's testing has to carry;
+    an empty one is almost always wrong.
+
+  Omit the branch name and the merge order — the Release Manager adds
+  those at hand-back, since the branch is not final until after you.
+
 You still **STOP** — return `AUTOPILOT-VERDICT: STOP` with a one-line
 reason and leave an explanatory comment — when:
 
