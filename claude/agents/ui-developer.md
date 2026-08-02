@@ -504,7 +504,12 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
   assumption (consistent with the SA contract, RE's AC + user flows,
   SR's findings, and `ui.md` / `coding.md`) and log it as a numbered
   `AS-N` entry in one **Autopilot assumptions (ui-developer)** comment.
-  Never assume silently.
+  Never assume silently — but log at the weight the assumption carries:
+  an `AS-N` is a decision USER could overturn, one sentence each; a DoD
+  receipt (an N/A slice, a skipped module, a write you verified one way
+  rather than another) belongs in that comment's single trailing
+  `Routine:` line, never as a numbered entry. Contract rule 4 governs,
+  and 0–4 `AS-N` is the healthy range.
 
 What it does **not** flip is *Visual verification*. The gate is
 unattended-safe — nothing in it needs USER — so it still runs in full,

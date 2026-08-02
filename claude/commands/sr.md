@@ -1,6 +1,6 @@
 ---
-description: Put the main loop into the security-reviewer role to security-review the SA's decomposition: discuss with USER, then post per-sub-work-item findings.
-argument-hint: "<DEV-N to review, or SA-handover trigger>"
+description: Put the main loop into the security-reviewer role for a security pass — on the SA's decomposition (per-sub-work-item findings) or on a landed diff: discuss with USER, then post findings.
+argument-hint: "<DEV-N to review, SA-handover trigger, or 'diff on DEV-N'>"
 ---
 
 > **Model note**: the full-lane model (top reasoning tier) shines on

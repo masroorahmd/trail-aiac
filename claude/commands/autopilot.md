@@ -1,5 +1,5 @@
 ---
-description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with step-by-step review steps; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → SR-diff → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with step-by-step review steps; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
 argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each>"
 ---
 
@@ -107,10 +107,28 @@ literal token `AUTOPILOT-MODE` is what flips the persona's gated
 > 4. ASSUME, don't ask. Anywhere your interactive role would stop to
 >    ask USER, instead pick the single most reasonable assumption,
 >    consistent with control-manifest.md, the Story body, and upstream
->    handovers — and LOG it. Maintain ONE comment on the work-item
->    titled `**Autopilot assumptions (<persona>)**` with numbered
->    `AS-N` entries: `AS-1: <what you assumed> — <why it's the safe
->    default>`. No silent assumptions; an unlogged assumption is a bug.
+>    handovers — and LOG it, at the weight it actually carries.
+>
+>    An `AS-N` is a **decision**, not a receipt. It earns a number only
+>    if USER could read it, disagree, and the deliverable would then
+>    change. **One sentence each.** Add a second only when the
+>    assumption contradicts an upstream artefact — and use it to name
+>    the contradiction, not to defend yourself. No "safe default
+>    because…" paragraphs: USER is deciding whether you were right,
+>    not grading your reasoning.
+>
+>    Everything your own DoD already answers is a **receipt**: a slice
+>    you marked N/A, a module you skipped, a doc you didn't touch, no
+>    version bump, a write you verified one way rather than another.
+>    Receipts go in ONE trailing line — `Routine: api.md N/A; frontend
+>    skipped; no version bump` — never as numbered entries.
+>
+>    Maintain ONE comment on the work-item titled
+>    `**Autopilot assumptions (<persona>)**` carrying the `AS-N`
+>    entries and that single `Routine:` line. No silent *decisions* —
+>    an unlogged decision is a bug, an itemised non-decision is noise.
+>    0–4 `AS-N` is the healthy range; past six you are numbering
+>    receipts, so re-read the list and demote them.
 > 5. STOP instead of guessing when your persona's `## Autonomous mode`
 >    STOP conditions hit (a hard security finding, a change that needs
 >    a migration / new external contract / new dependency with a
@@ -131,15 +149,17 @@ literal token `AUTOPILOT-MODE` is what flips the persona's gated
 >    NEXT: <suggested next persona, or "human" on STOP>
 >    NOTES: <one line of anything the next stage must know>
 >
->    (REPAIR is the Test Manager's only — a fixable red suite; NEXT then
->     names the implementor to re-run. Every other persona uses only
->     PROCEED or STOP.)
+>    (REPAIR belongs to the Test Manager — a fixable red suite — and to
+>     the Security Reviewer on its diff pass — a fixable finding. NEXT
+>     then names the implementor to re-run. Every other persona uses
+>     only PROCEED or STOP.)
 > ```
 
 After each subagent returns, **parse its final `AUTOPILOT-VERDICT`
 block**. `PROCEED` → advance to the next stage. `STOP` → jump to
-*Hand-back on STOP* below. `REPAIR` (Test Manager only) → run the
-repair loop in spine step 5. A subagent that returns no parseable
+*Hand-back on STOP* below. `REPAIR` (Test Manager at step 5, Security
+Reviewer's diff pass at step 6) → run the repair loop for that step;
+both share the one `max_repair_iterations` ceiling. A subagent that returns no parseable
 verdict is treated as STOP (reason: "no verdict — subagent aborted").
 
 ## Triage — find the Stories in the tree (run once, before the spine)
@@ -203,7 +223,7 @@ spine will drive:
 - **NESTED** → the `STORIES` list, in order, however many container
   levels sit above them. You drive the **Stories**, never a container:
   a container gets no branch and no spine. It does get handed back to
-  USER at the end — see *Hand-back* in spine step 9. Report the
+  USER at the end — see *Hand-back* in spine step 10. Report the
   `SKIPPED` Stories in the summary so USER sees nothing was silently
   dropped.
 - A triage subagent that returns no parseable verdict is treated as
@@ -216,7 +236,7 @@ order, each to completion before the next begins.** For each Story in
 turn (call it `<DEV-N>` throughout the spine):
 
 1. Create and switch to its feature branch
-   `autopilot/<DEV-N>-<short-slug>`, then run spine steps 1–9 for it.
+   `autopilot/<DEV-N>-<short-slug>`, then run spine steps 1–10 for it.
    **Every module child of that Story lands on this one branch** — both
    implementors, TM's tests, TW's docs.
 
@@ -229,7 +249,7 @@ turn (call it `<DEV-N>` throughout the spine):
    in doubt, branch off default and say in the summary that the Stories
    are independent as far as you could tell.
 
-2. **On a clean COMPLETED** (spine step 9 handed the Story back to
+2. **On a clean COMPLETED** (spine step 10 handed the Story back to
    USER): move to the next Story in the list. Nothing is merged and
    nothing is deleted; the branch stays.
 3. **On STOP** for any Story: **halt the whole work list.** Do not start
@@ -240,7 +260,7 @@ turn (call it `<DEV-N>` throughout the spine):
 
 **After the last Story completes**, and only if *every* Story in the
 work list COMPLETED, hand back the **containers** from triage —
-innermost first, outermost (the item USER named) last. See spine step 9.
+innermost first, outermost (the item USER named) last. See spine step 10.
 On a STOP, containers are not handed back: the tree is not finished, and
 moving it to `In Review` would say it is.
 
@@ -319,7 +339,7 @@ real content. Use judgement. Three levers, each with a hard floor:
      skip list. Its *release ceremony* (CHANGELOG reconciliation,
      release-trail entry) is lean-lane-trimmable — log a `SKIP-N` for
      that part when the Story carries no real release ceremony — but the
-     **hand-back in spine step 9 always runs**: the Story reaches USER
+     **hand-back in spine step 10 always runs**: the Story reaches USER
      `In Review`, assigned, with review steps — TM's, or RM's
      fallback when lean-lane skipped TM — or the run did not finish.
      You have no Plane token, so a skipped hand-back would leave
@@ -442,10 +462,10 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    when in doubt, run it. On a skip there is no independent green-suite
    gate, so the hand-back rests on the implementor's own local suite run
    alone **and no review steps get authored here** — RM writes the
-   fallback set at step 9. Flag that caveat in the summary. When you do
+   fallback set at step 10. Flag that caveat in the summary. When you do
    run it, TM writes/extends tests, runs the full suite, and — on its
    final green pass — posts the **Review steps (test-manager)** comment
-   on the parent Story that step 9 hands back. That comment is part of
+   on the parent Story that step 10 hands back. That comment is part of
    TM's normal DoD rather than an autopilot extra; the spawn prompt only
    needs to remind it that *final green pass* is the moment, and that it
    is ONE comment however many sections it has.
@@ -461,14 +481,48 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      repair iterations"). TM returns `STOP` directly for a non-fixable
      or un-runnable suite.
 
-6. **Technical Writer** — spawn with persona `technical-writer` only if
+6. **Security Reviewer — diff pass** — spawn `security-reviewer` a
+   second time, now with the parent Story plus the actual change: the
+   commits from step 4 and whatever TM added in step 5. Its review
+   object is `git diff <base>...HEAD` **plus the uncommitted tree** —
+   not the decomposition it already reviewed at step 3.
+
+   These are two different reviews and only one of them was ever in
+   this spine. Step 3 judges a **plan**, so it can only find what a
+   design gets wrong. This one judges **code**, and it is the only
+   stage that catches the class where the design was right and the
+   implementation came out narrower than it: a predicate covering
+   fewer cases than its own docstring claims, a test that goes green
+   against the very repair the Story forbids, a doc sentence that the
+   diff just made false. None of that is visible at step 3, by
+   construction.
+
+   Same hard gate as step 3: **any** blocker or high finding → STOP.
+   Medium and below are findings, not gates — they ride the hand-back
+   and USER decides fix-now versus follow-up. SR posts ONE comment on
+   the parent Story, titled **Security review — diff
+   (security-reviewer)**. It does **not** restate step 3's findings:
+   one line each (closed / still open / correctly disposed), and the
+   words go to what is new.
+
+   On a fixable finding SR returns `REPAIR` with `NEXT:` naming the
+   implementor, exactly as TM does — re-spawn, commit the fix, re-run
+   TM then SR. Shares TM's `max_repair_iterations` ceiling.
+
+   **Lean-lane:** skip it exactly when you skipped step 3 (same
+   `SKIP-N`), and additionally when the whole diff is docs or
+   comments. Never skip it on a diff touching a `CM-N` security
+   non-negotiable, however clean step 3 was — a clean plan review is
+   not evidence about the code that came out of the plan.
+
+7. **Technical Writer** — spawn with persona `technical-writer` only if
    SA created a documentation sub-work-item. TW updates user-facing
    docs. (Internal-only changes skip this — no STOP.) **Lean-lane:** you
    may also skip TW even when a doc item exists, if the change is
    internal-only or the doc delta is trivially self-evident — log a
    `SKIP-N`.
 
-7. **Git — commit + push the feature branch (you, the orchestrator).**
+8. **Git — commit + push the feature branch (you, the orchestrator).**
    Once the suite is green and all sub-work-items are `In Review` (each
    implementor's work has already been committed onto the feature
    branch in step 4b/4c):
@@ -488,27 +542,27 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      in the review steps that the branch is local-only, so USER
      doesn't look for it on the remote.
 
-8. **Release Manager — release ceremony** — spawn with persona
+9. **Release Manager — release ceremony** — spawn with persona
    `release-manager` + the commit/branch. RM performs the project's
    release/close step for the Story per its DoD (it will not push tags
    without the gate its persona defines; respect that). RM STOPs if
    release preconditions aren't met. **Lean-lane:** you may skip this
    *ceremony* when the Story carries no real release content — log a
-   `SKIP-N`. You may **not** skip step 9. When both run, spawn RM once
+   `SKIP-N`. You may **not** skip step 10. When both run, spawn RM once
    and give it both tasks; the hand-back is the second half of the same
    turn.
 
    Under autopilot RM **never sets anything to `Done`** — not a
    sub-work-item, not the Story, not a container. Closing is USER's.
 
-9. **Hand back to USER (mandatory — the end of the unattended lane).**
+10. **Hand back to USER (mandatory — the end of the unattended lane).**
    This runs on a clean COMPLETED Story: every gate green
    (RE/SA/SR/implementors/TM/TW all PROCEEDed — a *skipped* lean-lane
    stage is not a STOP — suite green where TM ran, SR clean).
 
    **You do not merge and you do not delete.** The branch is pushed
-   (step 7) and stays. What ends the Story is a hand-back in Plane, so
-   spawn `release-manager` with the task below (folded into step 8's
+   (step 8) and stays. What ends the Story is a hand-back in Plane, so
+   spawn `release-manager` with the task below (folded into step 9's
    spawn when the ceremony ran too):
 
    > Hand `<DEV-N>` back to USER. Set state `In Review` and assignee
@@ -630,7 +684,11 @@ covering:
   with final states.
 - **Every `AS-N` assumption** logged across all personas, gathered in
   one list — this is what USER reviews after the fact instead of being
-  asked up front.
+  asked up front. Gather the *decisions* only: a persona's trailing
+  `Routine:` line stays on its own comment and is never lifted into
+  this summary. If a persona returned more than six `AS-N`, say so —
+  it is the signal that receipts got numbered, and it is worth a line
+  here rather than a silent doubling of what USER has to read.
 - Each gate decision (SR verdict, repair iterations used).
 - **Every `SKIP-N` lean-lane decision** — each stage you skipped
   (RE/SA/SR/TM/TW or RM's release ceremony) or implementor you

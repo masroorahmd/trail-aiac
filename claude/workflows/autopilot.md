@@ -8,10 +8,10 @@ unattended and hands the result back for review.
 
 This is the mirror image of the [quick lane](quick-lane.md). The quick
 lane *shrinks the process* for a tiny change. Autopilot *keeps the
-whole process* (RE → SA → SR → BD/UD → TM → TW → commit/push → RM →
-hand back) but removes the human from between its stages — every persona makes and
-**logs** reasonable assumptions instead of asking, and an orchestrator
-threads them together.
+whole process* (RE → SA → SR → BD/UD → TM → SR-diff → TW →
+commit/push → RM → hand back) but removes the human from between its
+stages — every persona makes and **logs** reasonable assumptions
+instead of asking, and an orchestrator threads them together.
 
 It does **not** break the user-triggered rule: USER triggered exactly
 one turn, and nothing in Plane drives Claude Code. Autopilot only
@@ -80,14 +80,25 @@ the persona file, the ticket, and the upstream handover.
      implementor with TM's failure detail, then TM again, up to
      `max_repair_iterations`; still red after that → STOP.
    - un-runnable / non-fixable → STOP.
-6. **technical-writer** — only if SA created a documentation
+6. **security-reviewer (diff pass)** — spawned a second time, now on
+   the code that landed (`git diff <base>...HEAD` plus the uncommitted
+   tree) rather than on the decomposition. Step 3 judges a plan and can
+   only find what a design gets wrong; this is the only stage that
+   catches an implementation narrower than the design it was measured
+   against. Same hard gate (`blocker`/`high` → STOP); medium and below
+   ride the hand-back. Posts ONE **Security review — diff** comment and
+   does not restate step 3's findings. Fixable → **REPAIR**, sharing
+   TM's iteration ceiling. Skipped exactly when step 3 was skipped, or
+   when the whole diff is docs/comments — never on a diff touching a
+   security non-negotiable.
+7. **technical-writer** — only if SA created a documentation
    sub-work-item. Writes docs; does not stop unless a product decision
    surfaces.
-7. **commit + push (orchestrator)** — stage the tree, commit with a
+8. **commit + push (orchestrator)** — stage the tree, commit with a
    `Trail-Lane: autopilot (<DEV-N>)` trailer, push the **feature
    branch** (never default, never `--force`; push failure is recorded,
    not fatal).
-8. **release-manager** — performs the project's release ceremony
+9. **release-manager** — performs the project's release ceremony
    (lean-lane-trimmable) and then the **hand-back, which never skips**:
    the Story goes `In Review` + assignee USER, with an *Autopilot
    hand-back* comment carrying the branch, its base, the merge order
@@ -97,10 +108,10 @@ the persona file, the ticket, and the upstream handover.
    none, and RM writes a short fallback saying no independent test gate
    ran. Sets **nothing** to `Done`. Honours its own tag-push human gate
    — STOP rather than push a tag.
-9. **container hand-back** — after the last Story, the containers from
-   triage are handed back the same way, innermost first, each with a
-   roll-up comment: which Stories ran, their branches, and the order to
-   merge them.
+10. **container hand-back** — after the last Story, the containers from
+    triage are handed back the same way, innermost first, each with a
+    roll-up comment: which Stories ran, their branches, and the order
+    to merge them.
 
 ## The `AUTOPILOT-VERDICT` protocol
 
@@ -116,7 +127,8 @@ NEXT: <next persona, or "human" on STOP, or implementor on REPAIR>
 NOTES: <one line for the next stage>
 ```
 
-`REPAIR` is the Test Manager's alone. No parseable verdict is treated
+`REPAIR` belongs to the Test Manager (red suite) and to the Security
+Reviewer's diff pass (fixable finding). No parseable verdict is treated
 as STOP.
 
 ## The assumption ledger (autopilot's audit artefact in Plane)
@@ -130,11 +142,25 @@ the work-item:
 **Autopilot assumptions (requirements-engineer)**
 - AS-1: Treated "fast" in SC-2 as p95 < 300ms — the project's existing NFR baseline.
 - AS-2: Exported CSV uses the user's locale date format — matches the dashboard.
+
+Routine: api.md N/A; frontend slice skipped; priority and labels untouched.
 ```
 
-No silent assumptions. The orchestrator's terminal summary gathers
+An `AS-N` is a **decision** — something USER could read, disagree with,
+and thereby change the deliverable. One sentence each; a second only
+when the assumption contradicts an upstream artefact, and then to name
+the contradiction rather than to defend the choice. Everything the
+persona's own DoD already answers — an N/A slice, a skipped module, no
+version bump, a write verified one way rather than another — is a
+**receipt** and goes in the single trailing `Routine:` line, never as a
+numbered entry. 0–4 `AS-N` is the healthy range; past six the persona
+is numbering receipts.
+
+No silent *decisions*. The orchestrator's terminal summary gathers
 every `AS-N` from every persona into one list — that is what USER
 reviews **after** the run instead of being interrupted **during** it.
+The `Routine:` lines stay on their own comments and are never lifted
+into the summary.
 
 ## Stopping is a success
 
