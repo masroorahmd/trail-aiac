@@ -42,18 +42,23 @@ model_lanes:
   codegen: claude-opus-4-8
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
-# initiated turn drives a single already-framed Story through the whole
-# engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM →
-# merge) with no human in the loop: personas make + log reasonable
-# assumptions instead of asking, and the orchestrator owns git — the
-# implementors run one at a time directly in the feature tree (never
-# concurrently, never in a worktree), and on a clean COMPLETED run the
-# orchestrator merges the feature branch into the default branch and
-# deletes it. It is deliberately
-# the NARROW lane — it stops and hands back (branch intact, never
-# merged) the moment a change leaves the risk lane (a hard security
-# finding, a migration, a new external contract, a new dependency, or
-# irreducible ambiguity).
+# initiated turn drives an already-framed Story — or every Story in a
+# work-item tree above it (Epic → Story → module children, nested to
+# any depth) — through the whole engineering spine (RE → SA → SR →
+# BD/UD → TM → TW → commit → RM → hand back) with no human in the
+# loop: personas make + log reasonable assumptions instead of asking,
+# and the orchestrator owns git — the implementors run one at a time
+# directly in the feature tree (never concurrently, never in a
+# worktree). It creates ONE feature branch per Story, shared by that
+# Story's module children, and it NEVER merges and NEVER deletes a
+# branch: every branch is pushed and left standing, and every Story
+# (then every container above it) is handed back `In Review` +
+# assigned to USER with a step-by-step manual test guide. USER merges
+# and USER closes; rework goes back into the same ticket on the same
+# branch. It is deliberately the NARROW lane — it stops and hands back
+# the moment a change leaves the risk lane (a hard security finding, a
+# migration, a new external contract, a new dependency, or irreducible
+# ambiguity).
 #
 #   enabled               — master switch. `/autopilot` refuses to run
 #                           unless this is true. Default off: opt in per
@@ -64,17 +69,20 @@ model_lanes:
 #                           its own (`standard`). Anything the personas
 #                           judge above this is handed back to a human.
 #   lean_lane             — let the orchestrator use judgement to trim the
-#                           ceremony: skip SR / TW / RM when they add no
-#                           value for this Story, and collapse or swap the
-#                           BD/UD implementors (one agent covers both
-#                           slices, or a slice is routed to the other
-#                           discipline) when the cross-over work is small.
-#                           Every skip/merge is logged as a `SKIP-N`
-#                           decision and reported. A hard SR safety floor
-#                           always holds: SR still runs whenever the change
-#                           touches a security non-negotiable (CM-N). Set
-#                           false to force the full spine every run
-#                           (compliance-heavy projects). Default true.
+#                           ceremony: skip RE / SA / SR / TM / TW or RM's
+#                           release ceremony when they add no value for
+#                           this Story, and collapse or swap the BD/UD
+#                           implementors (one agent covers both slices, or
+#                           a slice is routed to the other discipline) when
+#                           the cross-over work is small. Every skip is
+#                           logged as a `SKIP-N` decision and reported.
+#                           Hard floors always hold: SR still runs whenever
+#                           the change touches a security non-negotiable
+#                           (CM-N), and RM's HAND-BACK never skips — a
+#                           Story always reaches USER `In Review` with its
+#                           manual test guide. Set false to force the full
+#                           spine every run (compliance-heavy projects).
+#                           Default true.
 autopilot:
   enabled: false
   max_repair_iterations: 2

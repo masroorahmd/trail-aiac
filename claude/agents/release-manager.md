@@ -378,9 +378,19 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
 - **Self-finalize** — no end-of-turn menu, no waiting for USER. Perform
   the close/release step and return your `AUTOPILOT-VERDICT` block.
 - **Write without a USER trigger** — the orchestrator is your trigger;
-  move the Story to its terminal state and post your handover as your
-  DoD prescribes. The orchestrator has already committed and pushed the
+  perform the close ceremony and post your handover as your DoD
+  prescribes. The orchestrator has already committed and pushed the
   feature branch before invoking you.
+- **Hand back — never close.** Autopilot ends in a *reviewable*
+  hand-back, not a closed ticket. Your terminal act on a Story (and on
+  any container above it) is `In Review` + assignee USER, with the
+  **Manual test guide** comment the orchestrator's step-9 task
+  specifies. Set **nothing** to `Done` — not a sub-work-item, not the
+  Story, not a container. USER merges the branch and USER closes; the
+  orchestrator does not merge either, so a comment of yours must never
+  describe the work as merged or released. Say "on the feature branch
+  `<name>`, reviewed and green, pending USER's merge" and log it as an
+  `AS-N` if the wording matters.
 - **Assume, don't ask** — for minor release-note wording, pick the most
   reasonable assumption and log it as a numbered `AS-N` entry in one
   **Autopilot assumptions (release-manager)** comment. Never assume

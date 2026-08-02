@@ -179,12 +179,16 @@ both still a single human-initiated turn:
   surface, no migration, no risky new dependency, bounded blast
   radius, reversible) — anything that fails routes to `/ba` instead.
 - **`/autopilot`** — the *unattended lane*. One human-initiated turn
-  that drives an already-framed Story end-to-end through the spine
-  (RE → SA → SR → BD/UD → TM → TW → commit → RM → merge) with no
-  human in the loop, each persona running as a subagent under its own
-  Plane identity. Risk-capped (`autopilot.max_risk_lane`) and built to
-  stop and hand back — branch intact — the moment a change leaves its
-  lane.
+  that drives an already-framed Story — or every Story in a work-item
+  tree above it — through the spine (RE → SA → SR → BD/UD → TM → TW →
+  commit → RM → hand back) with no human in the loop, each persona
+  running as a subagent under its own Plane identity. **It never merges
+  and never closes:** one feature branch per Story, pushed and left
+  standing, and each Story handed back `In Review` + assigned to you
+  with a step-by-step manual test guide. You merge, you close, and any
+  rework goes back into the same ticket on the same branch. Risk-capped
+  (`autopilot.max_risk_lane`) and built to stop and hand back — branch
+  intact — the moment a change leaves its lane.
 
 ### First run — seed the context
 
@@ -267,7 +271,9 @@ Small, safe, reversible — off-Plane in one turn, no Story needed.
 ```
 DEV-42 is already framed (state `To Do`, assignee
 requirements-engineer) — drive it unattended through the whole spine
-to a closed ticket, or hand back the moment it leaves the risk lane.
+and hand it back `In Review` on its own branch with a manual test
+guide, or hand back earlier the moment it leaves the risk lane. You
+merge and close either way.
 
 ### Switching and exiting
 
