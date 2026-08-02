@@ -582,6 +582,16 @@ and reports a defect, **the fix belongs inside the work-item that is
 already `In Review`** — not in a new ticket, and not in a new autopilot
 run.
 
+USER does not have to do the clicking. `/tm run manual test guide for
+<DEV-N>` puts the Test Manager back on the Story to *drive* the guide
+it wrote, in a live browser USER can watch, and to file the findings
+itself: one *Manual test run* comment on the Story, and one *Rework
+request* comment on each owning persona's sub-work-item with that
+item's assignee set back to the owning persona. The rules below are
+unchanged by that — TM only files the rework; the responsible persona
+still does it, on the same work-item and the same branch, when USER
+resumes it.
+
 USER resumes the responsible persona interactively (`/ud <DEV-N.frontend>`,
 `/bd …`, `/tm …`) and that persona:
 

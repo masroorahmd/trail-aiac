@@ -476,6 +476,20 @@ persona to source setup commands or a coverage boundary from. When
 lean-lane skipped TM, RM writes a short fallback guide and opens it by
 saying no independent test gate ran.
 
+**USER may hand the clicking back.** `/tm run manual test guide for
+<DEV-N>` puts the Test Manager into its second mode: it reads the guide
+off the Story, confirms the working tree is on the branch RM named, and
+*executes* the steps in a browser USER can watch live — one step at a
+time, each with an explicit PASS / FAIL / BLOCKED / SKIPPED. The run is
+reported as one **Manual test run (test-manager)** comment on the Story,
+including what could **not** be verified, and every defect is filed as a
+**Rework request (test-manager)** comment on the sub-work-item that owns
+the surface, with that item's assignee set back to the owning persona
+and its state left at `In Review`. TM routes findings; it does not fix
+another persona's slice, and reassignment is the only metadata it ever
+touches on someone else's ticket. The run never happens under
+`/autopilot` — being watchable is the whole point.
+
 **One branch per Story.** The branch hangs on the Story whose children
 are the module slices (`backend` / `frontend` / `testing` /
 `documentation`); those children all share it. Hand autopilot an Epic —

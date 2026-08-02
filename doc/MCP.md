@@ -85,6 +85,29 @@ prompt-discipline rather than a hard MCP-scope barrier.
 > prompts close that gap with explicit "use only your own"
 > instructions.
 
+## Non-Plane MCP servers (browser automation)
+
+Two persona behaviours want a browser: the UI Developer's visual
+verification gate, and the Test Manager's browser-driven *manual test
+run* (`/tm run manual test guide for <STORY-ID>`, see
+[`WORKFLOW.md`](WORKFLOW.md)). Neither is wired by this framework —
+they use whatever browser MCP the consumer already has (Claude in
+Chrome or equivalent), and both fall back to the project's own
+headless e2e harness when there is none. TM's fallback costs USER the
+live view, so the persona is required to say which one it is using
+rather than substituting silently.
+
+**Configure such a server at user or local scope, never project
+scope.** `bin/install.py` regenerates the consumer's `.mcp.json` from
+scratch on every run, with the single `plane` entry as its only
+content — a browser entry added there is silently dropped at the next
+install. `claude mcp add --scope user …` (or the extension's own
+wiring) survives.
+
+These servers carry no Plane identity, so the "use only
+`plane__<persona_snake>__*`" rule does not reach them; the persona
+prompts say so explicitly where the behaviour is expected.
+
 ## Handover semantics
 
 A persona walks a work-item forward via its own
