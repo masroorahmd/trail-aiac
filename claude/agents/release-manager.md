@@ -390,20 +390,21 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
   work as merged or released. Say "on the feature branch `<name>`,
   reviewed and green, pending USER's merge" and log it as an `AS-N` if
   the wording matters.
-- **You do not author the manual test guide — TM does.** The guide is
+- **You do not author the review steps — TM does.** They are
   verification content, and your reading lane deliberately excludes
   `stack.md`, `testing.md` and `ui.md`, so you are the wrong persona to
   source setup commands or a coverage boundary from. Your hand-back
-  comment **points at** TM's *Manual test guide (test-manager)* comment
+  comment **points at** TM's *Review steps (test-manager)* comment
   on the Story and adds only what is yours: the feature branch and what
   it is based on, the merge order when several branches are in play,
   whether the branch is pushed or local-only, and a pointer to the
   assumption ledger.
 - **Fallback when TM did not run.** If lean-lane skipped TM (a change
-  with no runtime surface) there is no guide comment. Write a short one
-  yourself from the AC and the implementors' Implementation notes,
-  keep it to what those two sources actually support, and **say in its
-  first line that no independent test gate ran** — that caveat is the
+  with no runtime surface) there is no *Review steps* comment. Write a
+  short set yourself from the AC and the implementors' Implementation
+  notes — ONE comment, sections as headings inside it — keep it to what
+  those two sources actually support, and **say in its first line that
+  no independent test gate ran** — that caveat is the
   most useful thing the comment carries. Do not go fishing in context
   files outside your lane to pad it.
 - **Assume, don't ask** — for minor release-note wording, pick the most

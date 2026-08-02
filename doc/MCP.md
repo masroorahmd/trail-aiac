@@ -88,14 +88,19 @@ prompt-discipline rather than a hard MCP-scope barrier.
 ## Non-Plane MCP servers (browser automation)
 
 Two persona behaviours want a browser: the UI Developer's visual
-verification gate, and the Test Manager's browser-driven *manual test
-run* (`/tm run manual test guide for <STORY-ID>`, see
-[`WORKFLOW.md`](WORKFLOW.md)). Neither is wired by this framework —
-they use whatever browser MCP the consumer already has (Claude in
-Chrome or equivalent), and both fall back to the project's own
-headless e2e harness when there is none. TM's fallback costs USER the
-live view, so the persona is required to say which one it is using
-rather than substituting silently.
+verification gate, and the Test Manager's browser-driven *review run*
+(`/tm run review steps for <STORY-ID>`, see
+[`WORKFLOW.md`](WORKFLOW.md)). Neither is wired by this framework.
+
+TM is told to prefer the **project's own browser harness run headed**
+over any browser MCP — it is an order of magnitude faster per step than
+a screenshot-driven MCP, and just as watchable — then a DOM/
+accessibility-tree MCP (Playwright MCP, Chrome DevTools MCP), and a
+screenshot-driven one (Claude in Chrome) last. UD's gate has the same
+preference for its own reason: the harness already has the fixtures,
+auth and a booted server. Both fall back to headless when nothing
+watchable exists, and TM must name the driver it picked, because the
+fallback costs USER the live view.
 
 **Configure such a server at user or local scope, never project
 scope.** `bin/install.py` regenerates the consumer's `.mcp.json` from

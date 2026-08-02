@@ -1,5 +1,5 @@
 ---
-description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with a step-by-step manual test guide; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with step-by-step review steps; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
 argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each>"
 ---
 
@@ -27,8 +27,8 @@ You are the **orchestrator**. You own three things and nothing else:
 3. **The audit summary** — the final report to USER.
 
 Autopilot's terminal state is a **reviewable hand-back**, not a closed
-ticket: every Story it drove ends `In Review`, assigned to USER, with a
-manual test guide on it, and its branch waiting. USER merges and USER
+ticket: every Story it drove ends `In Review`, assigned to USER, with
+its review steps on it, and its branch waiting. USER merges and USER
 closes. No persona under autopilot sets anything to `Done`.
 
 **All Plane I/O happens inside the persona subagents**, each under its
@@ -320,7 +320,7 @@ real content. Use judgement. Three levers, each with a hard floor:
      release-trail entry) is lean-lane-trimmable — log a `SKIP-N` for
      that part when the Story carries no real release ceremony — but the
      **hand-back in spine step 9 always runs**: the Story reaches USER
-     `In Review`, assigned, with a manual test guide — TM's, or RM's
+     `In Review`, assigned, with review steps — TM's, or RM's
      fallback when lean-lane skipped TM — or the run did not finish.
      You have no Plane token, so a skipped hand-back would leave
      the Story stranded mid-spine with no one holding it. That is the
@@ -441,12 +441,14 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    runtime-surface floor above governs when a skip is *not* allowed —
    when in doubt, run it. On a skip there is no independent green-suite
    gate, so the hand-back rests on the implementor's own local suite run
-   alone **and no manual test guide gets authored here** — RM writes the
-   fallback one at step 9. Flag that caveat in the summary. When you do
+   alone **and no review steps get authored here** — RM writes the
+   fallback set at step 9. Flag that caveat in the summary. When you do
    run it, TM writes/extends tests, runs the full suite, and — on its
-   final green pass — posts the **Manual test guide (test-manager)**
-   comment on the parent Story that step 9 hands back. Remind it of that
-   deliverable in the spawn prompt.
+   final green pass — posts the **Review steps (test-manager)** comment
+   on the parent Story that step 9 hands back. That comment is part of
+   TM's normal DoD rather than an autopilot extra; the spawn prompt only
+   needs to remind it that *final green pass* is the moment, and that it
+   is ONE comment however many sections it has.
    - TM PROCEEDs only with a **green suite**.
    - TM returns `REPAIR` for a fixable red suite (with `NEXT:` naming
      the implementor). That is the **repair loop**, not a STOP:
@@ -483,7 +485,7 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      remote, branch protection), record the failure in the summary and
      continue — the local commits are the durable artefact, and the
      hand-back names a local branch just as well as a pushed one. Say
-     in the manual test guide that the branch is local-only, so USER
+     in the review steps that the branch is local-only, so USER
      doesn't look for it on the remote.
 
 8. **Release Manager — release ceremony** — spawn with persona
@@ -513,8 +515,8 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    > USER. Set **nothing** to `Done` — neither this Story nor any of its
    > sub-work-items.
    >
-   > The manual test guide is **TM's**, not yours: it posted a
-   > *Manual test guide (test-manager)* comment on this Story with the
+   > The review steps is **TM's**, not yours: it posted a
+   > *Review steps (test-manager)* comment on this Story with the
    > setup commands, the numbered steps and the coverage boundary.
    > Confirm that comment is there, then post ONE comment titled
    > **Autopilot hand-back**, in English, adding only what is yours:
@@ -524,16 +526,18 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    >   whether it is pushed or local-only.
    > - **Merge order** — when several Story branches are in play, the
    >   order they must land in; otherwise "independent".
-   > - **Test guide** — a pointer to TM's comment ("see *Manual test
-   >   guide (test-manager)* above").
+   > - **Review steps** — a pointer to TM's comment ("see *Review
+   >   steps (test-manager)* above").
    > - **Watch out for** — every `AS-N` assumption whose wrongness USER
    >   would notice while testing, and any known-red test with its
    >   attribution.
    >
-   > **If no TM guide comment exists** (lean-lane skipped TM), write a
-   > short guide yourself from the AC and the implementors'
+   > **If no TM *Review steps* comment exists** (lean-lane skipped TM),
+   > write a short set yourself from the AC and the implementors'
    > Implementation notes — nothing beyond what those two sources
    > support — and open it by saying no independent test gate ran.
+   > **One comment, whatever its length** — sections are headings
+   > inside it, never separate posts.
    >
    > Then return the usual `AUTOPILOT-VERDICT` block.
 
@@ -547,7 +551,7 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    assignee USER, nothing set to `Done`). Their comment is a **roll-up**
    rather than a test plan: which Stories were driven, each one's branch,
    the order the branches should be merged, which Stories were skipped as
-   already done, and a pointer to each Story's own manual test guide.
+   already done, and a pointer to each Story's own review steps.
    Where the Stories add up to one user-visible capability, add a short
    end-to-end path across them — that is the test the per-Story guides
    cannot give USER.
@@ -577,15 +581,15 @@ correctly handed the steering wheel back.
 
 ## Rework after a hand-back (what USER does next, and what it must not become)
 
-A hand-back is an invitation to find things. When USER tests the guide
-and reports a defect, **the fix belongs inside the work-item that is
+A hand-back is an invitation to find things. When the review finds a
+defect, **the fix belongs inside the work-item that is
 already `In Review`** — not in a new ticket, and not in a new autopilot
 run.
 
-USER does not have to do the clicking. `/tm run manual test guide for
-<DEV-N>` puts the Test Manager back on the Story to *drive* the guide
+USER does not have to do the clicking. `/tm run review steps for
+<DEV-N>` puts the Test Manager back on the Story to *drive* the steps
 it wrote, in a live browser USER can watch, and to file the findings
-itself: one *Manual test run* comment on the Story, and one *Rework
+itself: one *Review run* comment on the Story, and one *Rework
 request* comment on each owning persona's sub-work-item with that
 item's assignee set back to the owning persona. The rules below are
 unchanged by that — TM only files the rework; the responsible persona
@@ -604,7 +608,7 @@ USER resumes the responsible persona interactively (`/ud <DEV-N.frontend>`,
   original notes are the record of what was believed at hand-back;
 - commits onto the **same feature branch**, which is still standing
   precisely so rework has somewhere to land;
-- re-runs the parts of the manual test guide its fix touches, and says
+- re-runs the parts of the review steps its fix touches, and says
   in the Rework notes which steps it re-verified.
 
 The Story and any container above it stay `In Review` throughout — they
@@ -641,7 +645,7 @@ covering:
 - **The merge order** across branches when more than one Story ran, and
   which branches are independent of each other.
 - **The hand-back roster** — for every Story and container: its ID, that
-  it is `In Review` and assigned to USER, and that its manual test guide
+  it is `In Review` and assigned to USER, and that its review steps comment
   (or roll-up) is posted. This is the actionable part of the summary:
   what USER should test, in what order, on which branch.
 - A one-line disposal per driven Story:

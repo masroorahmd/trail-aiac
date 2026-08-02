@@ -27,7 +27,7 @@ supervised-by-design run.
   push — never merge, never delete), and **the terminal summary** to
   USER.
 - **It does not finish the work — it hands it back.** Every Story ends
-  `In Review`, assigned to USER, with a **manual test guide** comment,
+  `In Review`, assigned to USER, with a **review steps** comment,
   on a branch that is pushed and left standing. USER merges, USER
   closes.
 - Every spine persona runs as a **subagent under its own
@@ -70,7 +70,7 @@ the persona file, the ticket, and the upstream handover.
    runs the suite, posts Implementation notes, moves its item to
    `In Review`. Bounce rule (as `/quick`) → STOP.
 5. **test-manager** — writes/extends tests, runs the full suite, and
-   on its final green pass posts the **Manual test guide
+   on its final green pass posts the **Review steps
    (test-manager)** comment on the parent Story: setup commands from
    `stack.md`, numbered steps with expected results tied to `AC-N`,
    what the suite already covers (so USER can skip it), and what could
@@ -92,8 +92,8 @@ the persona file, the ticket, and the upstream handover.
    the Story goes `In Review` + assignee USER, with an *Autopilot
    hand-back* comment carrying the branch, its base, the merge order
    and the assumptions worth watching while testing — and pointing at
-   the *Manual test guide (test-manager)* comment TM posted at step 5.
-   RM does **not** author that guide; if lean-lane skipped TM there is
+   the *Review steps (test-manager)* comment TM posted at step 5.
+   RM does **not** author them; if lean-lane skipped TM there is
    none, and RM writes a short fallback saying no independent test gate
    ran. Sets **nothing** to `Done`. Honours its own tag-push human gate
    — STOP rather than push a tag.
@@ -160,14 +160,14 @@ branch deletion, on any outcome.** To take a completed run: `git merge
 
 ## Rework goes back into the handed-back ticket
 
-USER can also hand the clicking back to TM: `/tm run manual test guide
-for <DEV-N>` has the Test Manager drive its own guide in a live browser,
-post a **Manual test run** comment on the Story, and file a **Rework
+USER can also hand the clicking back to TM: `/tm run review steps
+for <DEV-N>` has the Test Manager drive its own steps in a live browser,
+post a **Review run** comment on the Story, and file a **Rework
 request** comment on each owning persona's sub-work-item (setting that
 item's assignee back to the owning persona, state untouched). It does
 not fix anything — it only routes the finding.
 
-When USER tests the guide and finds a defect, the fix belongs *inside*
+When the review finds a defect, the fix belongs *inside*
 the work-item that is already `In Review` — not a new ticket and not a
 new autopilot run. USER resumes the responsible persona interactively
 (`/ud <ID>`); it moves the item `In Review → In Progress`, fixes it on
@@ -184,6 +184,6 @@ genuinely new scope — USER's call, BA's lane to file.
 ```
 
 Reach for it only on tickets you are comfortable reviewing **after**
-the fact, from a feature branch and a test guide — small,
+the fact, from a feature branch and a set of review steps — small,
 well-specified, security-neutral work. Anything else: run the normal spine, or let autopilot start and
 hand it back the moment a gate trips.

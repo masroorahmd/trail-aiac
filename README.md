@@ -185,7 +185,7 @@ both still a single human-initiated turn:
   running as a subagent under its own Plane identity. **It never merges
   and never closes:** one feature branch per Story, pushed and left
   standing, and each Story handed back `In Review` + assigned to you
-  with a step-by-step manual test guide. You merge, you close, and any
+  with step-by-step review steps. You merge, you close, and any
   rework goes back into the same ticket on the same branch. Risk-capped
   (`autopilot.max_risk_lane`) and built to stop and hand back — branch
   intact — the moment a change leaves its lane.
@@ -271,8 +271,8 @@ Small, safe, reversible — off-Plane in one turn, no Story needed.
 ```
 DEV-42 is already framed (state `To Do`, assignee
 requirements-engineer) — drive it unattended through the whole spine
-and hand it back `In Review` on its own branch with a manual test
-guide, or hand back earlier the moment it leaves the risk lane. You
+and hand it back `In Review` on its own branch with its review
+steps, or hand back earlier the moment it leaves the risk lane. You
 merge and close either way.
 
 ### Switching and exiting

@@ -237,7 +237,7 @@ Implementation notes instead, scoped to this Story), `stack.md`,
    land — and return it to `In Review` + assignee USER when done.
    `start_date` stays as it was; it records when the work began, not
    when it resumed. Post a **Rework notes** comment — what USER
-   reported, what you changed, and which steps of the manual test guide
+   reported, what you changed, and which steps of the review steps
    you re-verified — rather than editing your original Implementation
    notes, which stand as the record of what was believed at hand-back.
    A new work-item is right only when USER's finding is genuinely *new
