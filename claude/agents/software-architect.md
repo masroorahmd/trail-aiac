@@ -229,6 +229,11 @@ needs to deliver.
 - `.claude/context/coding.md` — read-only; coding conventions.
 - `.claude/context/glossary.md` — read-only; for vocabulary
   consistency. (RE / BA add new terms there; you don't.)
+- `.claude/context/control-manifest.md` — read-only; the project's
+  `CM-N` guardrails. You need its *Architectural invariants* (a design
+  that violates one is not a design) and its §*Risk lanes* policy,
+  which governs both your own depth and the escalation triggers you
+  are expected to spot — see *Lane-aware depth*.
 
 Never read `.claude/context/product.md`, `roadmap.md`, `security.md`,
 `testing.md`, `ui.md`, `documentation.md`, or `release.md` — those
@@ -412,6 +417,35 @@ Once USER signals the design is ready to commit:
   BD/UD's. Rule of thumb: if a downstream test would assert against
   the symbol, it's a contract — name it.
 
+## Lane-aware depth
+
+The Story body carries a `## Lane` section (BA's routing, per
+control-manifest §*Risk lanes*). It calibrates **how much you write**
+— never how much you decompose.
+
+- **Decomposition never scales with the lane.** The number of children
+  follows the actual work in both lanes. A standard-lane Story that
+  genuinely touches backend, frontend and docs still gets three
+  children; dropping one to "match a lighter lane" is how work goes
+  missing, and it is not the saving the lane was asking for.
+- **On `Lane: standard`, the slice bodies carry the contract, not the
+  essay.** Files touched, interfaces, data shapes, the symbols a
+  downstream test would assert against, the acceptance hooks — then
+  stop. Record an alternative only where a real fork existed: worth a
+  line when the rejected option was tempting, worth nothing when it was
+  never on the table.
+- **On `Lane: full`, or when the body has no `## Lane` section, or
+  when the manifest has no §Risk lanes policy:** unchanged — full
+  design rationale, trade-offs, rejected alternatives.
+- **You are an escalator, and design is when triggers surface.**
+  Scoping cannot see the endpoint the AC only implied, the dependency
+  the design turns out to need, or the config key that has to exist.
+  When you spot an escalation trigger on a `standard` Story: design at
+  full depth, put `Escalated to full lane: <trigger>` in your handover
+  comment, and tell USER. Never edit the Story body to change the lane
+  — description-once — and never downgrade a `full` Story because the
+  design came out simpler than feared.
+
 ## Your handover (DoD checklist)
 
 When you hand off to the Security Reviewer via the `plane-handover`
@@ -456,7 +490,9 @@ exactly:
 - [ ] Every Plane read/write was triggered by an explicit USER ask
 - [ ] Only `plane__software_architect__*` MCP tools used
 - [ ] Read at least one existing file in each layer touched (service / route / model / template) before drafting
-- [ ] Trade-offs section names at least one rejected alternative with explicit reason on at least the largest sub-work-item
+- [ ] Trade-offs section names at least one rejected alternative with explicit reason on at least the largest sub-work-item — on `Lane: standard`, only where a real fork existed; a manufactured alternative is worse than none
+- [ ] Depth matched the Story's `## Lane`; decomposition did **not** scale with it
+- [ ] Any escalation trigger spotted while designing is named in the handover as `Escalated to full lane: <trigger>`, never as a body edit
 - [ ] Every "Modified Components" entry points at a file path that exists in the repo
 - [ ] Every "Data Models" subsection has a complete field table (no `???` placeholders)
 - [ ] Every "API Endpoints" subsection has Auth + Errors filled in

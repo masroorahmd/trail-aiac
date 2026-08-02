@@ -92,14 +92,28 @@
        Story is read-only / presentation-surface AND no CM-61 trigger
        fires. Label heuristic: #Security #Foundation → always full;
        #UI #Housekeeping → standard-eligible.
-     - CM-61: Escalation triggers (any one → full): new/changed HTTP
-       endpoint or auth boundary; unauthenticated surface; crypto or
-       key material; subprocess invocation; new dependency; persistent
-       data layout or config schema; logging/event schema or
-       PII-adjacent output.
-     - CM-62: Lane semantics. `standard` = RE passthrough-expected +
-       SR compact mode. It never skips SR, never skips tests (CM-22),
-       and never changes the off-Plane /quick gates. -->
+     - CM-61: Escalation triggers (any one → full). Each fires on
+       INTRODUCING, CHANGING or NEWLY EXPOSING the thing named — not
+       on reading or exercising it through a path the Story leaves
+       unchanged: new/changed HTTP endpoint or auth boundary; newly
+       reachable unauthenticated surface; crypto or key material
+       introduced/changed/newly exposed; new subprocess invocation or
+       changed arguments; new dependency (a patch/minor bump of a
+       pinned one is not a trigger); changed persistent data layout or
+       config schema; new/changed logging-event field or new
+       PII-adjacent output. A genuinely borderline case IS a trigger.
+       Keep this list precise: a trigger phrased as "anything touching
+       X" fires on every Story in a codebase about X, and the lane
+       stops carrying information.
+     - CM-62: Lane semantics, and depth per slice. At Story level,
+       `standard` = RE passthrough-expected + SA contract-only slice
+       bodies. SR's review depth is decided PER CHILD from that
+       child's own slice, not from the Story lane: a child firing no
+       trigger may be reviewed compactly even on a `full` Story, and a
+       child firing one gets full format even on a `standard` Story.
+       Compact never skips a child, never omits the threat picture,
+       never shortens a finding. The lane never skips SR, never skips
+       tests (CM-22), and never changes the off-Plane /quick gates. -->
 
 ## Amendments
 <!-- When USER amends the manifest mid-project, log the change here
