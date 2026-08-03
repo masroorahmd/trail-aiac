@@ -106,6 +106,17 @@ reading. Never re-issue the PATCH on the strength of a stale echo; you
 will not learn anything new and you may fight a transition that
 already succeeded.
 
+**An outage is not a bad request.** If a Plane tool answers *"Plane is
+unreachable or restarting"*, the MCP has already retried it with
+backoff for ~45s — the call was well-formed and the instance is down
+(upgrade, restart, backup window). Do not vary the arguments, do not
+call it again in a loop, and do not fabricate the handover as though
+it landed. Tell USER Plane is unavailable, say which step is pending,
+and stop; the same call will work unchanged once Plane is back. If the
+error adds *"may or may not have been applied"*, a write broke
+mid-flight: `retrieve_work_item` (or `list_comments`) first to see
+whether it landed, and only then decide whether to repeat it.
+
 ### 2. DoD handover comment
 
 Call the `plane` MCP server's `<persona_snake>__add_comment` tool on

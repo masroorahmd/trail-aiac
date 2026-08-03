@@ -175,6 +175,32 @@ handover, a close) with an independent `retrieve_work_item` call and
 to report that reading, rather than re-issuing the PATCH against a
 stale echo.
 
+## When Plane goes away mid-run
+
+A self-hosted Plane disappears for a minute now and then — an upgrade,
+a container restart, a backup window. The reverse proxy answers 502
+with an empty body while it is gone, and to an agent that is
+indistinguishable from a malformed request: the failure mode is a
+persona that starts editing its own arguments to "fix" an outage.
+
+The MCP absorbs this rather than passing it up. Transient failures are
+retried inside the client with exponential backoff, bounded by
+`PLANE_RETRY_BUDGET` (default 45s, deliberately below Claude Code's
+MCP tool timeout — a 502 fails in milliseconds, so only a time budget
+can outlast a real outage). Reads are
+always retried; writes only when the failure proves Plane never
+processed the request — a bodiless proxy 502, a refused connection, a
+429. A write whose fate is genuinely unknown fails with an explicit
+"may or may not have been applied — re-read before repeating" so the
+persona verifies instead of guessing.
+
+What survives the retries surfaces as an error that names itself an
+outage and tells the persona to report it and stop. Retries are logged
+to stderr, which Claude Code captures into
+`~/.cache/claude-cli-nodejs/<consumer>/mcp-logs-plane/` — that is the
+place to look after the fact. Details and the full retry matrix:
+[`claude/mcp/README.md`](../claude/mcp/README.md).
+
 ## TLS / private-CA hosts
 
 The MCP reads system CA bundles via Python's `truststore`, plus the

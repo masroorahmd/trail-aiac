@@ -21,8 +21,10 @@ here as the "extras" gap. The upstream server is no longer launched.
 
 from __future__ import annotations
 
+import logging
 import os
 import re
+import sys
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -506,6 +508,14 @@ def main() -> None:
     hasn't been run yet against this consumer, and a server with zero
     tools would silently mask the misconfiguration.
     """
+    # stdout is the MCP protocol channel, so diagnostics go to stderr —
+    # which the MCP client captures into its own per-server log. A
+    # no-op if the host application already configured logging.
+    logging.basicConfig(
+        level=logging.WARNING,
+        stream=sys.stderr,
+        format="%(levelname)s %(message)s",
+    )
     if not register_personas_from_env():
         raise SystemExit(
             "plane-extras-mcp: no PLANE_API_KEY_<PERSONA> env vars found. "
