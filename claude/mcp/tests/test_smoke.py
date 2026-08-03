@@ -20,7 +20,11 @@ from plane_extras_mcp.plane import (
     API_VERSION,
     DEFAULT_BASE_URL,
     PlaneClient,
+    PlaneError,
+    PlaneUnavailableError,
+    _env_float,
     _resolve_verify,
+    _status_is_retryable,
     looks_like_uuid,
 )
 from plane_extras_mcp.server import (
@@ -634,3 +638,306 @@ def test_looks_like_uuid_rejects_identifier_form() -> None:
     assert not looks_like_uuid("LONGNAME-123")
     assert not looks_like_uuid("")
     assert not looks_like_uuid("not-a-uuid-at-all")
+
+
+# ---------------------------------------------------------------------
+# Transient-failure handling
+#
+# Modelled on the 2026-08-02 Plane maintenance window, where a reverse
+# proxy answered every call with a bodiless 502 for ~30s and each tool
+# call failed hard, leaving the agent to retry blindly.
+# ---------------------------------------------------------------------
+
+
+def _response(
+    status_code: int,
+    *,
+    method: str = "GET",
+    content: bytes = b"",
+    headers: dict[str, str] | None = None,
+) -> httpx.Response:
+    return httpx.Response(
+        status_code,
+        content=content,
+        headers=headers,
+        request=httpx.Request(method, "https://plane.example.org/x"),
+    )
+
+
+GATEWAY_502 = {"status_code": 502, "content": b""}
+APP_JSON = {"content-type": "application/json"}
+
+
+@pytest.fixture
+def instant_backoff(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    """Collapse the backoff to zero and record what would have been slept."""
+    import plane_extras_mcp.plane as plane_mod
+
+    slept: list[float] = []
+
+    def fake_delay(attempt: int) -> float:
+        slept.append(float(attempt))
+        return 0.0
+
+    monkeypatch.setattr(plane_mod, "_backoff_delay", fake_delay)
+    return slept
+
+
+def _client() -> PlaneClient:
+    return PlaneClient(
+        api_key="tok",
+        workspace_slug="test-ws",
+        base_url="https://plane.example.org",
+    )
+
+
+def _queue_responses(
+    monkeypatch: pytest.MonkeyPatch, responses: list[Any]
+) -> list[str]:
+    """Serve `responses` in order; each entry is a Response or an
+    exception to raise. Returns the list that records call methods.
+    """
+    calls: list[str] = []
+    queue = list(responses)
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> httpx.Response:
+        calls.append(method)
+        item = queue.pop(0) if queue else responses[-1]
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+    return calls
+
+
+async def test_transient_502_is_retried_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch, instant_backoff: list[float]
+) -> None:
+    """The exact failure from the maintenance window: two bodiless 502s
+    followed by recovery must look like a plain success to the caller.
+    """
+    ok = _response(200, content=b'{"id":"wi-1"}', headers=APP_JSON)
+    calls = _queue_responses(
+        monkeypatch,
+        [_response(**GATEWAY_502), _response(**GATEWAY_502), ok],
+    )
+    async with _client() as client:
+        result = await client._pat_request("GET", "projects/")
+    assert result == {"id": "wi-1"}
+    assert len(calls) == 3, f"expected 3 attempts, got {len(calls)}"
+
+
+async def test_persistent_outage_raises_actionable_error(
+    monkeypatch: pytest.MonkeyPatch, instant_backoff: list[float]
+) -> None:
+    """An outage that outlasts the retries must name itself as an
+    outage — the old bodiless "Plane API error 502:" told the agent
+    nothing and it started mutating its arguments.
+    """
+    calls = _queue_responses(monkeypatch, [_response(**GATEWAY_502)])
+    client = _client()
+    client.max_attempts = 4
+    async with client:
+        with pytest.raises(PlaneUnavailableError) as exc_info:
+            await client._pat_request("GET", "projects/")
+    assert len(calls) == 4
+    message = str(exc_info.value)
+    assert "unreachable or restarting" in message
+    assert "not a malformed request" in message
+    assert exc_info.value.status_code == 502
+    assert exc_info.value.attempts == 4
+
+
+async def test_client_errors_are_not_retried(
+    monkeypatch: pytest.MonkeyPatch, instant_backoff: list[float]
+) -> None:
+    """A 400/404 is the caller's fault and stays a single hard failure —
+    retrying it would only slow the agent down.
+    """
+    for status in (400, 403, 404):
+        calls = _queue_responses(
+            monkeypatch,
+            [_response(status, content=b'{"error":"nope"}', headers=APP_JSON)],
+        )
+        async with _client() as client:
+            with pytest.raises(PlaneError) as exc_info:
+                await client._pat_request("GET", "projects/")
+        assert not isinstance(exc_info.value, PlaneUnavailableError)
+        assert exc_info.value.status_code == status
+        assert len(calls) == 1, f"status {status} was retried"
+
+
+async def test_write_retried_when_request_never_reached_plane(
+    monkeypatch: pytest.MonkeyPatch, instant_backoff: list[float]
+) -> None:
+    """A bodiless 502 comes from the proxy, so no comment was written —
+    repeating the POST cannot duplicate anything.
+    """
+    ok = _response(201, content=b'{"id":"c-1"}', headers=APP_JSON)
+    calls = _queue_responses(
+        monkeypatch, [_response(**GATEWAY_502), ok]
+    )
+    async with _client() as client:
+        result = await client._pat_request(
+            "POST", "projects/p/work-items/w/comments/", json={"x": 1}
+        )
+    assert result == {"id": "c-1"}
+    assert calls == ["POST", "POST"]
+
+
+async def test_write_not_retried_when_plane_itself_errored(
+    monkeypatch: pytest.MonkeyPatch, instant_backoff: list[float]
+) -> None:
+    """A JSON 500 means Plane processed the request and may have
+    applied it — repeating the POST risks a duplicate comment.
+    """
+    calls = _queue_responses(
+        monkeypatch,
+        [_response(500, content=b'{"error":"boom"}', headers=APP_JSON)],
+    )
+    async with _client() as client:
+        with pytest.raises(PlaneError) as exc_info:
+            await client._pat_request(
+                "POST", "projects/p/work-items/w/comments/", json={"x": 1}
+            )
+    assert not isinstance(exc_info.value, PlaneUnavailableError)
+    assert len(calls) == 1
+
+
+async def test_connect_failure_is_retried_for_writes(
+    monkeypatch: pytest.MonkeyPatch, instant_backoff: list[float]
+) -> None:
+    """Plane down between calls: the connection never opened, so the
+    write provably did not land and the POST may be repeated.
+    """
+    ok = _response(201, content=b'{"id":"c-1"}', headers=APP_JSON)
+    calls = _queue_responses(
+        monkeypatch, [httpx.ConnectError("connection refused"), ok]
+    )
+    async with _client() as client:
+        result = await client._pat_request("POST", "x/", json={"a": 1})
+    assert result == {"id": "c-1"}
+    assert len(calls) == 2
+
+
+async def test_read_failure_on_write_reports_unknown_outcome(
+    monkeypatch: pytest.MonkeyPatch, instant_backoff: list[float]
+) -> None:
+    """The connection opened and then broke mid-flight: whether Plane
+    applied the write is unknowable, so the error says so instead of
+    silently repeating it.
+    """
+    calls = _queue_responses(
+        monkeypatch, [httpx.ReadTimeout("read timed out")]
+    )
+    async with _client() as client:
+        with pytest.raises(PlaneUnavailableError) as exc_info:
+            await client._pat_request("POST", "x/", json={"a": 1})
+    assert len(calls) == 1, "an ambiguous write must not be repeated"
+    assert exc_info.value.outcome_unknown
+    assert "may or may not have been applied" in str(exc_info.value)
+
+
+async def test_read_failure_on_get_is_retried(
+    monkeypatch: pytest.MonkeyPatch, instant_backoff: list[float]
+) -> None:
+    """The same mid-flight break on a GET has no side effect to protect."""
+    ok = _response(200, content=b"[]", headers=APP_JSON)
+    calls = _queue_responses(
+        monkeypatch, [httpx.ReadTimeout("read timed out"), ok]
+    )
+    async with _client() as client:
+        assert await client._pat_request("GET", "projects/") == []
+    assert len(calls) == 2
+
+
+async def test_retry_budget_ends_the_loop_before_max_attempts(
+    monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A tool call must not block indefinitely just because attempts
+    remain — the time budget is the ceiling the caller feels.
+    """
+    import plane_extras_mcp.plane as plane_mod
+
+    monkeypatch.setattr(plane_mod, "_backoff_delay", lambda attempt: 30.0)
+    calls = _queue_responses(monkeypatch, [_response(**GATEWAY_502)])
+    client = _client()
+    client.max_attempts = 10
+    client.retry_budget = 1.0
+    async with client:
+        with pytest.raises(PlaneUnavailableError):
+            await client._pat_request("GET", "projects/")
+    assert len(calls) == 1, "a delay overrunning the budget must not be slept"
+
+
+async def test_budget_not_attempt_count_outlasts_a_fast_outage(
+    monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A bodiless 502 fails in milliseconds, so a small attempt count
+    would give up seconds into an outage that lasts half a minute. The
+    time budget has to be what decides when to stop.
+    """
+    import plane_extras_mcp.plane as plane_mod
+
+    monkeypatch.setattr(plane_mod, "_backoff_delay", lambda attempt: 0.02)
+    calls = _queue_responses(monkeypatch, [_response(**GATEWAY_502)])
+    client = _client()
+    client.max_attempts = 1000
+    client.retry_budget = 0.3
+    async with client:
+        with pytest.raises(PlaneUnavailableError):
+            await client._pat_request("GET", "projects/")
+    assert len(calls) > 10, (
+        f"gave up after {len(calls)} attempts — the budget was not the ceiling"
+    )
+
+
+async def test_retry_after_header_is_honoured(
+    monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A throttled call waits the interval Plane asked for, capped."""
+    import plane_extras_mcp.plane as plane_mod
+
+    slept: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr(plane_mod.asyncio, "sleep", fake_sleep)
+    ok = _response(200, content=b"[]", headers=APP_JSON)
+    _queue_responses(
+        monkeypatch,
+        [_response(429, headers={"retry-after": "2"}), ok],
+    )
+    async with _client() as client:
+        assert await client._pat_request("GET", "projects/") == []
+    assert slept == [2.0], f"expected a 2s wait, slept {slept}"
+
+
+def test_status_retry_policy_distinguishes_gateway_from_app() -> None:
+    """The pivot the whole policy rests on: who produced the error."""
+    gateway = _response(502)
+    app = _response(502, content=b'{"detail":"x"}', headers=APP_JSON)
+    assert _status_is_retryable(502, "POST", gateway)
+    assert not _status_is_retryable(502, "POST", app)
+    assert _status_is_retryable(502, "GET", app)
+    assert _status_is_retryable(503, "POST", gateway)
+    assert _status_is_retryable(429, "POST", app)
+    assert not _status_is_retryable(504, "POST", gateway)
+    assert _status_is_retryable(504, "GET", gateway)
+    assert not _status_is_retryable(404, "GET", app)
+
+
+def test_env_float_falls_back_on_garbage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A typo in the consumer's .mcp.json must not stop the server."""
+    monkeypatch.setenv("PLANE_RETRY_BUDGET", "not-a-number")
+    assert _env_float("PLANE_RETRY_BUDGET", 45.0) == 45.0
+    monkeypatch.setenv("PLANE_RETRY_BUDGET", "-5")
+    assert _env_float("PLANE_RETRY_BUDGET", 45.0) == 45.0
+    monkeypatch.setenv("PLANE_RETRY_BUDGET", "12.5")
+    assert _env_float("PLANE_RETRY_BUDGET", 45.0) == 12.5

@@ -81,6 +81,45 @@ incoming tool call.
 | `PLANE_BASE_URL` | optional (defaults to plane.so cloud) | |
 | `PLANE_VERIFY_SSL` | optional | `false` to disable TLS verification |
 | `PLANE_CA_BUNDLE` | optional | Path to a CA cert; takes precedence over `PLANE_VERIFY_SSL` |
+| `PLANE_CONNECT_TIMEOUT` | optional | Seconds to wait for the TCP/TLS handshake (default `10`) |
+| `PLANE_READ_TIMEOUT` | optional | Seconds to wait for a response (default `30`) |
+| `PLANE_MAX_ATTEMPTS` | optional | Runaway guard on tries per call (default `10`) |
+| `PLANE_RETRY_BUDGET` | optional | Seconds one call may spend retrying (default `45`) |
+
+## Surviving a Plane restart
+
+A self-hosted Plane goes away for a minute during an upgrade, a
+container restart, or a backup window. Without help, every persona
+tool call fails instantly and the agent — which cannot tell an outage
+from a bad request — starts rewriting its arguments.
+
+So transient failures are retried inside the client, with equal-jitter
+exponential backoff (0.5s doubling to a cap of 8s). `PLANE_RETRY_BUDGET`
+is the real ceiling — a refused connection or a bodiless proxy 502
+fails in milliseconds, so an attempt count alone would give up after a
+few seconds, and the maintenance window this was built for ran 32s.
+`PLANE_MAX_ATTEMPTS` is only a runaway guard. The budget sits below
+the MCP client's own tool timeout, so a caller gets our diagnostic
+rather than a bare timeout.
+
+What counts as retryable depends on whether repeating the call could
+duplicate a write:
+
+| Failure | `GET` | `POST` / `PATCH` / `DELETE` |
+|---|---|---|
+| Connection refused / timed out | retry | retry — the request never reached Plane |
+| `429 Too Many Requests` | retry (honours `Retry-After`) | retry — throttled before any work |
+| `502` / `503` with an empty or HTML body | retry | retry — the proxy answered, Plane never saw it |
+| `502` with a JSON body | retry | fail — Plane answered, so it processed the request |
+| `500`, `504` | retry | fail — the write may have partly landed |
+| Connection broke mid-response | retry | fail, flagged "may or may not have been applied" |
+| `400` / `403` / `404` | fail immediately | fail immediately |
+
+A call that exhausts its retries raises `PlaneUnavailableError`, whose
+message names the outage explicitly and tells the agent not to touch
+its arguments. Every retry is logged to stderr, which MCP clients
+capture into their per-server log — an outage that used to leave only
+`Plane API error 502:` now leaves a trail.
 
 ## Install
 
