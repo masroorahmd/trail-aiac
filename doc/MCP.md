@@ -33,6 +33,27 @@ that performed it.
 > in a *comment* — so the page tools and the session-cookie auth
 > path were removed.
 
+## Why `plane` sometimes isn't there at all
+
+`plane` is a *project-scoped* server: it lives in the consumer's
+`.mcp.json`, not in the user-level config. Claude Code gates those
+behind a startup prompt — *"New MCP server found in this project:
+plane → Use this MCP server"* — and dismissing it answers **no** for
+the entire session. The refusal is not recorded, so the prompt returns
+next start; the symptom is a session where every persona is suddenly
+Plane-blind and `/mcp` does not list `plane` at all. Nothing to
+reconnect: a session enumerates its MCP servers once, at startup, so
+`/mcp reconnect` and `/mcp enable` can only act on servers that were
+loaded. That session cannot be repaired — it has to be restarted.
+
+`claude/settings.json` therefore ships `enabledMcpjsonServers:
+["plane"]`, which persists the approval and skips the prompt entirely.
+If a consumer predates that, re-run `bin/install.py` against it.
+
+Distinguish this from an outage: no `plane` tools *offered at all* is
+the approval gate, whereas tools that exist but fail is Plane itself
+being down (see *When Plane goes away mid-run* below).
+
 ## How personas write artefacts
 
 The framework's data model on Plane:

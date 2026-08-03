@@ -1,4 +1,5 @@
 {
+  "enabledMcpjsonServers": ["plane"],
   "permissions": {
     "allow": [
       "Edit(.claude/context/*.md)",
