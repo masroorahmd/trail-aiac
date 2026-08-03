@@ -73,7 +73,16 @@ trail-aiac/
 │                                  cover every file-editing tool —
 │                                  `Write(path)` rules are NOT matched
 │                                  by file permission checks and make
-│                                  Claude Code warn at startup)
+│                                  Claude Code warn at startup).
+│                                  Also carries
+│                                  `enabledMcpjsonServers: ["plane"]`
+│                                  — without it the project-scoped
+│                                  `.mcp.json` server is gated behind a
+│                                  startup prompt that is asked EVERY
+│                                  start, and one dismissed prompt
+│                                  leaves the whole session with no
+│                                  Plane tools and nothing in `/mcp`
+│                                  to reconnect.
 │
 ├── ansible/                       Plane provisioning (optional)
 │   ├── plane.yml                 turn-key playbook
