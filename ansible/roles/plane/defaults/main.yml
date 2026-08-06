@@ -12,8 +12,8 @@ plane_dir: "{{ stacks_dir }}/plane"
 plane_proxy_host_port: "127.0.0.1:8081"
 
 # Pin: matches the vendored compose derived from
-# https://github.com/makeplane/plane/tree/v1.3.0/deployments/cli/community
-plane_release: "v1.3.0"
+# https://github.com/makeplane/plane/tree/v1.4.0/deployments/cli/community
+plane_release: "v1.4.0"
 
 # MinIO has no semver tags upstream — pin the current stable RELEASE.
 # Note: MinIO appears to have stopped publishing to Docker Hub after

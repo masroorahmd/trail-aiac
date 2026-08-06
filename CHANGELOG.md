@@ -48,6 +48,25 @@ page-based, per-persona-MCP** design (0.1.0) to the current
 
 ### Changed
 
+- **Plane pinned to Community v1.4.0** (was v1.3.0). Upstream v1.4.0
+  closes a large batch of coordinated security advisories — cross-
+  workspace IDORs on project/member/estimate/asset endpoints, bot
+  service accounts accepting interactive logins, API keys still valid
+  for deactivated accounts, unverified OAuth provider emails, and
+  unbounded magic-code retries — so self-hosted instances should take
+  it. The vendored compose gains the two new upstream knobs
+  `WEBHOOK_ALLOWED_IPS` / `WEBHOOK_ALLOWED_HOSTS` (both empty, matching
+  upstream's default); no service-level changes. Upgrade path is
+  `ansible-playbook backup.yml && ansible-playbook plane.yml --tags
+  plane` — Django applies 164 migrations forward, and rolling back to
+  v1.3.0 requires a `pg_restore` from the backup, not just a tag flip.
+  (`ansible/roles/plane/defaults/main.yml`,
+  `ansible/roles/plane/templates/compose.yaml.j2`)
+- **`ansible.cfg` stdout callback un-broke.** `stdout_callback = yaml`
+  selected `community.general.yaml`, removed in community.general
+  12.0.0 — every `ansible-playbook` run aborted before its first task.
+  Replaced with the built-in `default` callback plus
+  `result_format = yaml`, the supported equivalent. (`ansible/ansible.cfg`)
 - **Personas run in the main loop, not as subagents.** Each
   `/<persona>` slash command puts the main Claude Code loop into that
   role for this and any follow-up turns, until USER exits or switches

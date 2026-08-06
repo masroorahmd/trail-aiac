@@ -1,6 +1,6 @@
 # Plane backup (Ansible)
 
-Backup of a running Plane v1.3.0 stack. Captures the two stateful
+Backup of a running Plane v1.4.0 stack. Captures the two stateful
 services — Postgres and MinIO — into a single tar.gz. Both containers
 stay running. Designed for the homelab / single-host case; not a
 substitute for a managed-service backup strategy.
@@ -84,7 +84,7 @@ be alive to dump from.
 ## Restore
 
 Against a freshly provisioned, **empty** Plane stack on the same Plane
-release (`v1.3.0`):
+release (`v1.4.0`):
 
 ```bash
 # 0. Provision a fresh Plane (creates the DB + MinIO bucket schemas).

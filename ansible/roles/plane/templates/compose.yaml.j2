@@ -1,5 +1,5 @@
-# Derived from makeplane/plane v1.3.0:
-# https://github.com/makeplane/plane/blob/v1.3.0/deployments/cli/community/docker-compose.yml
+# Derived from makeplane/plane v1.4.0:
+# https://github.com/makeplane/plane/blob/v1.4.0/deployments/cli/community/docker-compose.yml
 #
 # Local modifications from upstream:
 #   - Pinned APP_RELEASE and MinIO tag; other images already pinned upstream.
@@ -73,6 +73,12 @@ x-app-env: &app-env
   API_KEY_RATE_LIMIT: 60/minute
   MINIO_ENDPOINT_SSL: 0
   LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY}
+  # New in v1.4.0 — SSRF allow-lists for outbound webhook delivery. Empty
+  # mirrors the upstream default (`${WEBHOOK_ALLOWED_IPS:-}`), which keeps
+  # Plane's built-in private-range blocking in force. Populate only if you
+  # deliberately want webhooks to reach a specific internal host.
+  WEBHOOK_ALLOWED_IPS: ""
+  WEBHOOK_ALLOWED_HOSTS: ""
 
 services:
   web:

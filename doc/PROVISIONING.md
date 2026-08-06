@@ -1,10 +1,10 @@
 # Plane provisioning (Ansible)
 
-Brings up a **Plane Community v1.3.0** stack on an SSH-reachable host
+Brings up a **Plane Community v1.4.0** stack on an SSH-reachable host
 that already has docker + a Caddy reverse-proxy, then configures the
 workspace, projects, agents, modules, labels, ticket states, avatars,
 and per-agent API tokens the framework expects. Tested only against
-Plane v1.3.0 — the docker-exec ORM steps reach into Plane internals
+Plane v1.4.0 — the docker-exec ORM steps reach into Plane internals
 (model paths, signal behavior) that a future release may rename.
 
 > Quick path: don't run any of this manually — invoke the
