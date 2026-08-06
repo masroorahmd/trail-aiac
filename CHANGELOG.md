@@ -48,6 +48,18 @@ page-based, per-persona-MCP** design (0.1.0) to the current
 
 ### Changed
 
+- **`plane-handover` records that Plane v1.4.0 sanitizes work-item
+  bodies.** `description_html` now passes through nh3 before storage —
+  well-formed input is wrapped in a `<div>` and `<a>` tags gain
+  `rel="noopener noreferrer"` — so the skill's blanket "stored
+  verbatim" claim no longer held. Every tag the framework emits
+  survives; only script, event handlers, and unsafe link protocols are
+  dropped. `comment_html` is unaffected: the create path
+  (`IssueCommentCreateSerializer`) has no sanitizer hook, so comments
+  are still stored exactly as sent. The rule that matters for personas
+  is the new one: a `<div>` in the echo is normalization, not a mangled
+  write, and must not trigger a replacement work item — bodies are
+  written once. (`claude/skills/plane-handover/SKILL.md`)
 - **Plane pinned to Community v1.4.0** (was v1.3.0). Upstream v1.4.0
   closes a large batch of coordinated security advisories — cross-
   workspace IDORs on project/member/estimate/asset endpoints, bot
