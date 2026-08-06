@@ -44,7 +44,7 @@ projects repeatedly, so read them once and apply them to *every*
 `add_comment` and `create_work_item` call, not just to handovers.
 
 **1. `comment_html` and `description_html` take REAL HTML.**
-Whatever you pass is stored verbatim and rendered as markup.
+What you pass is rendered as markup, not as text.
 
 - Send real tags: `<p>`, `<strong>`, `<ul><li>`, `<code>`, `<h3>`.
 - Do **not** send Markdown. `**bold**` and `- item` are stored as
@@ -56,6 +56,26 @@ Whatever you pass is stored verbatim and rendered as markup.
   in the rendered output — e.g. demonstrating `a &lt; b` or an XML
   snippet inside a `<code>` block.
 - `<![CDATA[…]]>` does not work; it renders as literal text.
+
+**1b. `description_html` is sanitized on write; `comment_html` is not.**
+Since Plane v1.4.0 a work-item body passes through an HTML sanitizer
+before it is stored, so the value you read back is *not* byte-identical
+to the value you sent. Two normalizations happen to well-formed input:
+the body is wrapped in a `<div>…</div>`, and `<a>` tags gain
+`rel="noopener noreferrer"`. Comments skip the sanitizer entirely and
+are still stored exactly as sent.
+
+Every tag this skill tells you to use — `<p>`, `<strong>`, `<em>`,
+`<code>`, `<pre>`, `<h3>`, `<ul>`, `<ol>`, `<li>`, `<a>`, `<table>` —
+survives unchanged, as do entity escapes like `&lt;`. What the
+sanitizer drops is script, event-handler attributes, and non-`http(s)`
+/ `mailto` / `tel` link protocols, none of which belong in a handover.
+
+The consequence that matters: **a `<div>` wrapper in the echo is not
+corruption.** Do not "repair" it. Because a body is written once and
+never edited (see the *Description-once* rule), a persona that reads
+the echo, mistakes the wrapper for a mangled write, and creates a
+replacement work item has produced a duplicate it cannot take back.
 
 **2. There is no comment edit and no comment delete.** The persona
 toolsets expose `add_comment` and nothing else. A mis-encoded comment
