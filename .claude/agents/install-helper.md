@@ -47,7 +47,7 @@ Tight summary so you don't have to re-derive it:
   re-templates `<consumer>/.claude/agents/*.md` with the
   per-persona inlined Plane tokens. Idempotent.
 - **Plane provisioning.** Optional. `ansible/plane.yml` brings up Plane
-  v1.3.0 on an SSH-reachable host and provisions the workspace, eleven
+  v1.4.0 on an SSH-reachable host and provisions the workspace, eleven
   agent accounts, projects, modules, labels, ticket states, avatars,
   and per-agent API tokens. Outputs land in
   `ansible/out/plane-agent-{tokens,invitations}-<host>.yml` and
@@ -57,7 +57,7 @@ Tight summary so you don't have to re-derive it:
 - **Strengths.** Idempotent install + provisioning, Anthropic-native
   primitives only, audit trail (every agent acts as itself in Plane),
   context + memory in the consumer's git.
-- **Weaknesses.** Tested only against Plane v1.3.0; per-persona MCP
+- **Weaknesses.** Tested only against Plane v1.4.0; per-persona MCP
   wiring uses hard-coded tokens at install time (rendered into
   `.mcp.json`); first-time `ansible-playbook` run is 10–15 min
   wall-clock (Plane's 121 sequential DB migrations).
@@ -254,7 +254,7 @@ After the table, ask the scenario question:
 
 ```
 Which scenario applies?
-  1) Greenfield: provision Plane v1.3.0 on a fresh host (Ansible).
+  1) Greenfield: provision Plane v1.4.0 on a fresh host (Ansible).
   2) Existing Plane, but no agent accounts yet (run only the
      plane_users + plane_bootstrap roles).
   3) Existing Plane, agent accounts already there (skip Ansible
@@ -341,7 +341,7 @@ Ready to run:
 
 This will, on <host>:
   - apt-install docker + caddy if missing (sudo)
-  - bring up Plane v1.3.0 in /opt/stacks/plane/
+  - bring up Plane v1.4.0 in /opt/stacks/plane/
   - create one Caddy site block: /etc/caddy/sites.d/plane.caddy
   - provision the workspace, eleven agent accounts, and projects
   - 10–15 minutes wall-clock on a fresh DB

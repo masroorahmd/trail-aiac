@@ -34,7 +34,7 @@ drive by hand or troubleshoot.
 
 | Scenario | Plane already running? | Agent accounts already created? | What the install does |
 |---|---|---|---|
-| **1. Greenfield** | no | no | Provisions Plane v1.3.0 on a host you supply via Ansible, mints all secrets, copies them into the consumer's `.claude/`, runs `install.py`. |
+| **1. Greenfield** | no | no | Provisions Plane v1.4.0 on a host you supply via Ansible, mints all secrets, copies them into the consumer's `.claude/`, runs `install.py`. |
 | **2. Existing Plane, no agents** | yes | no | Skips the Plane stack rollout; runs `--tags plane_users,plane_bootstrap` to add the eleven persona accounts + workflow states/modules/labels; copies the resulting tokens + UI passwords into the consumer's `.claude/`, runs `install.py`. |
 | **3. Existing Plane, agents already there** | yes | yes | Pure framework install: you provide the eleven API tokens + UI passwords (from your own provisioning), they go into `.claude/credentials.yaml`, then `install.py`. |
 
