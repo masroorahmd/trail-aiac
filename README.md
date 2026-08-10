@@ -173,11 +173,14 @@ Two more commands sit outside the eleven personas — both off-Plane,
 both still a single human-initiated turn:
 
 - **`/quick`** — the off-Plane *quick lane*. One main-loop turn, no
-  Story, no persona identity, no Plane MCP calls. Implements a small,
-  safe change and commits it; the commit is the only artefact. Gated
-  on six eligibility checks (no security surface, no new external
-  surface, no migration, no risky new dependency, bounded blast
-  radius, reversible) — anything that fails routes to `/ba` instead.
+  Story, no persona identity, no Plane MCP calls. Implements a
+  bounded-risk change and commits it; the commit is the only artefact.
+  Gated on six eligibility checks (no security surface, no new
+  external surface, no migration, no risky new dependency, bounded
+  **risk**, reversible) — anything that fails routes to `/ba` instead.
+  Bounded risk is not bounded size: a mechanical sweep across twenty
+  files, whose sites one command can enumerate *and* re-verify, is in
+  lane; a two-file change to an auth path is not.
 - **`/autopilot`** — the *unattended lane*. One human-initiated turn
   that drives an already-framed Story — or every Story in a work-item
   tree above it — through the spine (RE → SA → SR → BD/UD → TM →
@@ -243,6 +246,16 @@ documentation`), each handed off by reassignment in Plane:
 Each command moves its work-item along the
 `Todo → In Progress → In Review` spine and posts a comment under
 that persona's own API token, so every change is attributed in Plane.
+
+That is the **maximum** path. BA assigns every Story a *risk lane*
+(policy lives in the project's own `control-manifest.md`): `standard`
+shortens the prose, and `light` shortens the path itself — RE
+passthroughs, SA is skipped, no sub-work-items are created and the
+Story *is* the work-item, so a one-module change with nothing left to
+design runs `/ba → /re → /bd → /tm → /rm`. Every trimmed stage leaves
+a `SKIP-N` receipt naming the reason and the next command. No lane
+buys past a gate: SR still reviews a security surface, TM still runs
+where behaviour changed, and the hand-back to you always happens.
 
 ### Other practical patterns
 

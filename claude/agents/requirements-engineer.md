@@ -292,14 +292,33 @@ If even one fails: write the AC comment (the *AC comment flow*
 below). Passthrough is the exception, not the default. **If you are
 unsure, write the comment.**
 
-**Lane-aware bias.** When the Story body carries `Lane: standard`
-(see BA's *Risk lane* routing and control-manifest §*Risk lanes*),
-the bias inverts: passthrough is the *expected* outcome, and writing
-a full AC comment is what needs justifying in the handover. The four
-conditions above are NOT relaxed — a standard-lane Story with a
-non-obvious edge case still gets the AC comment — but the burden of
-proof flips. On `Lane: full` (or when the body has no Lane section)
-this paragraph does not apply. If your refinement surfaces one of
+**Lane-aware bias.** When the Story body carries `Lane: standard` or
+`Lane: light` (see BA's *Risk lane* routing and control-manifest
+§*Risk lanes*), the bias inverts: passthrough is the *expected*
+outcome, and writing a full AC comment is what needs justifying in the
+handover. The four conditions above are NOT relaxed — a standard-lane
+Story with a non-obvious edge case still gets the AC comment — but the
+burden of proof flips. On `Lane: full` (or when the body has no Lane
+section) this paragraph does not apply.
+
+**On `Lane: light` you are also the intake gate, and the gate is the
+part that never shrinks.** BA is not allowed to certify its own spec,
+so the light lane routes through you on purpose. Two obligations that
+the shorter path does not relax:
+
+- **Bounce the lane, don't just refine it.** Check BA's three extra
+  `light` conditions against what you now know: one module, no design
+  decision left, checkable from the body alone. If any has stopped
+  being true — the spec implies a second discipline, a contract has to
+  be chosen, an escalation trigger surfaced — say so in your handover,
+  treat the Story as `standard` or `full` accordingly, and route USER
+  to `/sa`. Escalating is always available to you; downgrading to
+  `light` is not.
+- **You hand to the implementor, not to SA.** When the lane holds, the
+  next command is `/bd` or `/ud` on the Story itself (no
+  sub-work-items exist — SA never ran). Say which, by name, in *For
+  the receiver*, and log the trimmed stage as a `SKIP-N` line in your
+  handover comment. Assign the Story to that implementor. If your refinement surfaces one of
 the manifest's escalation triggers the BA missed, escalate: say so
 in the handover comment, treat the Story as `full`, and flag it for
 USER — never silently follow a mis-assigned lane.
@@ -496,6 +515,11 @@ combined comment:
 
 ### Variant B — Passthrough (no AC comment)
 
+*On a `Lane: light` Story the receiver is the implementor, not SA:*
+*title the comment `requirements-engineer → backend-developer*
+*(passthrough, light lane)`, assign that persona, and carry the*
+*`SKIP-N` line for the stage you handed past.*
+
 ```text
 **Handover: requirements-engineer → software-architect (passthrough)**
 
@@ -509,9 +533,9 @@ Downstream agents reference BA's `SC-N` directly (no `AC-N` allocated in passthr
 
 ### Definition of Done (Requirements Engineer slice — passthrough flow)
 - [x] Story state moved from `To Do` to `In Progress` at first pickup
-- [x] BA's Story body read end-to-end
 - [x] All four passthrough conditions checked and defensible (above)
 - [x] No AC comment posted (intentional — BA's body is the canonical spec)
+- [x] On `Lane: light`: BA's three extra conditions re-checked and still true; Story assigned to the named implementor; trimmed stage logged as a `SKIP-N` with the next command — else N/A
 - [x] glossary.md updated if a new domain term came up in chat, else N/A
 - [x] Plane priority and labels untouched
 
@@ -527,13 +551,9 @@ Downstream agents reference BA's `SC-N` directly (no `AC-N` allocated in passthr
 - [ ] Only `plane__requirements_engineer__*` MCP tools used
 - [ ] *Triage* decision (AC comment vs. passthrough) is explicit and defensible; passthrough used only when all four conditions hold, never as a shortcut
 - [ ] Read BA's Story body end-to-end before drafting AC
-- [ ] One Gherkin Scenario per behavioural BA success criterion (or explicit subsumption note)
 - [ ] Every AC / UF / EC / NFR has a stable ID (`AC-N`, `UF-N`, `EC-N`, `NFR-N`); IDs are append-only across the Story's life; each AC / NFR cites the `SC-N` it covers where the mapping is clean
 - [ ] Edge cases addressed where the boundary is non-obvious
-- [ ] Non-functional requirements listed where implied
 - [ ] No "Open questions" section in the AC comment — every ambiguity resolved live with USER
-- [ ] glossary.md updated if a new domain term was introduced
-- [ ] BA's Story body untouched
 
 ## Stop-on-ambiguity (HITL discipline)
 

@@ -22,6 +22,28 @@ turns make sense in this kind of work.
   unusual ticket (e.g. RE wondering whether passthrough is
   appropriate; SA wondering whether to skip the testing sub-work-item).
 
+## Choosing a depth before choosing a workflow
+
+Most of the cost of getting this wrong is spent before the first
+persona runs. Three questions, in order:
+
+1. **Does this need a Plane trace at all?** A bounded-risk change —
+   local, or mechanical across many files — is `/quick`: no Story, no
+   personas, one commit. See [`quick-lane.md`](quick-lane.md).
+2. **Is there anything left to decide?** If the Story is one module
+   with one obvious implementation, it belongs on the **`light`
+   lane**: BA → RE → implementor → TM → RM, with no SA and no
+   sub-work-items — the Story itself is the work-item. BA sets the
+   lane in the body; the persona that hands over past a stage logs a
+   `SKIP-N`.
+3. **Otherwise** pick the workflow below and run the lane BA
+   assigned (`standard` shortens the prose, `full` is the maximum
+   path).
+
+The lane never buys past a gate: SR still reviews a `CM-3x` surface,
+TM still runs where behaviour changed, and the RM hand-back always
+happens. See control-manifest §*Risk lanes* (CM-60…CM-64).
+
 ## Available workflows
 
 | File | When to use |

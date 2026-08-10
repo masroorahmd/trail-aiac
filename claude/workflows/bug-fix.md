@@ -25,8 +25,12 @@ to design.
    *Edge cases* are the high-value section here — what *almost*
    triggered the bug but didn't.
 
-3. **`/sa decompose DEV-N`** — Often a single sub-work-item plus a
-   testing slice. SA may inline the documentation update into the
+3. **`/sa decompose DEV-N`** — *skipped entirely on a `light` lane*,
+   which is where a one-module bug fix with an obvious repair
+   belongs: RE hands straight to the implementor, the Story itself is
+   the work-item, and RE's handover carries the `SKIP-N`. Run SA when
+   the repair spans two disciplines or a fix option has to be chosen.
+   When it runs: often a single sub-work-item plus a testing slice. SA may inline the documentation update into the
    implementor slice (no separate TW work) when the user-facing
    change is a one-line release-notes entry.
 

@@ -357,10 +357,15 @@ Once USER signals the Story is ready to commit:
    <So RE / SA do not relitigate.>
 
    ## Lane
-   **Lane: full** — <or `standard`; one line citing the
+   **Lane: full** — <or `standard` / `light`; one line citing the
    control-manifest §Risk lanes rule that justifies the choice.
    Omit this section only when the manifest has no §Risk lanes
    policy — then every Story implicitly runs the full lane.>
+   **Planned path**: <only on `light`: the persona chain USER is
+   expected to type, e.g. `BA → BD → TM → RM`. A plan, not a
+   promise — any departure is a `SKIP-N` line in a comment. RE is
+   always on the path: it is the independent intake gate, and you
+   do not get to certify your own spec as testable.>
    ```
 
    *No "Open product questions" section — everything was resolved in
@@ -490,29 +495,88 @@ scoping time you assign each Story a lane and record it in the body
 - **`standard`** — for low-risk Stories. Downstream effect: RE
   treats passthrough as the *expected* outcome (same four
   conditions, inverted bias), and SA writes contract-only slice
-  bodies instead of full design rationale. **SR's review depth does
-  not hang on your lane** — it is decided per child from that child's
-  own slice, so a clean documentation child is reviewed compactly
-  even on a `full` Story. Decomposition and TM coverage obligations
-  are identical in both lanes.
+  bodies instead of full design rationale. The *path* is unchanged:
+  every persona still runs.
+- **`light`** — for Stories that are low-risk **and** mechanically
+  simple: one module, one obvious way to do it, nothing left to
+  design. This is the only lane that shortens the **path** instead of
+  the prose, and it exists because a lane that merely shortens prose
+  does not stop a two-line change from costing eight handovers:
+  - RE passthroughs unless its intake floor fires.
+  - SA is skipped when the decomposition is self-evident. Then **no
+    sub-work-items are created and the Story itself is the work-item**
+    the implementor and TM pick up.
+  - TW runs only when a user-facing documentation surface actually
+    changes.
+  - RM trims the release ceremony, never the hand-back.
+
+**SR's review depth does not hang on your lane** — it is decided per
+child from that child's own slice, so a clean documentation child is
+reviewed compactly even on a `full` Story.
+
+### What `light` may never buy
+
+The lane trims ceremony. It never trims a gate, and these four hold in
+every lane:
+
+1. **SR runs whenever the change touches a *Security non-negotiable*
+   (`CM-3x`).** No lane buys past that.
+2. **TM runs whenever the change has a runtime surface** — anything
+   that alters behaviour, however small.
+3. **The RM hand-back always runs.** The Story reaches USER
+   `In Review`, assigned, with review steps.
+4. **The Story is never skipped.** `light` shortens the path *through*
+   Plane; it does not take work off Plane. Taking work off Plane
+   entirely is `/quick`'s job, and `/quick` leaves no work-item at
+   all — pick one tool or the other, never a silent blend.
 
 Routing rules:
 
 1. Read `.claude/context/control-manifest.md` §*Risk lanes*. The
    project policy there (label heuristics + escalation triggers) is
    authoritative. **If the section does not exist, every Story is
-   `full`** — you never infer a standard lane from your own
+   `full`** — you never infer a lighter lane from your own
    judgement of "this looks small".
 2. **Any escalation trigger → `full`**, regardless of labels. When
    in doubt, `full`. A wrongly-full Story costs some review depth; a
-   wrongly-standard Story costs a missed threat.
-3. The lane is part of the body (description-once). If later work
-   reveals an escalation trigger, the lane is *escalated in a
-   comment* by whoever finds it (usually SR) — never silently
+   wrongly-light Story costs a missed threat.
+3. **`light` needs all three of these on top of `standard`'s bar**, and
+   a single uncertainty drops the Story to `standard` at best:
+   - **one module / one discipline** — no real backend *and* frontend
+     slice, no code *and* docs deliverable;
+   - **no design decision left** — no new component, no contract or
+     data-shape choice, no dependency question. If SA would have to
+     *decide* anything, SA runs;
+   - **checkable from the Story body alone** — a reviewer can tell
+     whether it is done without reconstructing intent.
+4. The lane is part of the body (description-once), together with the
+   **planned path** — `Lane: light — path: BA → RE → BD → TM → RM`. The
+   planned path is what tells USER which slash commands to type; it is
+   a plan, not a promise. Any persona that departs from it records a
+   `SKIP-N` line in its handover comment (see *Trimming a stage*).
+5. If later work reveals an escalation trigger, the lane is *escalated
+   in a comment* by whoever finds it (usually SR) — never silently
    downgraded.
-4. USER can veto the lane in chat before you commit the Story —
+6. USER can veto the lane in chat before you commit the Story —
    surface your lane choice in the end-of-turn menu whenever you
-   picked `standard`.
+   picked `standard` or `light`.
+
+### Trimming a stage (the receipt)
+
+A trimmed stage leaves a receipt, exactly like a logged assumption.
+Whoever hands over past a stage writes one `SKIP-N` line into its
+handover comment, naming the stage, the reason, and who absorbs the
+work:
+
+```text
+SKIP-1: skipped SA — single backend module, no contract decision;
+        Story itself is the work-item, no children created.
+        Next: /bd on DEV-42.
+```
+
+No silent skips. An unlogged skip is a bug, exactly like an unlogged
+assumption — and because USER drives every turn by hand, the `Next:`
+pointer is also what makes the shortened path usable.
 
 ## ID convention (SC / IS / OOS)
 
@@ -554,13 +618,13 @@ containing exactly:
 - [x] Every Success criterion / In-scope / Out-of-scope item carries a stable ID (`SC-N` / `IS-N` / `OOS-N`) per the *ID convention*
 - [x] Body has no "Open product questions" section — every ambiguity was resolved in chat with USER before the work-item was created
 - [x] In/out-of-scope boundary is explicit (out-of-scope items each have a one-line reason)
-- [x] Lane set per control-manifest §Risk lanes (`full` when in doubt or when the manifest has no lane policy); `standard` was surfaced to USER before commit
+- [x] Lane set per control-manifest §Risk lanes (`full` when in doubt or when the manifest has no lane policy); `standard` / `light` was surfaced to USER before commit, and `light` carries its planned path
 - [x] State is `Backlog` (USER will triage to `To Do` when ready to work)
 - [x] At least one Story label applied from the project taxonomy (copied from roadmap entry when pulled from roadmap)
 - [x] Priority set from roadmap entry when pulled from roadmap, else `none`
 - [x] product.md updated if the Story expanded scope or introduced a new user
 - [x] glossary.md updated if the Story introduced a new domain term
-- [x] roadmap.md updated if scoping shifted an entry's horizon (or n/a)
+- [x] roadmap.md updated if scoping shifted an entry's horizon, or USER asked for roadmap maintenance (or n/a)
 
 ### For the receiver (Requirements Engineer)
 - Story: <DEV-N> — <title>
@@ -574,14 +638,8 @@ containing exactly:
 - [ ] Read product.md before scoping; read roadmap.md before scoping (the strategy sanity-check requires it)
 - [ ] Strategy sanity-check answered for new ideas (problem owner / smallest version / on-strategy)
 - [ ] Title is imperative outcome, ≤70 chars, names the user-visible result (not the engineering action)
-- [ ] Body sections are Problem / Target users / Success criteria / In scope / Out of scope — no "Open questions" leak
-- [ ] Lane routed via control-manifest §Risk lanes; no escalation trigger overlooked; `standard` only with USER's eyes on it
+- [ ] Lane routed via control-manifest §Risk lanes; no escalation trigger overlooked; `standard` / `light` only with USER's eyes on it, and `light` only when all three of its extra conditions hold
 - [ ] Every SC / IS / OOS item has a stable inline ID (`SC-N`, `IS-N`, `OOS-N`); IDs are append-only across the Story's life
-- [ ] Out-of-scope items each carry a one-line reason
-- [ ] Labels match the project taxonomy or are copied verbatim from the roadmap entry
-- [ ] glossary.md updated if Story introduced a new domain term
-- [ ] product.md updated if Story expanded scope or introduced a new user
-- [ ] roadmap.md updated when USER asked for maintenance, or when scoping moved an entry's horizon
 - [ ] (sprint turns only) cycle writes were USER-triggered; one active cycle invariant respected; dates set together or not at all; the *parent* Story (not its children) was added to the cycle
 
 ## Stop-on-ambiguity (HITL discipline)

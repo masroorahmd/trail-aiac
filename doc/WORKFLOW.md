@@ -471,11 +471,42 @@ normal outcome of a Story that went cleanly. It runs after the
 hand-back, writes only inside `.claude/`, and has no STOP — a lost
 lesson must never turn a completed Story into a stopped one.
 
+## Risk lanes — how deep the spine runs
+
+The spine above is the **maximum** path, not a fixed liturgy. At
+scoping time BA assigns each Story a lane, recorded in the body's
+`## Lane` section and governed by the project's own policy in
+`control-manifest.md` §*Risk lanes* (CM-60…CM-64). Without that
+policy, every Story runs `full`.
+
+| Lane | What changes | What it costs |
+|---|---|---|
+| `full` | Nothing — the whole spine, full design rationale. | The default, and the answer whenever anything is uncertain. |
+| `standard` | **Prose only.** RE passthrough expected, SA writes contract-only slice bodies. Every persona still runs. | Some review depth. |
+| `light` | **The path.** RE passthrough, SA skipped (no sub-work-items — *the Story itself is the work-item*), TW only on a real user-facing doc surface, RM ceremony trimmed. | Whole handovers. Needs one module, no design decision left, and a result checkable from the body alone. |
+
+Two properties keep this honest:
+
+- **No lane buys past a gate.** SR reviews any `CM-3x` surface (as a
+  diff pass when there are no children), TM runs wherever behaviour
+  changed, the RM hand-back to USER always happens, and the Story is
+  never skipped — taking work off Plane entirely is `/quick`'s gate,
+  below, not a lane's.
+- **Every trimmed stage leaves a receipt.** The persona handing over
+  past a stage writes a `SKIP-N` line into its handover comment —
+  the stage, the reason, and the command USER types next. A skip
+  nobody logged is indistinguishable from a stage somebody forgot.
+
+A lane is BA's estimate, not a verdict: any persona may **escalate**
+when a trigger surfaces (recorded in a comment, never a body edit),
+and none may quietly downgrade.
+
 ## The quick lane (off-Plane)
 
-`/quick` is a deliberate exception to everything above. For a small,
-safe change — a trivial chore, a local bug fix, a small
-single-surface feature — the full spine costs more than the change is
+`/quick` is a deliberate exception to everything above. For a change
+whose *risk* is bounded — a trivial chore, a local bug fix, a small
+single-surface feature, or a mechanical sweep repeating one edit shape
+across many files — the full spine costs more than the change is
 worth. The quick lane collapses it into a **single main-loop turn that
 leaves no Plane footprint**: no Story, no sub-work-items, no state
 spine, no assignee chain, no handover comments. The **git commit is
@@ -489,15 +520,22 @@ is gated, not a free pass:
 - **Eligibility gate (all must hold):** no `control-manifest.md`
   *Security non-negotiable* touched; no new external surface; no
   data/schema migration; no new dependency with a licence question;
-  bounded blast radius (~≤3 files / one module); reversible by a
-  single `git revert`. Any failure routes USER to `/ba` (or `/re`).
+  **bounded risk** — either a local change (~≤3 files / one module) or
+  a mechanical sweep whose sites one command can both enumerate and
+  re-verify; reversible by a single `git revert`. The boundary runs
+  along risk, never along file count: a twenty-file sweep is in, a
+  two-file change to an auth path is out. Any failure routes USER to
+  `/ba` (or `/re`).
 - **Bounce rule:** the gate is re-checked *during* implementation. If
   the change grows past it, `/quick` stops without committing and sends
   USER to the normal spine. Security work never gets routed around SR
   by going off-Plane.
 - **Tests are mandatory in-lane** (regression test for a fix, smoke
   test for a feature) even though no Test Manager turn runs; the suite
-  must be green at commit.
+  must be green at commit. A sweep is the one shape that gets no
+  per-site tests: the enumerating command, re-run and returning zero,
+  is the evidence — and where the defect class should stay closed, that
+  command is left behind as a lint/CI guard and *is* the coverage.
 - **Lane memory is kept.** Though it has no persona identity, the
   change lands in a persona's *lane* (UI→`ui-developer`,
   backend→`backend-developer`, tests→`test-manager`,

@@ -209,6 +209,15 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
 
 ## Your inputs
 
+0. **Light lane:** the Story *itself* is dispatched to you, with no
+   sub-work-item under it, because SA never ran (`Lane: light` in the
+   body, RE's handover carries the `SKIP-N`). Everything below reads
+   "sub-work-item" as "the Story"; your contract is BA's body plus
+   RE's AC comment (or BA's `SC-N` on a passthrough) instead of an SA
+   slice body, and your comments go on the Story. See the
+   `plane-handover` skill, *Light lane*. If you find yourself needing
+   a design decision the Story does not answer, the lane was wrong:
+   stop and route USER to `/sa`.
 1. USER dispatches a frontend sub-work-item to you (`assignee = ui-
    developer`, state `Todo`).
 2. The user says "UD, implement DEV-N" — sub-work-item is ready.
@@ -510,7 +519,6 @@ combined into a single comment if you prefer.
 - [ ] Only `plane__ui_developer__*` MCP tools used
 - [ ] Read at least one existing template / JS module / CSS file in the same area before drafting
 - [ ] Public-contract symbols (CSS classes, JS function names, template variables) exactly match SA's spec where specified
-- [ ] All SR blocker findings addressed; deferrals justified
 - [ ] Every touched route actually loaded and looked at — not inferred from green assertions, and the capture verified to cover the region I judged from
 - [ ] New/changed surfaces compared against their shipped siblings on the same page
 - [ ] Contrast computed (not inferred) for any new or restyled text

@@ -469,6 +469,15 @@ Once USER signals the review is ready to commit:
     manifest, full format throughout, and say in your handover that
     the manifest is what set the depth. The manifest outranks this
     paragraph, always.
+  - **A lane never buys past a `CM-3x` non-negotiable.** On a
+    `Lane: light` Story there are usually no children at all — SA
+    never ran — and you were not in the path. That is a routing
+    decision about ceremony, not a waiver: whenever such a change
+    turns out to touch auth/authz, secrets or crypto, externally
+    controlled input, PII, a new dependency, or a network or
+    permission boundary, you review it, as a **diff pass** on the
+    Story (input 5). Whoever notices says so; USER types `/sr`. The
+    light lane trims handovers, never the security gate.
   - When in doubt about a slice, it is full. The tie breaks toward
     depth, never away from it.
 - **Threat picture is mandatory, not optional.** Every per-child
@@ -513,7 +522,6 @@ post a single comment on the **parent** Story containing exactly:
 
 ### Definition of Done (Security Reviewer slice)
 - [x] Parent body, RE's AC comment, and every sub-work-item body read end-to-end
-- [x] Threat picture discussed with USER in chat; all uncertainties resolved before posting any comment
 - [x] One security-review comment posted per sub-work-item (findings or "no concerns" + No-concerns checks)
 - [x] *Threat picture* paragraph present on every per-child comment (STRIDE classes named primary/secondary)
 - [x] Every finding carries STRIDE category, *Attack scenario*, and *Already addressed in design?*

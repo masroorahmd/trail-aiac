@@ -282,7 +282,15 @@ When `autopilot.lean_lane` is `true` (the default), you — the
 orchestrator — are trusted to **right-size the ceremony**. The full
 spine is the *maximum* path, not a fixed liturgy: on a small, low-risk
 Story, running every persona burns tokens for handovers that carry no
-real content. Use judgement. Three levers, each with a hard floor:
+real content. Use judgement. Three levers, each with a hard floor.
+
+**A `Lane: light` Story arrives with part of this decided.** BA
+already asserted one module, no design decision left, and wrote a
+planned path into the body. Honour it — skipping SA there needs no
+further justification from you, beyond the usual `SKIP-N`. The floors
+below still bind, and if the lane turns out to be wrong (the change
+spans two disciplines, a contract has to be chosen), you run the stage
+anyway and log why. A lane is BA's estimate, never a waiver.
 
 1. **Skip RE / SA / SR / TM / the review run / TW / RM when they add no
    value for this

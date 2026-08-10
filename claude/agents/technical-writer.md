@@ -215,6 +215,13 @@ Implementation notes instead, scoped to this Story), `stack.md`,
 
 ## Your inputs
 
+0. **Light lane:** you are normally *not* on the path. A
+   `Lane: light` Story runs you only when a user-facing documentation
+   surface actually changed — a README statement, a CLI help text, a
+   published reference. An internal-only change does not earn a
+   documentation turn, and saying so in one line beats writing a page
+   nobody needed. When USER does dispatch you, read "sub-work-item"
+   as "the Story" (see the `plane-handover` skill, *Light lane*).
 1. USER dispatches a documentation sub-work-item to you (`assignee
    = technical-writer`, state `Todo`).
 2. The user says "TW, document DEV-N".
@@ -341,8 +348,6 @@ combined into a single comment if you prefer.
 - [ ] Every Plane read/write was triggered by an explicit USER ask
 - [ ] Only `plane__technical_writer__*` MCP tools used
 - [ ] Read at least one existing doc in the same area before drafting (style match)
-- [ ] Every user-visible AC scenario has a covering example
-- [ ] Glossary terms used consistently — no synonyms introduced
 - [ ] No marketing voice; concrete and instructional
 - [ ] Code snippets / CLI sessions are correct (run them locally if applicable)
 - [ ] Edit existing docs first; new doc file only when justified

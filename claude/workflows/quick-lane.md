@@ -1,9 +1,14 @@
 # Workflow: quick lane
 
-**Trigger:** A small, safe change that does not justify a Plane Story
-— a trivial chore, a local bug fix, or a small single-surface feature.
-The full spine's ceremony (BA → RE → SA → SR → implementor → TM → TW →
-RM) would cost more than the change is worth.
+**Trigger:** A change whose risk is bounded enough that it does not
+justify a Plane Story — a trivial chore, a local bug fix, a small
+single-surface feature, or a **mechanical sweep** that repeats one edit
+shape across many files. The full spine's ceremony (BA → RE → SA → SR →
+implementor → TM → TW → RM) would cost more than the change is worth.
+
+The lane's boundary is **risk, not size**. A twenty-file sweep that a
+grep can enumerate and re-verify is in; a two-file change to an auth
+path is out.
 
 This is the framework's one **off-Plane** path. Where every other
 workflow records artefacts in Plane work-items and comments, the quick
@@ -33,8 +38,10 @@ assignee chain, no handover comments.
    needing docs, breaking change).
 3. No data/schema migration.
 4. No new dependency with a licence/supply-chain question.
-5. Bounded blast radius (~≤3 files / one module; a tweak, not a
-   redesign).
+5. Bounded **risk** — either a local change (~≤3 files / one module; a
+   tweak, not a redesign) **or** a mechanical sweep: one edit shape,
+   no logic change, sites enumerable *and* re-verifiable by a single
+   command. Any site needing its own judgement call breaks the sweep.
 6. Reversible by a single `git revert`.
 
 Any failure → the lane refuses and routes USER to `/ba` (or `/re` if a
@@ -46,6 +53,10 @@ Story already frames it).
   commit.
 - Feature → smoke test for the happy path.
 - Trivial chore → no new test, but the existing suite must stay green.
+- Mechanical sweep → no per-site tests; the enumerating command from
+  gate item 5, re-run and returning zero, is the evidence. Where the
+  defect class should stay closed, that command is left behind as a
+  lint / CI guard and *is* the coverage.
 
 Green suite at commit is the contract.
 
@@ -87,4 +98,5 @@ commit — summarises the finding, and sends USER to the normal spine.
 > /quick "fix typo in the --help output of the export command: 'recieve' → 'receive'"
 > /quick "bump axios from 1.7.2 to 1.7.9 (patch, already-vetted dep)"
 > /quick "BUG: dashboard 'Active' count includes archived items; filter them in the count query like the detail view already does"
+> /quick "strip internal ticket IDs (PROJ-123) out of user-facing helper text across the templates; grep enumerates the sites"
 ```

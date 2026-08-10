@@ -137,6 +137,35 @@ error adds *"may or may not have been applied"*, a write broke
 mid-flight: `retrieve_work_item` (or `list_comments`) first to see
 whether it landed, and only then decide whether to repeat it.
 
+**Light lane — the Story *is* the work-item.** When the Story body
+carries `Lane: light` and the Software Architect created no children
+(its single-slice claim held), there are no sub-work-items to walk.
+The Story itself takes the sub-work-item spine instead: RE moves it to
+`In Progress` and assigns the implementor, the implementor works on it
+directly, TM takes it to `In Review` with `assignee = USER`. Three
+things do not change — nobody moves a parent into `To Do`, nobody
+closes it but USER, and the body is still written once and never
+edited. Two things follow from there being no slice ticket: the
+contract is BA's Story body plus RE's AC comment (or BA's `SC-N` on a
+passthrough), and every artefact that would have gone on a child —
+*Implementation notes*, *Notes for TM*, SR findings, *Review steps* —
+goes on the Story as its own comment.
+
+**Trimmed stages leave a receipt.** A persona that hands over *past* a
+stage the full spine would have run writes one `SKIP-N` line into its
+handover comment: the stage, the reason, and — because USER drives
+every turn by hand — the command that comes next.
+
+```text
+SKIP-1: skipped SA — single backend module, no contract decision;
+        Story itself is the work-item, no children created.
+        Next: /bd on DEV-42.
+```
+
+This is the `AS-N` discipline applied to ceremony instead of
+assumptions. A skip nobody logged is indistinguishable from a stage
+somebody forgot.
+
 ### 2. DoD handover comment
 
 Call the `plane` MCP server's `<persona_snake>__add_comment` tool on
@@ -193,6 +222,24 @@ a row each re-reporting the same rotted line number, the same forbidden
 remedy, the same "do not relitigate" list, in a ticket where each of
 those facts was true exactly once. Report a fact at the first persona
 that established it. Afterwards it is `see RE's note`.
+
+**DoD hygiene — one check, one home.** Two lists guard every handover,
+and an item belongs to exactly one of them:
+
+- The **DoD comment** (this one, posted to Plane) holds what the
+  *receiver can verify from the ticket*: an artefact exists, a state is
+  set, a body carries a section, an ID is cited.
+- The **Self-Quality Gate** (private, ticked before posting) holds what
+  only *you* can attest because it leaves no artefact behind: which
+  files you read first, that an ambiguity was resolved in chat, that
+  you used only your own MCP tools.
+
+An item that appears in both lists is not checked twice — it is one
+check and one copy of it, and the copy is what makes these lists long
+enough to skim instead of read. When you would add a criterion, ask
+which list it belongs to and put it *only* there. A criterion neither
+list can hold — nothing to point at, nothing only you know — is not a
+criterion; it is a wish.
 
 ### 3. Update agent memory
 

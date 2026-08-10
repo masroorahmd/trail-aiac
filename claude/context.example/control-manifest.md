@@ -48,8 +48,12 @@
        surface. UI Stories that lower this are rejected.
      - CM-21: Performance — pX latency budget on hot paths
        (define X, threshold, measurement method).
-     - CM-22: Test coverage — every AC scenario has a covering
-       test; no merge with red suite. -->
+     - CM-22: Test coverage — every AC scenario is discharged by a
+       named mechanism: a covering test, a structural guarantee that
+       runs unattended and fails loudly (CI lint, type/schema/DB
+       constraint), or explicit subsumption. Where a guarantee closes
+       the whole class, it is preferred over enumerating instances.
+       No merge with a red suite. -->
 
 ## Security non-negotiables
 <!-- Things SR will hard-block on regardless of the Story's framing.
@@ -84,14 +88,17 @@
 <!-- OPTIONAL — delete this section to run every Story at full depth.
      When present, BA routes each Story into a lane (recorded in the
      Story body's `## Lane` section), RE inverts its passthrough bias
-     on standard-lane Stories, and SR may use its compact review mode.
+     on standard- and light-lane Stories, SR may use its compact
+     review mode, and a `light` Story skips stages outright.
      The escalation triggers are the safety valve: ANY trigger → full,
      regardless of labels, decided by whoever spots it. Examples:
 
      - CM-60: Lane policy. Default `full`. `standard` only when the
        Story is read-only / presentation-surface AND no CM-61 trigger
-       fires. Label heuristic: #Security #Foundation → always full;
-       #UI #Housekeeping → standard-eligible.
+       fires. `light` only when CM-64 additionally holds. Label
+       heuristic: #Security #Foundation → always full; #UI
+       #Housekeeping → standard-eligible; #Housekeeping and #Chore
+       that touch one module → light-eligible.
      - CM-61: Escalation triggers (any one → full). Each fires on
        INTRODUCING, CHANGING or NEWLY EXPOSING the thing named — not
        on reading or exercising it through a path the Story leaves
@@ -107,13 +114,27 @@
        stops carrying information.
      - CM-62: Lane semantics, and depth per slice. At Story level,
        `standard` = RE passthrough-expected + SA contract-only slice
-       bodies. SR's review depth is decided PER CHILD from that
-       child's own slice, not from the Story lane: a child firing no
-       trigger may be reviewed compactly even on a `full` Story, and a
-       child firing one gets full format even on a `standard` Story.
-       Compact never skips a child, never omits the threat picture,
-       never shortens a finding. The lane never skips SR, never skips
-       tests (CM-22), and never changes the off-Plane /quick gates. -->
+       bodies; the path is unchanged, only the prose shrinks.
+       `light` = the one lane that shortens the PATH: RE passthrough
+       + SA skipped (no children — the Story itself is the
+       work-item) + TW only on a real user-facing doc surface + RM
+       ceremony trimmed. Every trimmed stage is logged as a SKIP-N in
+       the handover comment. SR's review depth is decided PER CHILD
+       from that child's own slice, not from the Story lane: a child
+       firing no trigger may be reviewed compactly even on a `full`
+       Story, and a child firing one gets full format even on a
+       `standard` Story. Compact never skips a child, never omits the
+       threat picture, never shortens a finding.
+     - CM-63: What no lane may buy. SR always runs on a CM-3x
+       surface (as a diff pass when there are no children); TM always
+       runs where there is a runtime surface; the RM hand-back to
+       USER always runs; and the Story is never skipped — taking work
+       off Plane entirely is /quick's gate, not a lane's.
+     - CM-64: `light` eligibility, on top of `standard`'s bar (all
+       three): one module / one discipline; no design decision left
+       (no new component, contract, data shape or dependency to
+       choose); result checkable from the Story body alone. One
+       uncertainty → `standard` at best. -->
 
 ## Amendments
 <!-- When USER amends the manifest mid-project, log the change here

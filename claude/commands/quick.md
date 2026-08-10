@@ -1,6 +1,6 @@
 ---
-description: Off-Plane quick lane — implement a small, safe change in a single main-loop turn (no Story, no personas, no Plane). Git commit is the only artefact.
-argument-hint: "<short description of the change, e.g. 'fix typo in CLI help' or 'bump axios to 1.7.9'>"
+description: Off-Plane quick lane — implement a small or mechanical low-risk change in a single main-loop turn (no Story, no personas, no Plane). Covers both a local tweak and a repetitive sweep across many files, as long as the risk is bounded. Git commit is the only artefact.
+argument-hint: "<short description of the change, e.g. 'fix typo in CLI help', 'bump axios to 1.7.9' or 'strip ticket IDs from user-facing text'>"
 ---
 
 You are running `/quick` directly in the **main loop** of this Claude
@@ -10,9 +10,11 @@ framework's deliberate *off-Plane quick lane*: a single turn that
 implements a small, safe change and commits it. The git commit is the
 **only** audit artefact.
 
-Use it only for work that is genuinely small and safe. Everything
+Use it only for work whose *risk* is genuinely bounded — which
+includes big-but-mechanical work, not only small work. Everything
 else goes through the normal spine (`/ba`, `/re`, …). Your first job
-every turn is to defend that boundary.
+every turn is to defend that boundary, and the boundary runs along
+risk, never along file count.
 
 ## Load standards (read before touching anything)
 
@@ -52,8 +54,26 @@ Check them out loud against USER's brief before you write a line:
 4. **No new dependency** carrying a licence or supply-chain question
    (a patch/minor bump of an already-vetted dep is fine; a brand-new
    package is not).
-5. **Bounded blast radius.** Local change — as a rule of thumb
-   ~3 files / a single module. A tweak or a fix, not a redesign.
+5. **Bounded risk — which is not the same as a bounded file count.**
+   What disqualifies a change is the *judgement* it carries, not the
+   number of files it lands in. Two shapes qualify:
+   - **A local change** — a tweak or a fix inside a single module, as
+     a rule of thumb ~3 files. Not a redesign.
+   - **A mechanical sweep** — the *same* edit shape repeated across
+     many sites with no logic change: stripping ticket IDs out of
+     user-facing text, a rename, a licence header, a lint-driven
+     reformat. Here the file count is irrelevant. What makes it
+     eligible is that you can **enumerate the sites with a command**,
+     every site gets the **same** treatment, and you can **verify the
+     result with that same command**. Run the enumeration *before*
+     you touch anything and say how many sites it found — a sweep you
+     cannot count is not a sweep.
+
+   The moment some sites need a judgement call the others don't, it
+   is not a sweep — it is a redesign in a sweep's clothing, and this
+   item fails. Same when the enumerating command is unreliable
+   (patterns that need eyeballing case by case): fail the item and
+   bounce.
 6. **Reversible.** A single `git revert` fully undoes it.
 
 If **any** item fails, do **not** proceed. Say which item failed and
@@ -81,6 +101,15 @@ You do not spin up a Test Manager turn — but you do not skip tests:
 - **Feature** → write at least a smoke test covering the happy path.
 - **Trivial chore** (typo, comment, config/dep bump with no logic
   change) → no new test, but run the existing suite.
+- **Mechanical sweep** → **no per-site tests.** N assertions that
+  freeze the N sites you happened to find are worse than the one
+  command that finds them: re-run the enumeration from gate item 5
+  and show it returning zero. If the class of defect should stay
+  closed, leave that command behind as a guard — a rule in the
+  project's existing lint / CI step — and the guard *is* the
+  coverage. Adding a few lines to tooling that already runs is
+  in-lane; if the guard would need a new tool or a CI decision, don't
+  improvise one: note it in chat as a follow-up and ship the sweep.
 
 **Green suite at commit is the contract.** Run the project's tests
 (see `stack.md`) before committing and record the command + result in

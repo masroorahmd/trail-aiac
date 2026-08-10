@@ -219,6 +219,26 @@ trail-aiac/
   and re-run `install.py` — never write a concrete model ID into
   `claude/agents/*.md` or `claude/commands/*.md`. Tier policy:
   [`doc/PERSONAS.md`](doc/PERSONAS.md) → Model lanes.
+- **A new persona rule pays for itself, or names what it replaces.**
+  The prompts grow by ratchet: every incident adds a rule, almost
+  nothing ever removes one, and a persona that reads as a compliance
+  checklist starts behaving like a compliance clerk — which is how a
+  comment cleanup ends up costing eight handovers. So when a change
+  adds a rule to `claude/agents/*.md` or `claude/commands/*.md`, the
+  commit message says one of two things: **which rule it replaces or
+  narrows**, or **why the prompt is genuinely bigger than the problem
+  it now covers**. Neither is a veto — it is the sentence that makes
+  the growth deliberate.
+  - Prefer stating a rule **once in a shared skill** over restating it
+    in N personas. `plane-handover` is where cross-persona mechanics
+    belong; a persona then carries a one-line pointer, not a copy.
+  - **One check, one home** (canonical: `plane-handover` → *DoD
+    hygiene*). The posted DoD holds what the receiver can verify from
+    the ticket; the Self-Quality Gate holds what only the author can
+    attest. An item in both lists is one check and one copy of it.
+  - Periodically run a **deletion pass** rather than only additions:
+    duplicated checklist items, rules superseded by a later rule, and
+    prose that restates a constraint already stated above it.
 - **Multi-consumer setups (one company → several repos)** use
   `bin/link-shared.py` to symlink cross-cutting `.claude/` slots
   (config, credentials, product/roadmap/glossary/brand/seo/site-map/

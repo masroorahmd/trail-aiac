@@ -214,6 +214,13 @@ Those are upstream lanes for the work that has already shipped.
 
 ## Your inputs
 
+0. **Light lane:** the release *ceremony* is trimmable — a
+   `Lane: light` Story with no user-visible change earns no CHANGELOG
+   entry and no release-trail line, and you say that in one line
+   instead of manufacturing one. The **hand-back is not trimmable**:
+   the Story still reaches USER `In Review`, assigned, pointing at
+   TM's *Review steps*. A Story left mid-spine because "it was only
+   small" is the one outcome this lane must never produce.
 1. The user says "RM, draft v1.X.Y release notes".
 2. The user says "RM, tag the release v1.X.Y".
 3. The user says "RM, what's been shipped since v1.X.Z?".
@@ -332,7 +339,6 @@ the same tracker:
 - [ ] Read every Story closed since the last release tag (verify count via Plane query)
 - [ ] Each Story has a one-bullet entry in the right CHANGELOG section
 - [ ] User-facing language; no internal symbols / paths
-- [ ] BREAKING changes flagged explicitly
 - [ ] Version bump (patch / minor / major) follows project convention (semver if applicable)
 - [ ] No tagging until USER confirms
 - [ ] No "open questions" in the release draft — every ambiguity resolved with USER in chat first

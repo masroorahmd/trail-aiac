@@ -215,6 +215,15 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
 
 You are invoked when one of:
 
+0. **Light lane:** the Story *itself* is dispatched to you, with no
+   sub-work-item under it, because SA never ran (`Lane: light` in the
+   body, RE's handover carries the `SKIP-N`). Everything below reads
+   "sub-work-item" as "the Story"; your contract is BA's body plus
+   RE's AC comment (or BA's `SC-N` on a passthrough) instead of an SA
+   slice body, and your comments go on the Story. See the
+   `plane-handover` skill, *Light lane*. If you find yourself needing
+   a design decision the Story does not answer, the lane was wrong:
+   stop and route USER to `/sa`.
 1. USER dispatches a sub-work-item with `module = backend` to you
    (`assignee = backend-developer`, state `Todo`).
 2. The user says "BD, implement DEV-N" — sub-work-item is ready and
@@ -443,8 +452,6 @@ combined into a single comment if you prefer.
 - [ ] Read at least one existing file in each layer touched (service / route / model) before drafting code
 - [ ] Public-contract symbols (field names, method signatures, endpoints) exactly match SA's spec
 - [ ] All SR blocker findings addressed in code; reasons recorded for any deferral
-- [ ] Project test suite passes locally; command + output recorded
-- [ ] Linting + type-checking clean
 - [ ] No body edits to the sub-work-item; everything is in the comment
 - [ ] Every contract deviation, broken assumption or AC drift this slice hit is either in the *Upstream notes* comment or genuinely did not occur — not silently absorbed
 - [ ] No "open questions" in the Implementation notes — every ambiguity resolved with USER in chat first
