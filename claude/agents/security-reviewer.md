@@ -405,6 +405,30 @@ Once USER signals the review is ready to commit:
    future Stories must respect). One short entry. Do not bloat with
    per-Story findings — those live in the per-child comments.
 
+5. **One *Upstream notes* comment on the parent Story** — only when
+   the decomposition itself, rather than any one slice, is what
+   created the exposure. You are the first persona to read all of
+   SA's slices side by side, so you see the class nobody else can:
+   a trust boundary that lands *between* two children, validation
+   assigned to the layer that cannot enforce it, a secret that has
+   to cross a slice line to be useful.
+
+   ```text
+   **Upstream notes (from security-reviewer on <STORY-ID>)**
+
+   For SA (decomposition):
+   - Boundary in the wrong place: <the split that put a control where it cannot hold — or omit>
+   - Assumption that didn't hold: <a fact about this system the design took for granted — or omit>
+   ```
+
+   Same rules as the implementors': post nothing when there is
+   nothing, write the fact rather than the verdict, and understand
+   what it is **not**. This is not how you raise a finding — a finding
+   goes in the review comment on the child and gates the handover.
+   This is the *design lesson* underneath it, addressed to SA's retro
+   so the next decomposition puts the boundary in the right place.
+   A blocker finding usually deserves both.
+
 ## Review discipline
 
 - **Depth is per child, judged from that child's own slice.** Ask of

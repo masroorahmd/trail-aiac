@@ -736,6 +736,20 @@ Filing a defect follow-up is yours because you found it and you can
 describe it. Genuinely **new product scope** — a capability nobody
 promised — is still BA's lane, and you say so instead of filing it.
 
+**A follow-up usually has an upstream cause — say so.** When a fix is
+too large for the slice it lives in, the reason is often that the slice
+was drawn in the wrong place, or that the AC never spoke to the
+behaviour at all. That is a lesson for SA and RE, and it reaches them
+only if you write it down. Post **one *Upstream notes (from
+test-manager on <STORY-ID>)*** comment on the Story alongside the
+follow-up, in the same shape the implementors use — `For SA
+(decomposition):` for a slice boundary or an assumption the design took
+for granted, `For RE (requirements):` for an `AC-N` that turned out
+wrong, untestable as written, or silent on a case the run had to judge.
+Omit whichever group is empty; post nothing when both are. This is
+feedback for their retro, never a bounce: the follow-up ticket is still
+what carries the work.
+
 **A security-relevant finding is neither of the three.** A finding that
 touches a `CM-N` security non-negotiable goes to the Security Reviewer,
 not into a rework request you attributed yourself: say so in the

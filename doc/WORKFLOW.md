@@ -45,6 +45,8 @@ the previous page-based design fragile. Everything now lives in
 | User-facing docs (TW) | Files in the project repo's docs directory | Not in Plane |
 | Release notes (RM) | `CHANGELOG.md` in the project repo | Plus a comment on a release-tracker work-item |
 | Per-persona handover DoDs | Comment on the work-item being handed off | Posted via the `plane-handover` skill |
+| Upstream notes (BD / UD / SR / TM) | Comment on the parent *Story* | Feedback to SA and RE when a slice's contract or an `AC-N` did not hold — posted only when something did not hold |
+| Retro (SA / RE) | Comment on the parent *Story* | What the retro took, what it rejected, which context file it corrected; the lessons themselves go to `MEMORY.md` |
 
 **Description-once is the rule for every persona.** A work-item body
 is written when it's created, and never edited afterwards. Later
@@ -400,6 +402,75 @@ without the cold-start each subagent invocation otherwise causes.
   uncertainty is resolved in chat with USER *before* the body /
   comment is written.
 
+## The upstream feedback loop (Upstream notes → retro)
+
+The spine is a one-way street by construction. RE writes acceptance
+criteria and hands off; SA decomposes and hands off. Neither ever finds
+out what happened next — whether the slice boundary held, whether an
+`AC-N` turned out to be unverifiable, whether the design assumed a
+service layer this repo does not have. The implementors *do* find out,
+every time, and until this loop existed they had nowhere to put it: the
+knowledge stayed on a child ticket that no upstream persona reads.
+
+Two artefacts close it.
+
+**1. *Upstream notes*, a comment on the parent Story.** Posted by BD,
+UD, SR and TM — on the Story, because that is where SA's decomposition
+and RE's AC live and neither persona ever opens a child ticket. Two
+groups, either of which may be absent:
+
+- `For SA (decomposition):` — contract drift, an assumption about the
+  codebase that did not hold, a slice boundary in the wrong place, a
+  slice materially bigger or smaller than its decomposition implied.
+  SR contributes the one class only it can see, reading all slices side
+  by side: a control assigned to a layer that cannot enforce it.
+  TM contributes the review-run finding whose fix was *too large for
+  the slice* — usually a decomposition problem wearing a defect's
+  clothes.
+- `For RE (requirements):` — AC drift, an `AC-N` that was untestable as
+  written, a case no criterion spoke to and the implementor had to
+  decide alone.
+
+Three rules keep it from becoming noise or a weapon. It is posted
+**only when something actually did not hold** — no comment full of
+"none"s, and a clean Story produces nothing. It is **feedback, never a
+bounce**: the implementor already shipped against the contract that
+exists, and this comment neither reopens the slice nor blocks the
+handover. And it records **the fact, not the verdict** — "the repo has
+no service layer; the slice assumed one" is actionable, "the design was
+wrong" is not.
+
+**2. The retro — `/sa retro <STORY-ID>` and `/re retro <STORY-ID>`.**
+A second mode on each upstream persona, run after the Story is built.
+It takes no ticket and changes no state: SA and RE read the group
+addressed to them, judge each entry, and write the outcome in three
+places — a **lesson** as a pattern in their own `MEMORY.md`, a
+**correction** to the context file they own (`architecture.md` /
+`api.md` for SA, `glossary.md` for RE) when a note proves it wrong, and
+one *Retro* comment on the Story recording what was taken, what was
+**rejected**, and why. Rejection matters: a retro that accepts every
+note is not judgement, and the implementor frequently lacks the context
+behind a deliberate trade-off.
+
+RE's retro carries one distinction the others do not: separating a
+criterion that was genuinely wrong from **a real defect wearing the
+word "drift"**. Everything upstream of that judgement has an incentive
+to call a mismatch drift and move on.
+
+Neither persona ever edits its original artefact. SA's sub-work-item
+bodies and RE's AC comment are description-once; the corrected wording
+lives in the retro comment and travels into the *next* Story that
+touches the same behaviour. What actually carries the lesson forward is
+`MEMORY.md`, which is why the retro writes patterns rather than
+incidents — "slices that assume a service layer come back" earns a
+line, "DEV-42's backend slice was wrong" does not.
+
+Under `/autopilot` this is spine step 12, and it is **conditional**: no
+*Upstream notes* on the Story means no spawn at all, which is the
+normal outcome of a Story that went cleanly. It runs after the
+hand-back, writes only inside `.claude/`, and has no STOP — a lost
+lesson must never turn a completed Story into a stopped one.
+
 ## The quick lane (off-Plane)
 
 `/quick` is a deliberate exception to everything above. For a small,
@@ -451,7 +522,7 @@ spine but removes the human from between its stages. One
 human-initiated turn (USER types `/autopilot DEV-N`) drives an
 already-framed Story — or every Story in a work-item tree above it —
 through the spine: RE → SA → SR → BD/UD → TM → TM review run → SR-diff
-→ TW → commit → RM → hand back, without stopping to ask USER anything. That chain is the
+→ TW → commit → RM → hand back → retro, without stopping to ask USER anything. That chain is the
 *maximum* path: in **lean-lane mode** (the default) the orchestrator
 uses judgement to trim the ceremony a small Story doesn't need (see
 below).

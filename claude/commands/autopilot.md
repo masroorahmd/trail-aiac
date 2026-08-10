@@ -1,5 +1,5 @@
 ---
-description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Before the hand-back the Test Manager **drives its own review steps** against the running app, triaging what it finds back to the owning persona as a rework round — or, when the fix is too large for the slice, into a follow-up work-item. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with those step-by-step review steps and the result of the run; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/review-run/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back → retro) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Before the hand-back the Test Manager **drives its own review steps** against the running app, triaging what it finds back to the owning persona as a rework round — or, when the fix is too large for the slice, into a follow-up work-item. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with those step-by-step review steps and the result of the run; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/review-run/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
 argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each>"
 ---
 
@@ -703,6 +703,42 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    end-to-end path across them — that is the test the per-Story guides
    cannot give USER.
 
+12. **Retro — close the loop back to SA and RE (conditional).** The
+   spine is otherwise a one-way street: SA decomposes and never learns
+   whether its slices survived contact with the code, RE writes criteria
+   and never learns which ones were wrong. Under autopilot that is worse
+   than interactively, because no human sat between the stages to notice
+   either.
+
+   The implementors, SR and TM post ***Upstream notes*** comments on the
+   Story when a slice's contract or an `AC-N` did not hold. **Only when
+   such notes exist** (or an implementor's *Notes for TM* carries an AC
+   drift line), spawn the owning persona once more, with the contract
+   plus the literal token **`RETRO`**:
+
+   - `software-architect` — when any `For SA (decomposition):` group is
+     present.
+   - `requirements-engineer` — when any `For RE (requirements):` group
+     or AC-drift line is present.
+
+   Each reads the notes, distils the lessons into its own `MEMORY.md`,
+   corrects the context file it owns where a note proved it wrong
+   (`architecture.md` / `api.md` for SA, `glossary.md` for RE), and
+   posts one *Retro* comment on the Story. No notes, no spawn — that is
+   the common case on a Story that went cleanly, and it costs nothing.
+
+   **This stage cannot fail the run.** It comes after the hand-back, it
+   changes nothing USER is waiting on, and both personas are told they
+   have no STOP here. A retro that goes wrong is a lost lesson, never a
+   stopped Story. Its edits land in `.claude/` — context and memory, not
+   the source tree — so there is nothing to commit and nothing to push.
+
+   **Across a work list**, you may fold the retros for every driven
+   Story into one SA spawn and one RE spawn at the very end instead of
+   two spawns per Story. Pass the Story IDs; the lessons are more useful
+   read together anyway, since the pattern across three Stories is the
+   thing worth remembering.
+
 ## Hand-back on STOP (the safety valve)
 
 The instant any stage returns STOP — or the repair loop exhausts, or a
@@ -798,6 +834,10 @@ covering:
   here rather than a silent doubling of what USER has to read.
 - Each gate decision (SR verdict, repair iterations used out of the
   shared budget, and which stage spent them).
+- **The retro** — whether *Upstream notes* were posted at all, and what
+  SA and RE took from them (lessons written, context files corrected,
+  notes rejected). "No upstream notes — the decomposition and the AC
+  both held" is a result worth one line, not silence.
 - **The review run, per driven Story** — driver TM picked (or that none
   was available), how many steps ran, the `P / F / B / S` counts, how
   many rework rounds it drove, every `Follow-up: …` work-item it filed

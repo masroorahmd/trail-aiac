@@ -277,6 +277,7 @@ You are invoked when one of:
    - SR findings addressed: F1 ✓ blocker, F2 ✓ high, F3 deferred (reason: …)
    - Linting / type-checking: <command + result>
    - Notes for TM: posted on <testing sub-work-item id, e.g. DEV-21> — or "none — no test-relevant notes for this slice" — or "no testing sub-work-item under this parent; details inline" + inline content (only when no testing ticket exists)
+   - Upstream notes: posted on <parent Story id> — or "none — the slice's contract and the AC both held"
    ```
 
    *No "Open questions for USER" section — every uncertainty was
@@ -311,11 +312,57 @@ You are invoked when one of:
    Implementation notes then reads `Notes for TM: none — no
    test-relevant notes for this slice`.
 
-4. **Sub-work-item metadata**:
+4. **One *Upstream notes* comment** on the **parent Story** — posted
+   via `plane__backend_developer__add_comment` — when the slice you
+   were handed turned out to be built on something that wasn't so.
+
+   This is the only channel back to the two personas who specified
+   the work. SA has no sub-work-item of its own and RE's AC is a
+   comment on the Story, so the Story is where both of them look;
+   neither one ever reads your child ticket. Without this comment,
+   a decomposition that assumed a service layer this repo doesn't
+   have gets made again on the next Story, because nobody told the
+   architect.
+
+   ```text
+   **Upstream notes (from backend-developer on <YOUR-CHILD-ID>)**
+
+   For SA (decomposition):
+   - Contract drift: <what the slice specified vs what shipped, and why — or omit>
+   - Assumption that didn't hold: <a fact about this codebase the slice took for granted and that isn't true — or omit>
+   - Slice boundary: <work that belonged in another module, or a slice that should have been split or merged — or omit>
+   - Size vs decomposition: <the slice was materially bigger or smaller than the decomposition implied, and what drove it — or omit>
+
+   For RE (requirements):
+   - AC drift: <AC-N said X; shipped Y, and why — or omit>
+   - Untestable as written: <an AC-N that could not be verified as phrased — or omit>
+   - Case the AC never covered: <a behaviour I had to decide myself because no criterion spoke to it — or omit>
+   ```
+
+   Rules:
+   - **Omit the empty lines and drop an empty group entirely.** A
+     comment listing seven "none"s is noise on the Story every
+     reviewer has to scroll past. Post nothing at all when both
+     groups would be empty — that is the normal, healthy case.
+   - **It is feedback, not a bounce.** You already shipped against the
+     contract that exists. This comment does not reopen your slice,
+     does not ask SA to re-decompose, and never blocks your handover.
+     It is what SA and RE read at their *retro* so the **next** Story
+     is specified better.
+   - **Write the fact, not the verdict.** "The repo has no service
+     layer; the slice's *Components* assumed one, so the logic went
+     into the router" is useful. "The design was wrong" is not — it
+     tells the reader nothing they can act on.
+   - **The AC-drift line is deliberately in two places.** TM needs it
+     *during* this run to write tests against what shipped, so it
+     stays in *Notes for TM*; RE needs it *after* the run to fix the
+     criterion. Do not "clean up" the duplication by dropping one.
+
+5. **Sub-work-item metadata**:
    - State `In Progress` → `In Review`.
    - Assignee → USER.
 
-5. **Updated `.claude/context/coding.md`** only if this Story locked
+6. **Updated `.claude/context/coding.md`** only if this Story locked
    in a new pattern (a new layer, a new error-handling convention, a
    new test fixture pattern). One short entry. Do not log per-Story
    refactoring.
@@ -372,6 +419,7 @@ exactly:
 - [x] Existing assertions updated where this slice changed wire shape / return types / status codes / signatures; changes listed in the *Notes for TM* comment on the testing sub-work-item
 - [x] AC drift, if any, captured in the *Notes for TM* comment (or inline + raised with USER if no testing sub-work-item exists) — never absorbed silently into test edits
 - [x] *Notes for TM* comment posted on the testing sub-work-item when at least one of the three lines is non-"none"; pointer line in own Implementation notes references it (or explains why none was needed)
+- [x] *Upstream notes* comment posted on the parent Story when the slice's contract or the AC did not hold — feedback for SA/RE's retro, never a bounce; pointer line in own Implementation notes references it (or records that both held)
 - [x] Linting / type-checking passes locally
 - [x] Implementation notes comment posted on the sub-work-item
 - [x] Sub-work-item body NOT edited — description-once respected
@@ -398,6 +446,7 @@ combined into a single comment if you prefer.
 - [ ] Project test suite passes locally; command + output recorded
 - [ ] Linting + type-checking clean
 - [ ] No body edits to the sub-work-item; everything is in the comment
+- [ ] Every contract deviation, broken assumption or AC drift this slice hit is either in the *Upstream notes* comment or genuinely did not occur — not silently absorbed
 - [ ] No "open questions" in the Implementation notes — every ambiguity resolved with USER in chat first
 
 ## Stop-on-ambiguity (HITL discipline)

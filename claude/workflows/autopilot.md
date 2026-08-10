@@ -9,7 +9,7 @@ unattended and hands the result back for review.
 This is the mirror image of the [quick lane](quick-lane.md). The quick
 lane *shrinks the process* for a tiny change. Autopilot *keeps the
 whole process* (RE → SA → SR → BD/UD → TM → TM review run → SR-diff →
-TW → commit/push → RM → hand back) but removes the human from between
+TW → commit/push → RM → hand back → retro) but removes the human from between
 its stages — every persona makes and **logs** reasonable assumptions
 instead of asking, and an orchestrator threads them together.
 
@@ -150,6 +150,19 @@ the persona file, the ticket, and the upstream handover.
     triage are handed back the same way, innermost first, each with a
     roll-up comment: which Stories ran, their branches, and the order
     to merge them.
+12. **retro (conditional)** — `software-architect` and/or
+    `requirements-engineer`, spawned once more with the token `RETRO`,
+    **only when the Story carries *Upstream notes*** — the comments BD,
+    UD, SR and TM leave when a slice's contract or an `AC-N` did not
+    hold. Each reads the group addressed to it, distils the lessons into
+    its own `MEMORY.md`, corrects the context file it owns where a note
+    proved it wrong, and posts one *Retro* comment. This is the only
+    feedback the two upstream personas ever get: everywhere else they
+    specify and never learn what happened. It runs after the hand-back,
+    writes only to `.claude/`, and has **no STOP** — a lost lesson must
+    never turn a completed Story into a stopped one. Across a work list
+    the retros may be folded into one spawn each at the very end, where
+    the pattern across Stories is more useful than the incidents.
 
 ## The `AUTOPILOT-VERDICT` protocol
 

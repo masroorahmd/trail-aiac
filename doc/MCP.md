@@ -70,6 +70,8 @@ The framework's data model on Plane:
 | User-facing docs (TW) | Files in the project's existing docs directory (`docs/`, `README.md`, etc.) — not in Plane |
 | Release notes (RM) | `CHANGELOG.md` in the project repo + comment on a release-tracker work-item |
 | Per-persona handover DoDs | *Comment* on the work-item being handed off (via the `plane-handover` skill) |
+| Upstream notes (BD / UD / SR / TM) | *Comment* on the parent Story — feedback to SA / RE's retro |
+| Retro (SA / RE) | *Comment* on the parent Story, plus `MEMORY.md` + the persona's own context file |
 
 Description-once is the rule for every persona: a body is written
 when the work-item is created and never edited afterwards. Later

@@ -1,6 +1,6 @@
 ---
-description: Put the main loop into the software-architect role to decompose a Story into 1–4 sub-work-items, each carrying its architecture slice in the body.
-argument-hint: "<DEV-N to design, or RE-handover trigger>"
+description: Put the main loop into the software-architect role to decompose a Story into 1–4 sub-work-items, each carrying its architecture slice in the body — or to run a retro on a built Story and read back what the implementors learned about that decomposition.
+argument-hint: "<DEV-N to design, or RE-handover trigger> | retro <STORY-ID>"
 ---
 
 > **Model note**: the full-lane model (top reasoning tier) shines on
@@ -30,6 +30,18 @@ thread:
    from previous sessions. Use them to avoid repeating earlier
    work; verify any concrete claim (file paths, work-item IDs) is
    still valid before relying on it.
+
+Two modes live behind this command; the brief decides which:
+
+- **Design** (default) — a Story to decompose, e.g. `/sa DEV-42`.
+- **Retro** — `retro DEV-42`, or any paraphrase. The Story has been
+  built and handed back; the persona reads the *Upstream notes*
+  comments the implementors, SR and TM left about its decomposition,
+  distils the lessons into `MEMORY.md`, corrects `architecture.md` /
+  `api.md` where a note proved them wrong, and posts one *Retro*
+  comment. It takes no ticket and changes no state. See the *Retro
+  mode* section of the persona file; its outputs and gate replace the
+  design DoD.
 
 The user's first brief follows. Pass it through verbatim to the
 software-architect role — do not pre-process, summarise, or split into tasks
