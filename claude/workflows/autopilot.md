@@ -8,9 +8,9 @@ unattended and hands the result back for review.
 
 This is the mirror image of the [quick lane](quick-lane.md). The quick
 lane *shrinks the process* for a tiny change. Autopilot *keeps the
-whole process* (RE → SA → SR → BD/UD → TM → SR-diff → TW →
-commit/push → RM → hand back) but removes the human from between its
-stages — every persona makes and **logs** reasonable assumptions
+whole process* (RE → SA → SR → BD/UD → TM → TM review run → SR-diff →
+TW → commit/push → RM → hand back) but removes the human from between
+its stages — every persona makes and **logs** reasonable assumptions
 instead of asking, and an orchestrator threads them together.
 
 It does **not** break the user-triggered rule: USER triggered exactly
@@ -30,6 +30,11 @@ supervised-by-design run.
   `In Review`, assigned to USER, with a **review steps** comment,
   on a branch that is pushed and left standing. USER merges, USER
   closes.
+- **It walks the review steps before it hands them over.** The Test
+  Manager drives what it wrote (step 6), routes each defect back to the
+  slice that owns it, and only escalates to a follow-up ticket when the
+  fix is too large for that slice. USER's review starts from a run that
+  already happened, not from a checklist nobody executed.
 - Every spine persona runs as a **subagent under its own
   `plane__<persona>__*` identity**, so Plane attribution is identical
   to the interactive flow. The orchestrator never reads or writes Plane
@@ -80,35 +85,68 @@ the persona file, the ticket, and the upstream handover.
      implementor with TM's failure detail, then TM again, up to
      `max_repair_iterations`; still red after that → STOP.
    - un-runnable / non-fixable → STOP.
-6. **security-reviewer (diff pass)** — spawned a second time, now on
+6. **test-manager (review run)** — spawned a **second time** with the
+   token `REVIEW-RUN`, TM now *drives* the steps it just wrote: a
+   browser for UI steps, plain commands for curl/CLI ones, one step at
+   a time with an explicit PASS / FAIL / BLOCKED / SKIPPED, plus a
+   console and network sweep on every route it visits. The suite proves
+   the assertions hold and SR proves the code is not dangerous; neither
+   opens the app, and this is the only stage that does. It reports one
+   **Review run (test-manager)** comment on the Story and triages every
+   finding into exactly one of three:
+   - **a defect in a slice this Story delivered** → *Rework request* on
+     the owning sub-work-item, assignee back to that persona, verdict
+     **REPAIR** with `NEXT:` naming it. The orchestrator re-spawns that
+     implementor, commits the fix, and re-runs the review run for the
+     failed and dependent steps only. **The common case by design** —
+     the branch is standing and the persona is one spawn away.
+   - **a gap in TM's own coverage** → TM writes the missing test itself.
+   - **a fix too large for the slice** (redesign, new contract,
+     migration, or the AC itself is wrong) → one `Follow-up: …`
+     work-item, `To Do`, assigned to USER, and the spine continues; the
+     run's outcome becomes `COMPLETED-WITH-FINDINGS`.
+   A `CM-N` security finding is none of the three — it is SR's gate, so
+   TM STOPs. When no browser driver exists TM reports the steps as
+   un-driven and returns PROCEED; a missing browser never stops a run,
+   and an invented click-through is worse than an admitted gap. Skipped
+   with TM, off entirely under `autopilot.review_run: false`.
+   Shares the Story's one `max_repair_iterations` budget with steps 5
+   and 7; when it runs out, remaining findings become follow-ups rather
+   than a stranded Story.
+7. **security-reviewer (diff pass)** — spawned a second time, now on
    the code that landed (`git diff <base>...HEAD` plus the uncommitted
    tree) rather than on the decomposition. Step 3 judges a plan and can
    only find what a design gets wrong; this is the only stage that
    catches an implementation narrower than the design it was measured
    against. Same hard gate (`blocker`/`high` → STOP); medium and below
    ride the hand-back. Posts ONE **Security review — diff** comment and
-   does not restate step 3's findings. Fixable → **REPAIR**, sharing
-   TM's iteration ceiling. Skipped exactly when step 3 was skipped, or
+   does not restate step 3's findings. Fixable → **REPAIR**, drawing on
+   the same shared iteration budget as steps 5 and 6. Skipped exactly when step 3 was skipped, or
    when the whole diff is docs/comments — never on a diff touching a
    security non-negotiable.
-7. **technical-writer** — only if SA created a documentation
+8. **technical-writer** — only if SA created a documentation
    sub-work-item. Writes docs; does not stop unless a product decision
    surfaces.
-8. **commit + push (orchestrator)** — stage the tree, commit with a
+9. **commit + push (orchestrator)** — stage the tree (TM's tests and
+   any step-spec it encoded at step 6 included; its traces, videos and
+   screenshots deliberately not), commit with a
    `Trail-Lane: autopilot (<DEV-N>)` trailer, push the **feature
    branch** (never default, never `--force`; push failure is recorded,
    not fatal).
-9. **release-manager** — performs the project's release ceremony
+10. **release-manager** — performs the project's release ceremony
    (lean-lane-trimmable) and then the **hand-back, which never skips**:
    the Story goes `In Review` + assignee USER, with an *Autopilot
    hand-back* comment carrying the branch, its base, the merge order
    and the assumptions worth watching while testing — and pointing at
-   the *Review steps (test-manager)* comment TM posted at step 5.
-   RM does **not** author them; if lean-lane skipped TM there is
+   the *Review steps (test-manager)* comment TM posted at step 5 and,
+   when the review run drove them, at TM's *Review run* comment with
+   its one-line result — plus a **Known defects and follow-ups**
+   section for anything that rode the hand-back unfixed.
+   RM does **not** author the steps; if lean-lane skipped TM there are
    none, and RM writes a short fallback saying no independent test gate
    ran. Sets **nothing** to `Done`. Honours its own tag-push human gate
    — STOP rather than push a tag.
-10. **container hand-back** — after the last Story, the containers from
+11. **container hand-back** — after the last Story, the containers from
     triage are handed back the same way, innermost first, each with a
     roll-up comment: which Stories ran, their branches, and the order
     to merge them.
@@ -186,12 +224,18 @@ branch deletion, on any outcome.** To take a completed run: `git merge
 
 ## Rework goes back into the handed-back ticket
 
-USER can also hand the clicking back to TM: `/tm run review steps
-for <DEV-N>` has the Test Manager drive its own steps in a live browser,
-post a **Review run** comment on the Story, and file a **Rework
-request** comment on each owning persona's sub-work-item (setting that
-item's assignee back to the owning persona, state untouched). It does
-not fix anything — it only routes the finding.
+Step 6 already drove the steps once, so what reaches USER is the
+residue: what a machine following a script could not see, plus whatever
+the *Review run* comment lists as not verified. Start a review there.
+
+USER can hand the clicking back to TM again at any point: `/tm run
+review steps for <DEV-N>` has the Test Manager re-drive its own steps
+in a live browser USER watches — after a rework round, or when the
+unattended run reported no driver — post a **Review run** comment on
+the Story, and file a **Rework request** comment on each owning
+persona's sub-work-item (setting that item's assignee back to the
+owning persona, state untouched). It does not fix another persona's
+slice — it only routes the finding.
 
 When the review finds a defect, the fix belongs *inside*
 the work-item that is already `In Review` — not a new ticket and not a
@@ -200,7 +244,9 @@ new autopilot run. USER resumes the responsible persona interactively
 the same still-standing branch, posts a **Rework notes** comment rather
 than editing the original Implementation notes, and returns it to
 `In Review` + USER. A new work-item is right only when the finding is
-genuinely new scope — USER's call, BA's lane to file.
+genuinely new scope (USER's call, BA's lane to file) — or when it is a
+defect whose fix is too large for the slice, which is the `Follow-up: …`
+item TM files out of a review run.
 
 ## Example trigger
 

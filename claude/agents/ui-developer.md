@@ -5,6 +5,7 @@ model: __MODEL_STANDARD__
 skills:
   - plane-handover
   - plane-id-cache
+  - browser-review
 memory: project
 ---
 
@@ -350,6 +351,12 @@ test suite. A passing assertion tells you a selector exists; it tells
 you nothing about whether the thing is where a human would look for
 it, whether it lines up with its neighbours, or whether it is legible.
 
+**How** you drive the browser is the `browser-review` skill
+(`.claude/skills/browser-review/SKILL.md`) — driver choice, booting the
+app on a free port, spending evidence cheaply, native dialogs,
+destructive actions. Read it before your first capture. **What** to
+look at is below, and it is yours.
+
 The loop, per affected route:
 
 1. **Load it and capture it.** Then *check the capture is what you
@@ -376,6 +383,12 @@ The loop, per affected route:
    (`scrollWidth > clientWidth`) and element geometry. And attribute a
    page-level overflow before claiming it is yours: remove your
    element, re-measure, compare.
+6. **Read the console and the network panel before you leave the
+   route.** They are free and they see what looking cannot: an uncaught
+   exception on keystroke, a 500 the page swallows into an empty state,
+   a 404 on an asset, a CSP violation. Any of these is a defect in your
+   slice even when the page renders perfectly — fix it, or name it in
+   the Implementation notes with the reason it stands.
 
 **Measurements complement the screenshot; they never replace it.**
 Both directions fail on their own — a suite of green assertions has
@@ -384,14 +397,13 @@ has reported an element absent from a page that visibly carries it.
 When a probe returns an empty or surprising result, look at the page
 before you believe it.
 
-**Which tool.** Prefer the project's own browser/e2e harness — it
-already has the fixtures, auth and a booted server. If the project has
-none, or the surface is outside its reach, drive a browser directly
-(a browser-automation MCP if the consumer has one wired, otherwise
-headless Playwright/Puppeteer against a hand-booted server).
-Whichever you use, if you boot a server yourself: **pick a free port,
-never the project's default**, and never kill a process already
-holding one — a colleague or USER is very likely using it.
+**Which tool.** The `browser-review` ladder: the project's own
+browser/e2e harness first — it already has the fixtures, auth and a
+bootable server — then a browser-automation MCP if the consumer has one
+wired, then headless Playwright/Puppeteer against a hand-booted server.
+And when you boot one yourself, the skill's rule holds: **a free port,
+never the project's default**, and never kill a process already holding
+one.
 
 **Record it.** The Implementation notes carry the list of routes you
 actually loaded, at which viewports/themes. "Browser-verified" without
@@ -423,6 +435,7 @@ exactly:
 - [x] AC drift, if any, captured in the *Notes for TM* comment (or inline + raised with USER if no testing sub-work-item exists) — never absorbed silently into test edits
 - [x] *Notes for TM* comment posted on the testing sub-work-item when at least one of the three lines is non-"none"; pointer line in own Implementation notes references it (or explains why none was needed)
 - [x] **Every** route this change touched loaded and looked at in a browser; the routes (+ viewports/themes) enumerated in the Implementation notes, unreachable ones named with a reason
+- [x] Console + network panel read on every route visited; uncaught errors, 4xx/5xx and CSP violations fixed, or named in the Implementation notes with the reason they stand
 - [x] Accessibility: keyboard navigation works, semantic HTML used, ARIA labels where needed
 - [x] No regression on adjacent UI surfaces
 - [x] Implementation notes comment posted on the sub-work-item

@@ -44,7 +44,12 @@ trail-aiac/
 │   │                              `<consumer>/.claude/` as REAL files.
 │   ├── agents/                    11 persona definitions (loaded
 │   │                              into the main loop by /<persona>)
-│   ├── skills/                    shared skills (plane-handover)
+│   ├── skills/                    shared skills (plane-handover,
+│   │                              plane-id-cache, browser-review —
+│   │                              the last one carries the browser
+│   │                              driver ladder + evidence discipline
+│   │                              TM's review run and UD's visual gate
+│   │                              both follow)
 │   ├── commands/                  slash-command dispatchers
 │   │                              (/gm, /ba, /re, /sa, /sr, /bd,
 │   │                              /ud, /tm, /tw, /rm, /mm, /kickoff,

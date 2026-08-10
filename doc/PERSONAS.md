@@ -32,7 +32,7 @@ command.
 | <img src="../avatars/security-reviewer.png" width="60"/>     | `security-reviewer`     | `/sr` | Strict, non-negotiable gate. Runs twice: over SA's decomposition (a comment per child), and over the landed diff (one comment on the Story) — a plan pass cannot see an implementation narrower than its design. Maintains project-level security state. | After SA — `/sr <STORY-ID>`; again on the diff before hand-back. |
 | <img src="../avatars/backend-developer.png" width="60"/>     | `backend-developer`     | `/bd` | Implements the `backend`-module sub-work-item; posts an Implementation notes comment. | After SR — `/bd <SUBTASK-ID>`. |
 | <img src="../avatars/ui-developer.png" width="60"/>          | `ui-developer`          | `/ud` | Implements the `frontend`-module sub-work-item; visually verifies **every** route the change touched in a browser before handing back, and enumerates them in the Implementation notes. | After SR — `/ud <SUBTASK-ID>`. |
-| <img src="../avatars/test-manager.png" width="60"/>          | `test-manager`          | `/tm` | Implements the `testing`-module sub-work-item; owns test strategy and verification across the Story; posts the Story's **Review steps** comment on every hand to `In Review`. On demand drives those steps in a live browser, filing a *Rework request* on each owning persona's sub-work-item. | After SR — `/tm <SUBTASK-ID>`. To drive them: `/tm run review steps for <STORY-ID>`. |
+| <img src="../avatars/test-manager.png" width="60"/>          | `test-manager`          | `/tm` | Implements the `testing`-module sub-work-item; owns test strategy and verification across the Story; posts the Story's **Review steps** comment on every hand to `In Review`, then *drives* those steps against the running app — on demand interactively, and automatically as its own stage under `/autopilot` — triaging each finding into a *Rework request* on the owning persona's sub-work-item, its own missing test, or a `Follow-up:` work-item when the fix outgrows the slice. | After SR — `/tm <SUBTASK-ID>`. To drive them: `/tm run review steps for <STORY-ID>`. |
 | <img src="../avatars/technical-writer.png" width="60"/>      | `technical-writer`      | `/tw` | Implements the `documentation`-module sub-work-item; edits files in the project repo's docs directory. | After SR — `/tw <SUBTASK-ID>`. |
 | <img src="../avatars/release-manager.png" width="60"/>       | `release-manager`       | `/rm` | Drives versioning, tagging, and release. Runs outside the Story workflow. | When you're cutting a release — `/rm`. |
 | <img src="../avatars/marketing-manager.png" width="60"/>     | `marketing-manager`     | `/mm` | Owns the website(s) — positioning, IA, copy, CTAs, brand voice, SEO across `.org` (OSS narrative) and `.com` (enterprise funnel). Edits text-only content directly; hands site code (layout, components, build) to UI Developer via Plane Story on the `MKT` project. Co-owns `.org` documentation prose with Technical Writer. | When you scope a website / brand / SEO initiative — `/mm "<brief>"`. |
@@ -117,6 +117,11 @@ Every `claude/agents/<persona>.md` follows the same template:
   relevant), and any SR findings.
 - **Outputs** — structured body / comment shapes.
 - **DoD-checklist handover** via the shared `plane-handover` skill.
+- **Shared skills** for anything two personas would otherwise encode
+  twice: `plane-handover`, `plane-id-cache`, and
+  [`browser-review`](../claude/skills/browser-review/SKILL.md) — the
+  driver ladder, evidence discipline and dialog/destructive rules that
+  TM's review run and UD's visual verification gate both follow.
 - **Self-Quality-Gate** — inline checklist the persona runs on its
   own output before signing off, including a top-line check that
   every Plane read/write was triggered by an explicit USER ask.

@@ -45,7 +45,8 @@ model_lanes:
 # initiated turn drives an already-framed Story — or every Story in a
 # work-item tree above it (Epic → Story → module children, nested to
 # any depth) — through the whole engineering spine (RE → SA → SR →
-# BD/UD → TM → TW → commit → RM → hand back) with no human in the
+# BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back)
+# with no human in the
 # loop: personas make + log reasonable assumptions instead of asking,
 # and the orchestrator owns git — the implementors run one at a time
 # directly in the feature tree (never concurrently, never in a
@@ -64,7 +65,25 @@ model_lanes:
 #                           unless this is true. Default off: opt in per
 #                           project once you trust the lane.
 #   max_repair_iterations — how many times TM↔implementor may loop to
-#                           turn a red suite green before autopilot stops.
+#                           turn a red suite green (or to fix a defect the
+#                           review run found) before autopilot stops. One
+#                           shared budget per Story across the TM, review-run
+#                           and SR-diff repair loops.
+#   review_run            — after TM's green pass, have TM DRIVE the review
+#                           steps it just wrote against the running app
+#                           (browser for UI steps, plain commands for
+#                           curl/CLI ones) instead of only writing them down.
+#                           Findings are triaged: back to the owning persona
+#                           as a rework round, fixed in TM's own slice, or —
+#                           when the fix is too large for the slice — filed
+#                           as a `Follow-up: …` work-item that rides the
+#                           hand-back. Needs a driver the project can reach:
+#                           its own browser/e2e harness (best), or a
+#                           DOM/accessibility-tree browser MCP wired at USER
+#                           scope. With none, TM reports the steps as
+#                           un-driven and the run continues. Set false to
+#                           turn the stage off for projects with no
+#                           executable surface worth driving. Default true.
 #   max_risk_lane         — the highest risk tier autopilot may carry on
 #                           its own (`standard`). Anything the personas
 #                           judge above this is handed back to a human.
@@ -88,6 +107,7 @@ autopilot:
   max_repair_iterations: 2
   max_risk_lane: standard
   lean_lane: true
+  review_run: true
 
 # Plane ticket system configuration. Any Plane deployment works — cloud or
 # self-hosted. Tokens per agent go into credentials.yaml.

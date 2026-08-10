@@ -31,9 +31,15 @@ Two modes live behind this command; the brief decides which:
 - **Review run** — `run review steps for DEV-42`, or any paraphrase of
   it. The persona then *executes* the Story's *Review steps
   (test-manager)* comment in a live browser instead of writing test
-  code, and files a *Rework request* on each owning persona's
-  sub-work-item. See the *Review run (browser-driven)* section of the
-  persona file; its outputs and gate replace the authoring DoD.
+  code, and triages every finding: a *Rework request* on the owning
+  persona's sub-work-item, its own missing coverage fixed on the spot,
+  or a `Follow-up: …` work-item when the fix is too large for the
+  slice. See the *Review run (browser-driven)* section of the persona
+  file; its outputs and gate replace the authoring DoD. Under
+  `/autopilot` the same mode runs unattended as its own spine stage —
+  reach for `/tm run review steps` after a hand-back to re-drive the
+  steps with your own eyes on them, or when the unattended run found
+  no browser driver.
 
 Both modes post **one comment per artefact** — sections are headings
 inside it. If you see the persona about to split *Review steps* or a

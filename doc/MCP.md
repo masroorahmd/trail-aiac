@@ -110,18 +110,28 @@ prompt-discipline rather than a hard MCP-scope barrier.
 
 Two persona behaviours want a browser: the UI Developer's visual
 verification gate, and the Test Manager's browser-driven *review run*
-(`/tm run review steps for <STORY-ID>`, see
-[`WORKFLOW.md`](WORKFLOW.md)). Neither is wired by this framework.
+(`/tm run review steps for <STORY-ID>` interactively, and spine step 6
+under `/autopilot` — see [`WORKFLOW.md`](WORKFLOW.md)). Neither is
+wired by this framework.
 
-TM is told to prefer the **project's own browser harness run headed**
-over any browser MCP — it is an order of magnitude faster per step than
-a screenshot-driven MCP, and just as watchable — then a DOM/
-accessibility-tree MCP (Playwright MCP, Chrome DevTools MCP), and a
-screenshot-driven one (Claude in Chrome) last. UD's gate has the same
-preference for its own reason: the harness already has the fixtures,
-auth and a booted server. Both fall back to headless when nothing
-watchable exists, and TM must name the driver it picked, because the
-fallback costs USER the live view.
+Both follow the [`browser-review`](../claude/skills/browser-review/SKILL.md)
+skill's driver ladder. **Attended**, it ranks by *watchability*: the
+project's own browser harness run headed first — an order of magnitude
+faster per step than a screenshot-driven MCP, and just as watchable —
+then a DOM/accessibility-tree MCP (Playwright MCP, Chrome DevTools
+MCP), then a screenshot-driven one (Claude in Chrome). **Unattended**
+it ranks by reliability instead: the same harness headless, then a
+DOM/accessibility-tree MCP, and a screenshot-driven,
+human-session-bound driver **not at all** — Claude in Chrome needs a
+live window and per-site permission grants that an autopilot run cannot
+supply. The persona always names the driver it picked, because the
+fallback costs USER the live view; with no driver at all it reports the
+steps as un-driven rather than improvising, and the run continues.
+
+The practical consequence for a project that wants autopilot's review
+run to do real work: **wire a Playwright/Chrome-DevTools MCP at user
+scope, or keep an e2e harness in the repo.** Without either, step 6
+degrades to an honest "not driven" every run.
 
 **Configure such a server at user or local scope, never project
 scope.** `bin/install.py` regenerates the consumer's `.mcp.json` from

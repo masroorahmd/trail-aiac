@@ -181,12 +181,15 @@ both still a single human-initiated turn:
 - **`/autopilot`** — the *unattended lane*. One human-initiated turn
   that drives an already-framed Story — or every Story in a work-item
   tree above it — through the spine (RE → SA → SR → BD/UD → TM →
-  SR-diff → TW → commit → RM → hand back) with no human in the loop,
-  each persona
-  running as a subagent under its own Plane identity. **It never merges
-  and never closes:** one feature branch per Story, pushed and left
-  standing, and each Story handed back `In Review` + assigned to you
-  with step-by-step review steps. You merge, you close, and any
+  TM review run → SR-diff → TW → commit → RM → hand back) with no human
+  in the loop, each persona
+  running as a subagent under its own Plane identity. The Test Manager
+  doesn't just write the review steps, it **drives them** against the
+  running app and routes each defect back to the persona that owns the
+  slice. **It never merges and never closes:** one feature branch per
+  Story, pushed and left standing, and each Story handed back
+  `In Review` + assigned to you with those review steps and the result
+  of the run. You merge, you close, and any
   rework goes back into the same ticket on the same branch. Risk-capped
   (`autopilot.max_risk_lane`) and built to stop and hand back — branch
   intact — the moment a change leaves its lane.

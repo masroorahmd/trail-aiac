@@ -399,6 +399,15 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
   it is based on, the merge order when several branches are in play,
   whether the branch is pushed or local-only, and a pointer to the
   assumption ledger.
+- **When TM drove the steps, say so and say what it cost.** The spine's
+  review-run stage leaves a *Review run (test-manager)* comment on the
+  Story. Point at it with its one-line result (`<P> passed, <F> failed,
+  <B> blocked`), and carry a **Known defects and follow-ups** section
+  listing every finding that rode the hand-back unfixed and every
+  `Follow-up: …` work-item TM filed, one line and one ID each. Do not
+  re-triage or re-word TM's findings — you are the index, not the
+  second opinion. A hand-back that hides an open finding behind
+  "In Review" is the one failure this comment exists to prevent.
 - **Fallback when TM did not run.** If lean-lane skipped TM (a change
   with no runtime surface) there is no *Review steps* comment. Write a
   short set yourself from the AC and the implementors' Implementation

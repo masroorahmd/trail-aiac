@@ -450,8 +450,8 @@ above simply do not apply to it.
 spine but removes the human from between its stages. One
 human-initiated turn (USER types `/autopilot DEV-N`) drives an
 already-framed Story — or every Story in a work-item tree above it —
-through the spine: RE → SA → SR → BD/UD → TM → SR-diff → TW → commit →
-RM → hand back, without stopping to ask USER anything. That chain is the
+through the spine: RE → SA → SR → BD/UD → TM → TM review run → SR-diff
+→ TW → commit → RM → hand back, without stopping to ask USER anything. That chain is the
 *maximum* path: in **lean-lane mode** (the default) the orchestrator
 uses judgement to trim the ceremony a small Story doesn't need (see
 below).
@@ -480,21 +480,42 @@ reading lane deliberately excludes `stack.md`, `testing.md` and
 coverage boundary from. When lean-lane skipped TM, RM writes a short
 fallback set and opens it by saying no independent test gate ran.
 
-**USER may hand the clicking back.** `/tm run review steps for
+**And TM drives them, not only writes them.** `/tm run review steps for
 <DEV-N>` puts the Test Manager into its second mode: it reads the steps
 off the Story, confirms the working tree is on the branch RM named,
-picks the fastest *watchable* driver — the project's own browser harness
-run headed, one test per numbered step, before any model-in-the-loop
-browser MCP — and *executes* them while USER watches, one step at a
-time, each with an explicit PASS / FAIL / BLOCKED / SKIPPED. The run is
-reported as one **Review run (test-manager)** comment on the Story,
-including what could **not** be verified, and every defect is filed as a
+picks a driver by the [`browser-review`](../claude/skills/browser-review/SKILL.md)
+skill's ladder — the project's own browser harness first, one test per
+numbered step, before any model-in-the-loop browser MCP — and
+*executes* them one step at a time, each with an explicit
+PASS / FAIL / BLOCKED / SKIPPED, sweeping the console and network panel
+on every route it visits. The run is reported as one **Review run
+(test-manager)** comment on the Story, including what could **not** be
+verified, and every finding gets exactly one of three dispositions: a
 **Rework request (test-manager)** comment on the sub-work-item that owns
-the surface, with that item's assignee set back to the owning persona
-and its state left at `In Review`. TM routes findings; it does not fix
-another persona's slice, and reassignment is the only metadata it ever
-touches on someone else's ticket. The run never happens under
-`/autopilot` — being watchable is the whole point.
+the surface (assignee set back to that persona, state left at
+`In Review`); a missing test TM writes itself; or — only when the fix
+needs a redesign, a new contract, a migration, or the AC itself is
+wrong — a `Follow-up: …` work-item filed `To Do` and assigned to USER,
+carrying the one line that says why it was too large for the slice.
+TM routes findings; it does not fix another persona's slice, and
+reassignment is the only metadata it ever touches on someone else's
+ticket.
+
+Interactively USER triggers the run and watches the clicks. **Under
+`/autopilot` it is a spine stage of its own** (step 6, config
+`autopilot.review_run`): the orchestrator spawns TM a second time right
+after its green pass, TM drives the steps it just wrote, and a defect
+in a delivered slice comes back as a `REPAIR` verdict — the owning
+implementor is re-spawned, the fix is committed, and only the failed and
+dependent steps are re-driven. That is what makes the review steps an
+executed artefact rather than a checklist handed to USER unrun: the
+suite proves the assertions hold and SR's diff pass proves the code is
+not dangerous, but neither of them opens the app. Unattended the driver
+ladder flips to headless-first and a screenshot-driven,
+human-session-bound driver (Claude in Chrome) is unavailable by
+definition; when no driver can be reached at all TM says the steps were
+not driven and the run continues — a missing browser is a disclosed gap,
+never a STOP, and never an invented click-through.
 
 **One branch per Story.** The branch hangs on the Story whose children
 are the module slices (`backend` / `frontend` / `testing` /
@@ -539,14 +560,16 @@ How it stays safe and auditable:
   blocker/high finding → stop, never self-cleared);
   implementors bounce like `/quick` if the change reaches a security
   non-negotiable or a migration; TM↔implementor repair-loops a fixable
-  red suite up to `max_repair_iterations`, then stops. **Stopping is a
+  red suite — and, at the review-run stage, a defect TM hit while
+  driving the steps — up to one shared `max_repair_iterations` budget
+  per Story, then stops. **Stopping is a
   success** — it means the change reached the edge of what may be done
   unattended and handed the wheel back, working tree and branch intact.
 - **Lean-lane discretion — right-size the ceremony (default on).** The
   full spine is the maximum path, not a fixed liturgy: on a small,
   low-risk Story, running every persona burns tokens on handovers that
   carry no content. Under `autopilot.lean_lane: true` (the default) the
-  orchestrator may (a) **skip RE, SA, SR, TM, TW, or RM's release
+  orchestrator may (a) **skip RE, SA, SR, TM, the review run, TW, or RM's release
   ceremony** when they add no value for the Story — a Story already
   framed as crisp, testable AC
   needs no Requirements Engineer to re-state it, a single-slice change
