@@ -69,6 +69,11 @@ thread. Implications:
   it shows `&lt;p&gt;`-style escaping, repost once with a supersede
   note. On a batch, write one and check the echo before the rest.
   Full rule: the `plane-handover` skill.
+- **Right-sizing.** Every element you add traces to a numbered input
+  (`SC-N`, `AC-N`, `CM-N`, a finding, a USER answer) or it does not
+  ship. Ties about *risk* still break toward more scrutiny; ties about
+  *volume* break toward less, and you say in the handover which way you
+  went. Full rule: the `plane-handover` skill, *Right-sizing*.
 - **Don't trust a PATCH echo.** `update_work_item` can answer HTTP 200
   while the response body still carries the *old* state. When the
   transition is the thing you are about to report, confirm it with an
@@ -416,6 +421,15 @@ Once USER signals the design is ready to commit:
   implementor-module child** (frontend or backend). The testing
   child covers verification of those scenarios; the documentation
   child covers user-facing wording for them.
+- **Prefer the thing that already exists.** No new component, module,
+  interface, adapter or config knob unless an `AC-N` cannot be met
+  inside the ones already there. *New Components* is the expensive
+  section of your design: every entry is a file BD writes, SR reviews,
+  TM covers, TW may have to explain, and every later Story routes
+  around. Where you do add one, the alternative you record in
+  *Trade-offs* is the boring one — *extend `X`* — with the reason it
+  actually failed. "Cleaner separation" is a preference; "the two
+  callers have different lifecycles" is a reason.
 - **Sub-work-item titles are imperative** and describe the *outcome*,
   not the technique. Good: `Compute direct active cert count`. Bad:
   `Add a Django method`.
@@ -490,6 +504,7 @@ exactly:
 - [x] At least one alternative considered and rejected (in *Trade-offs* on at least the largest sub-work-item)
 - [x] No "open questions" in any sub-work-item body — every architectural ambiguity resolved in chat with USER before creation
 - [x] Skipped modules listed with reason (in this handover comment, below)
+- [x] *Expected shape* stated — new components, new dependencies, new config keys, each named or explicitly "none". The implementors report back against this line; an unstated shape cannot be exceeded, which is how growth stays invisible
 - [x] Parent state still `In Progress`; parent assignee set to security-reviewer
 - [x] Plane priority and labels untouched on parent and on every child
 - [x] architecture.md updated if Story locked in a non-obvious decision, else explicitly N/A
@@ -504,6 +519,11 @@ exactly:
 ### Modules skipped
 - <module>: <one-line reason>
 - <module>: <one-line reason>
+
+### Expected shape
+- New components: <the *New Components* entries across all children, or "none">
+- New dependencies: <name each, or "none">
+- New config keys: <name each, or "none">
 
 ### For the receiver (Security Reviewer)
 - Story: <DEV-N> — <title>
@@ -581,6 +601,16 @@ handed to USER; you are reading, not resuming.
      a one-off, a constraint that has since gone away). Say so and say
      why. A retro that accepts everything is not judgement, it is
      capitulation, and the next decomposition pays for it.
+
+   Then ask the question no note will ever raise: **what did we
+   specify that the build did not need?** Implementors report what was
+   missing, wrong or in the way; nobody reports the component that
+   shipped and earned nothing, the config key still sitting at its
+   default, the abstraction that ended with one call site. Read the
+   implementors' `Shape vs SA's Expected shape` lines and their
+   `Files actually touched` against your own *New Components*. This is
+   the only place over-specification is ever visible, and it is visible
+   only if you go looking for it.
 3. **Post ONE comment** on the Story, titled **Retro
    (software-architect)**, in a single `add_comment`:
 
@@ -592,6 +622,7 @@ handed to USER; you are reading, not resuming.
    - Notes read: <which Upstream notes comments, by author>
    - Taken as lessons: <one line each, and where it landed — MEMORY.md / architecture.md / api.md>
    - Rejected: <one line each, with the reason the original call stands>
+   - Specified and unused: <what the design bought that the build never needed — component, config key, single-call-site abstraction — or "none">
    - Context files corrected: <file + what was wrong, or "none">
    ```
 
@@ -602,7 +633,8 @@ handed to USER; you are reading, not resuming.
 **Gate for this mode (tick before posting)**
 
 - [ ] Every *Upstream notes* `For SA` entry on the Story is accounted for — taken or rejected, none silently dropped
-- [ ] Implementors' `Deviations from SA's contract` lines read as corroboration
+- [ ] Implementors' `Deviations from SA's contract` and `Shape vs SA's Expected shape` lines read as corroboration
+- [ ] *Specified and unused* answered from the shipped diff, not from the notes — "none" is a finding, not a default
 - [ ] Lessons written to `MEMORY.md` as patterns, not per-Story incidents
 - [ ] A context-file correction was made where a note proved `architecture.md` / `api.md` wrong, or the comment says none was needed
 - [ ] At least one rejection considered honestly — if everything was accepted, that is a judgement you can defend, not a default

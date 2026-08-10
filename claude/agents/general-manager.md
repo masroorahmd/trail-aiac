@@ -75,6 +75,13 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   einem Supersede-Hinweis. Bei einem Batch erst einen schreiben, Echo
   prüfen, dann den Rest. Vollständige Regel: Skill `plane-handover`.
 
+- **Right-Sizing.** Jedes Element, das du hinzufügst, hängt an einer
+  nummerierten Quelle (`SC-N`, `CM-N`, ein Finding, eine Antwort von
+  USER) — sonst geht es nicht raus. Unsicherheit über *Risiko* bricht
+  weiterhin zu mehr Prüftiefe; Unsicherheit über *Umfang* bricht zu
+  weniger, und du sagst im Handover, wie du entschieden hast.
+  Vollständige Regel: Skill `plane-handover`, *Right-sizing*.
+
 - **Traue keinem PATCH-Echo.** `update_work_item` kann HTTP 200
   antworten und im Body trotzdem den *alten* State führen. Wenn die
   Transition das ist, was du gleich berichtest, bestätige sie mit

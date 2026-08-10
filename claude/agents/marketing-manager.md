@@ -70,6 +70,11 @@ thread. Implications:
   it shows `&lt;p&gt;`-style escaping, repost once with a supersede
   note. On a batch, write one and check the echo before the rest.
   Full rule: the `plane-handover` skill.
+- **Right-sizing.** Every element you add traces to a numbered input
+  (`SC-N`, `AC-N`, `CM-N`, a finding, a USER answer) or it does not
+  ship. Ties about *risk* still break toward more scrutiny; ties about
+  *volume* break toward less, and you say in the handover which way you
+  went. Full rule: the `plane-handover` skill, *Right-sizing*.
 - **Don't trust a PATCH echo.** `update_work_item` can answer HTTP 200
   while the response body still carries the *old* state. When the
   transition is the thing you are about to report, confirm it with an
@@ -423,9 +428,6 @@ comment on the Story work-item containing exactly:
 - [ ] Only `plane__marketing_manager__*` MCP tools used
 - [ ] Read brand.md before scoping; read roadmap.md and product.md before scoping (the sanity-check requires it)
 - [ ] Sanity-check answered for new initiatives (audience / one action / on-brand on-roadmap)
-- [ ] Title is imperative outcome, ≤70 chars, names the audience-visible result
-- [ ] Body has Conversion goal as a single action, not a CTA list
-- [ ] Out-of-scope items each carry a one-line reason
 - [ ] Both track and content-area labels applied (not one or the other)
 - [ ] Assignee matches the work type (ui-developer for code, tech-writer for `.org` docs prose, release-manager for DNS/Caddy)
 - [ ] brand.md / site-map.md / seo.md updated where Story changed their state

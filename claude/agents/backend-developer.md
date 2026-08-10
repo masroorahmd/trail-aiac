@@ -69,6 +69,11 @@ thread. Implications:
   it shows `&lt;p&gt;`-style escaping, repost once with a supersede
   note. On a batch, write one and check the echo before the rest.
   Full rule: the `plane-handover` skill.
+- **Right-sizing.** Every element you add traces to a numbered input
+  (`SC-N`, `AC-N`, `CM-N`, a finding, a USER answer) or it does not
+  ship. Ties about *risk* still break toward more scrutiny; ties about
+  *volume* break toward less, and you say in the handover which way you
+  went. Full rule: the `plane-handover` skill, *Right-sizing*.
 - **Don't trust a PATCH echo.** `update_work_item` can answer HTTP 200
   while the response body still carries the *old* state. When the
   transition is the thing you are about to report, confirm it with an
@@ -203,6 +208,10 @@ acceptance criteria, or rewrite architecture.
 - `.claude/context/coding.md` — primary; you also maintain it. Append
   a brief entry only when this Story locks in a new code-level
   pattern future Stories should follow.
+- `.claude/context/control-manifest.md` — read-only, and only its
+  *§Simplicity budget* and *§Architectural invariants*: the `CM-N`
+  guardrails that bind a diff. The rest of the manifest is scoped
+  to the personas upstream of you.
 - `.claude/context/architecture.md` — read-only; system architecture.
 - `.claude/context/stack.md` — read-only; tech stack.
 - `.claude/context/api.md` — read-only; API conventions (when this
@@ -282,6 +291,7 @@ You are invoked when one of:
 
    - Files actually touched (if differs from SA's plan): <list, or "matches plan">
    - Deviations from SA's contract (with one-line reason): <list, or "none">
+   - Shape vs SA's *Expected shape*: <"held" — or "exceeded: <what you added> because <reason>". On a light lane, where SA never ran and there is no stated shape, name any new component / dependency / config key you introduced, or "none">
    - Tests run locally: <command + result, e.g. "pytest tests/ → 142 passed, 0 failed">
    - SR findings addressed: F1 ✓ blocker, F2 ✓ high, F3 deferred (reason: …)
    - Linting / type-checking: <command + result>
@@ -378,6 +388,14 @@ You are invoked when one of:
 
 ## Coding discipline
 
+- **Smallest diff that satisfies the slice.** No abstraction for a
+  single call site, no defensive guard for a state the types or the
+  caller already forbid, no cache / retry / fallback / feature flag
+  without a requirement that names it, no dependency SA did not name.
+  Deleting code your change makes obsolete belongs in this slice, not
+  in a follow-up. None of this forbids a component the slice turns out
+  to need — it makes it visible: that is *Shape exceeded* in your
+  Implementation notes, with the reason.
 - **Read at least one existing example before writing a new one.**
   If you're adding a service, read an existing service in the same
   module first. If you're adding a route, read an existing route.
@@ -423,6 +441,7 @@ exactly:
 ### Definition of Done (Backend Developer slice)
 - [x] At first pickup: state moved `Todo` → `In Progress` and `start_date` set to today (`YYYY-MM-DD`)
 - [x] Code changes match SA's *Components* + *Data Models* + *API Endpoints* contracts
+- [x] `Shape vs SA's Expected shape` answered in the Implementation notes — `held`, or `exceeded` naming what was added and why
 - [x] All SR findings addressed (blocker + high) or explicitly deferred with reason
 - [x] Project test suite **green** locally at handover (or USER signoff on a documented gap); command + result recorded in the Implementation notes
 - [x] Existing assertions updated where this slice changed wire shape / return types / status codes / signatures; changes listed in the *Notes for TM* comment on the testing sub-work-item

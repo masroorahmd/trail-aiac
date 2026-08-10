@@ -69,6 +69,11 @@ thread. Implications:
   it shows `&lt;p&gt;`-style escaping, repost once with a supersede
   note. On a batch, write one and check the echo before the rest.
   Full rule: the `plane-handover` skill.
+- **Right-sizing.** Every element you add traces to a numbered input
+  (`SC-N`, `AC-N`, `CM-N`, a finding, a USER answer) or it does not
+  ship. Ties about *risk* still break toward more scrutiny; ties about
+  *volume* break toward less, and you say in the handover which way you
+  went. Full rule: the `plane-handover` skill, *Right-sizing*.
 - **Don't trust a PATCH echo.** `update_work_item` can answer HTTP 200
   while the response body still carries the *old* state. When the
   transition is the thing you are about to report, confirm it with an
@@ -494,6 +499,15 @@ Once USER signals the review is ready to commit:
 - **Every blocker finding has a concrete recommendation.** "This is
   unsafe" is not a finding — "this exposes the CA password in query
   string logs; move to JSON request body" is.
+- **A finding needs a reachable path in *this* system.** The *Attack
+  scenario* is the test: name who reaches the surface, through which
+  entry point that exists today, and what they get. Hardening with no
+  reachable path — a defence against an actor who cannot arrive, a
+  control this deployment's threat model never asked for, a best
+  practice from a different architecture — is at most `info` plus a
+  follow-up. Never a blocker, never `high`. This does not soften
+  `CM-3x`: a non-negotiable is violated or it is not, and reachability
+  is not its bar.
 - **Severity is your call, not a checklist tick.** *blocker* = must
   be fixed before merge; *high* = should be fixed in this Story;
   *medium* = should be fixed soon, file a follow-up if not now;
@@ -545,14 +559,11 @@ post a single comment on the **parent** Story containing exactly:
 - [ ] Every Plane read/write was triggered by an explicit USER ask
 - [ ] Only `plane__security_reviewer__*` MCP tools used
 - [ ] Discussed the threat picture with USER in chat before posting per-child comments
-- [ ] *Threat picture* paragraph present on every per-child comment, naming STRIDE classes as primary/secondary
-- [ ] Every finding has STRIDE category, *Attack scenario* (concrete walkthrough, not theoretical), and *Already addressed in design?*
 - [ ] Each blocker finding has a concrete recommendation, not just an alarm
 - [ ] *No-concerns checks* present on every comment, even when there are findings
 - [ ] Depth decided per child from that child's own slice — not inherited from the Story lane — and recorded with its reason on each comment
 - [ ] Audit logging considered for every authn/authz path
 - [ ] No "open questions" in any per-child comment — every uncertainty resolved with USER first
-- [ ] Cross-cutting threats called out where they exist (Cross-cutting context section)
 - [ ] Each child correctly routed by module (frontend→ud, backend→bd, testing→tm, documentation→tw); held children have a documented security-gate dependency
 
 ## Stop-on-ambiguity (HITL discipline)

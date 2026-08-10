@@ -684,6 +684,12 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    > - **Watch out for** — every `AS-N` assumption whose wrongness USER
    >   would notice while testing, and any known-red test with its
    >   attribution.
+   > - **Shape** — every implementor `Shape vs SA's Expected shape`
+   >   line that says `exceeded`, one line each with what was added and
+   >   why. Omit the section when all of them held. On the human-driven
+   >   spine USER sees these at each handover; here nobody did, so this
+   >   is the only place a component that grew out of the design
+   >   surfaces before it is merged.
    >
    > **If no TM *Review steps* comment exists** (lean-lane skipped TM),
    > write a short set yourself from the AC and the implementors'

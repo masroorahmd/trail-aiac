@@ -1,8 +1,10 @@
 # Control Manifest — non-negotiable guardrails
 
 > Read by: Business Analyst (primary), Requirements Engineer, Software
-> Architect, Security Reviewer, Test Manager. Maintained by: USER
-> directly (in chat with BA), or BA on USER's explicit request.
+> Architect, Security Reviewer, Test Manager — in full; Backend and UI
+> Developer read *§Simplicity budget* and *§Architectural invariants*
+> only, because those two bind a diff. Maintained by: USER directly
+> (in chat with BA), or BA on USER's explicit request.
 >
 > Purpose: the constraints that apply to **every** Story without needing
 > to be re-stated. When BA scopes a Story, every CM-N here is implicitly
@@ -135,6 +137,38 @@
        (no new component, contract, data shape or dependency to
        choose); result checkable from the Story body alone. One
        uncertainty → `standard` at best. -->
+
+## Simplicity budget
+<!-- OPTIONAL — delete this section to leave solution size to each
+     persona's own right-sizing judgement (the `plane-handover` skill,
+     §Right-sizing). When present, these are project policy and outrank
+     that judgement in both directions: a persona pushing against one
+     cites the CM-N and asks USER rather than deciding alone. Unlike
+     §Risk lanes, this section says nothing about which personas run —
+     it bounds what they are allowed to *build*. Examples (delete and
+     replace with real ones):
+
+     - CM-70: A new runtime dependency needs USER's explicit approval,
+       named in the Story before SA hands over. Dev-only and test-only
+       dependencies do not.
+     - CM-71: No abstraction below three real call sites. Interfaces,
+       base classes, factories, wrappers and generic helpers arrive
+       when the third caller does, not in anticipation of it.
+     - CM-72: No new config key without a named operator who would
+       change it and a stated default. A knob nobody turns is a branch
+       everybody has to test.
+     - CM-73: One Story ships one version. Phases the team can already
+       see are `OOS-N` on this Story — not extra `SC-N`, not a fifth
+       sub-work-item.
+     - CM-74: Defensive code needs a reachable input. Guards, retries,
+       fallbacks and try/except around code that cannot throw are
+       written when an `AC-N`, an `EC-N` or an SR finding names the
+       failure, not on principle. This never overrides a `CM-3x`.
+
+     Note the asymmetry these encode on purpose: a lane or a review
+     depth breaks toward MORE when the team is unsure, because the cost
+     of under-scrutiny is a defect. Size breaks toward LESS, because
+     the cost of over-building is paid by every Story after this one. -->
 
 ## Amendments
 <!-- When USER amends the manifest mid-project, log the change here

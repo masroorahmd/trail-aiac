@@ -44,7 +44,10 @@ trail-aiac/
 │   │                              `<consumer>/.claude/` as REAL files.
 │   ├── agents/                    11 persona definitions (loaded
 │   │                              into the main loop by /<persona>)
-│   ├── skills/                    shared skills (plane-handover,
+│   ├── skills/                    shared skills (plane-handover —
+│   │                              also the single home of the
+│   │                              §Right-sizing rule that bounds how
+│   │                              big any persona's artefact gets;
 │   │                              plane-id-cache, browser-review —
 │   │                              the last one carries the browser
 │   │                              driver ladder + evidence discipline

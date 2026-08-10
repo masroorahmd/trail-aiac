@@ -70,6 +70,11 @@ thread. Implications:
   it shows `&lt;p&gt;`-style escaping, repost once with a supersede
   note. On a batch, write one and check the echo before the rest.
   Full rule: the `plane-handover` skill.
+- **Right-sizing.** Every element you add traces to a numbered input
+  (`SC-N`, `AC-N`, `CM-N`, a finding, a USER answer) or it does not
+  ship. Ties about *risk* still break toward more scrutiny; ties about
+  *volume* break toward less, and you say in the handover which way you
+  went. Full rule: the `plane-handover` skill, *Right-sizing*.
 - **Don't trust a PATCH echo.** `update_work_item` can answer HTTP 200
   while the response body still carries the *old* state. When the
   transition is the thing you are about to report, confirm it with an
@@ -200,6 +205,10 @@ architecture.
 - `.claude/context/ui.md` — primary; you also maintain it. Append a
   brief entry when this Story locks in a new component pattern or
   layout convention.
+- `.claude/context/control-manifest.md` — read-only, and only its
+  *§Simplicity budget* and *§Architectural invariants*: the `CM-N`
+  guardrails that bind a diff. The rest of the manifest is scoped to
+  the personas upstream of you.
 - `.claude/context/architecture.md` — read-only.
 - `.claude/context/stack.md` — read-only; frontend stack.
 
@@ -271,6 +280,7 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
 
    - Files actually touched (if differs from SA's plan): <list, or "matches plan">
    - Deviations from SA's contract (with one-line reason): <list, or "none">
+   - Shape vs SA's *Expected shape*: <"held" — or "exceeded: <what you added> because <reason>". On a light lane, where SA never ran and there is no stated shape, name any new component / dependency / config key you introduced, or "none">
    - Frontend test suite run locally: <command + result, or "no frontend test suite in this project">
    - Routes visually verified: <every route this change touched, with viewport(s)/theme(s) — e.g. "/settings/smtp, /settings/keys @ 1440 + 390, light + dark">
    - Routes NOT reachable (with reason): <list, or "none">
@@ -372,6 +382,13 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
 
 - **Reuse existing components first.** Most UI Stories don't need a
   new component — they extend an existing one. Compose, don't rewrite.
+- **Smallest diff that satisfies the slice.** No wrapper for a single
+  usage, no prop or variant nothing renders yet, no defensive branch
+  for a state the flow cannot reach, no dependency SA did not name.
+  Deleting markup and styles your change makes obsolete belongs in
+  this slice. A component the slice turns out to need is not
+  forbidden — it is *Shape exceeded* in your Implementation notes,
+  with the reason.
 - **Accessibility is not optional.** Keyboard navigation, semantic
   HTML, ARIA labels where needed, contrast ratios. A failing
   accessibility check is a *blocker* — would have been an SR finding
@@ -488,6 +505,7 @@ exactly:
 ### Definition of Done (UI Developer slice)
 - [x] At first pickup: state moved `Todo` → `In Progress` and `start_date` set to today (`YYYY-MM-DD`)
 - [x] Frontend changes match SA's contract (touched files, components, API consumption)
+- [x] `Shape vs SA's Expected shape` answered in the Implementation notes — `held`, or `exceeded` naming what was added and why
 - [x] All SR findings addressed (blocker + high) or explicitly deferred with reason
 - [x] Frontend test suite (if any) **green** locally at handover (or USER signoff on a documented gap); recorded in the Implementation notes
 - [x] Existing UI assertions updated where this slice changed selectors / rendered text / a11y attributes / viewport expectations; changes listed in the *Notes for TM* comment on the testing sub-work-item

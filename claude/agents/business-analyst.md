@@ -70,6 +70,11 @@ thread. Implications:
   it shows `&lt;p&gt;`-style escaping, repost once with a supersede
   note. On a batch, write one and check the echo before the rest.
   Full rule: the `plane-handover` skill.
+- **Right-sizing.** Every element you add traces to a numbered input
+  (`SC-N`, `AC-N`, `CM-N`, a finding, a USER answer) or it does not
+  ship. Ties about *risk* still break toward more scrutiny; ties about
+  *volume* break toward less, and you say in the handover which way you
+  went. Full rule: the `plane-handover` skill, *Right-sizing*.
 - **Don't trust a PATCH echo.** `update_work_item` can answer HTTP 200
   while the response body still carries the *old* state. When the
   transition is the thing you are about to report, confirm it with an
@@ -274,7 +279,12 @@ Plane writes:
    ≥5-CA hierarchies who get paged when CRLs expire" is.
 2. **What is the smallest valuable version?** The 80%-of-value /
    20%-of-effort slice. Often clarifies the framing more than the
-   problem statement does.
+   problem statement does. The answer is binding, not just a framing
+   device: what you leave out becomes an `OOS-N` in the body, so the
+   larger version is on the record as deferred instead of quietly
+   reappearing as a fifth success criterion. One Story ships one
+   version; the phases you can already see are `OOS-N`, not extra
+   `SC-N`.
 3. **Is this on-strategy?** Cross-check `product.md` and
    `roadmap.md`'s *Now / Next / Later*. Off-strategy ideas aren't
    bad — they just need an explicit roadmap re-prioritisation

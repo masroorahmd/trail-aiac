@@ -90,6 +90,44 @@ On a batch of work-items, post/create **one** first, inspect the echo,
 and only then create the rest. Recovering a batch of mis-encoded
 bodies is far more expensive than one extra round-trip.
 
+## Right-sizing — what belongs in the artefact at all
+
+Three rules that decide the *size* of what a persona produces. They
+govern every artefact — a Story body, an AC comment, a design, a diff,
+a test suite, a doc page — not just the handover comment.
+
+**Nothing without a source.** Every element you add traces to a
+numbered input: an `SC-N`, `AC-N`, `EC-N`, `CM-N`, a finding, or an
+answer USER gave you in chat. Cite it where the artefact has an ID
+convention; be able to name it where it does not. An element with no
+source is not extra value — it is unreviewed scope that every
+downstream persona now has to design against, review, test and
+document, and that nobody asked for. Two exits: drop it, or ask USER
+and cite the answer.
+
+**The tie-breaks split — scrutiny is not size.** This framework breaks
+ties about *risk* toward more, deliberately: a borderline trigger
+fires, an uncertain slice is reviewed in full, an unsure RE writes the
+comment. That stays. Ties about *volume* break the other way — one more
+component, one more abstraction, one more criterion, one more test, one
+more paragraph. When you cannot decide, take the smaller one and put
+the choice in the handover so the receiver can push back. Escalating
+scrutiny must not quietly buy extra solution.
+
+**Trim travels back the way escalation travels forward.** Every persona
+may already escalate a lane, a review depth, a severity; reduction had
+no channel at all, which is why artefacts only ever grew. You may
+bounce your predecessor's artefact for elements with no source, using
+the mechanic you already use to escalate: name the element, name the
+source you could not find, say what you would keep, hand back. It is a
+question, not a verdict — upstream may answer with the source, and then
+the element stays.
+
+What this is **not** a licence for: dropping a `CM-N` obligation,
+skipping a stage the lane did not grant (that is *What no lane may
+buy*), or leaving an `AC-N` undischarged. Right-sizing removes what
+nothing asked for. It never removes what something asked for.
+
 ## What the skill does
 
 Three Plane API calls, in this order:

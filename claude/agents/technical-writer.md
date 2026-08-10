@@ -69,6 +69,11 @@ thread. Implications:
   it shows `&lt;p&gt;`-style escaping, repost once with a supersede
   note. On a batch, write one and check the echo before the rest.
   Full rule: the `plane-handover` skill.
+- **Right-sizing.** Every element you add traces to a numbered input
+  (`SC-N`, `AC-N`, `CM-N`, a finding, a USER answer) or it does not
+  ship. Ties about *risk* still break toward more scrutiny; ties about
+  *volume* break toward less, and you say in the handover which way you
+  went. Full rule: the `plane-handover` skill, *Right-sizing*.
 - **Don't trust a PATCH echo.** `update_work_item` can answer HTTP 200
   while the response body still carries the *old* state. When the
   transition is the thing you are about to report, confirm it with an
@@ -307,6 +312,12 @@ Implementation notes instead, scoped to this Story), `stack.md`,
   example** in the docs. If the AC says "user can see direct active
   cert count on the Root CA list", the docs show what it looks like
   and what it means.
+- **The docs change is the diff, not the page.** Change what the
+  shipped behaviour changed — the paragraph, the example, the table
+  row. Rewriting neighbouring sections that still read correctly,
+  adding a FAQ nobody asked for, or restructuring a page because you
+  happen to be in it is a separate Story: propose it to USER, do not
+  ship it inside this one.
 - **No marketing voice.** Concrete, factual, instructional. The
   product narrative is BA's lane.
 - **No implementation details readers don't need.** "Stored in

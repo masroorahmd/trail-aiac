@@ -501,6 +501,51 @@ A lane is BA's estimate, not a verdict: any persona may **escalate**
 when a trigger surfaces (recorded in a comment, never a body edit),
 and none may quietly downgrade.
 
+## Right-sizing — how big the solution gets
+
+Lanes decide how many *stations* a Story passes. They say nothing
+about how big the thing built at each station becomes, and those are
+different failure modes: a `light` Story can still arrive with a
+factory nobody needed. The rule that bounds size lives once, in the
+`plane-handover` skill §*Right-sizing*, and every persona carries a
+one-line pointer to it.
+
+- **Nothing without a source.** Every element of an artefact traces to
+  a numbered input — `SC-N`, `AC-N`, `EC-N`, `CM-N`, a finding, an
+  answer USER gave. Unsourced elements are not extra value; they are
+  scope nobody reviewed that everyone downstream now designs against,
+  reviews, tests and documents.
+- **The tie-breaks split.** Uncertainty about *risk* still breaks
+  toward more scrutiny — that is what makes the lanes safe.
+  Uncertainty about *volume* breaks toward less, and the choice is
+  named in the handover so the receiver can push back. Escalating
+  scrutiny must not quietly buy extra solution.
+- **Trim travels back the way escalation travels forward.** A receiver
+  may bounce an artefact for unsourced elements — name the element,
+  name the missing source, hand back. It is a question, not a verdict.
+  Before this, escalation was the only direction the spine could
+  carry, which is why artefacts only ever grew.
+
+Two mechanisms make it visible rather than merely advisory. SA states
+an **Expected shape** in its handover — new components, new
+dependencies, new config keys, each named or explicitly "none" — and
+each implementor answers it with `Shape vs SA's Expected shape: held`
+or `exceeded: <what> because <why>` in the Implementation notes. Then
+the **retros ask what nobody else can**: SA's *Specified and unused*
+and RE's *Specified and unneeded* look for the component that shipped
+and earned nothing, the criterion that cost work and bought nothing.
+No implementor ever files a note about a requirement that was merely
+superfluous, so if the retro does not go looking, over-building is the
+one class of waste the framework cannot see.
+
+A project can make this binding rather than advisory with a
+§*Simplicity budget* in `control-manifest.md` (CM-70…CM-74): approval
+for new runtime dependencies, no abstraction below three call sites,
+no config key without an operator who would turn it, one version per
+Story, defensive code only where a reachable input is named. Like
+§*Risk lanes*, the section is optional — delete it and size is left to
+each persona's judgement.
+
 ## The quick lane (off-Plane)
 
 `/quick` is a deliberate exception to everything above. For a change
