@@ -4,7 +4,8 @@
 One-shot, idempotent. Two stages, run in sequence:
 
   1. **Copy + seed.** Framework deliverables (`agents/`, `skills/`,
-     `commands/`, `mcp/`, `*.example/`, `settings.json`) are copied
+     `commands/`, `output-styles/`, `mcp/`, `*.example/`,
+     `settings.json`) are copied
      from `<framework>/claude/` into `<consumer>/.claude/` as REAL
      files, overwriting any older copy. Consumer-owned slots
      (`config.yaml`, `credentials.yaml`, `context/`, `agent-memory/`)
@@ -31,7 +32,8 @@ One-shot, idempotent. Two stages, run in sequence:
          `plane-mcp-server` + one `plane-extras-mcp` per persona),
          which cost ~2 GB of RSS per Claude session.
 
-       - `<consumer>/.claude/agents/*.md` (mode 0600) — re-templated
+       - `<consumer>/.claude/{agents,commands,output-styles}/*.md`
+         (mode 0600) — re-templated
          in place: every `__VAR__` placeholder (`__CHAT_LANGUAGE__`,
          `__USER_NAME__`, …) is replaced with the real value, and the
          conditional USER_NAME bullet is stripped when no name was
@@ -89,6 +91,7 @@ DELIVERABLES = [
     "agents",
     "skills",
     "commands",
+    "output-styles",
     "mcp",
     "workflows",
     "settings.json",
@@ -528,7 +531,7 @@ def render_persona_files(consumer_claude: Path, env_map: dict[str, str]) -> list
     placeholder.
     """
     render_targets: list[Path] = []
-    for subdir in ("agents", "commands"):
+    for subdir in ("agents", "commands", "output-styles"):
         d = consumer_claude / subdir
         if d.is_dir():
             render_targets.extend(sorted(d.glob("*.md")))

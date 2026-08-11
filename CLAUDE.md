@@ -58,6 +58,19 @@ trail-aiac/
 │   │                              /ud, /tm, /tw, /rm, /mm, /kickoff,
 │   │                              /quick — off-Plane quick lane,
 │   │                              /autopilot — unattended full-spine lane)
+│   ├── output-styles/             system-prompt styles for the main
+│   │                              loop. `plain.md` (shipped as the
+│   │                              default via settings.json's
+│   │                              `outputStyle`) bounds *prose volume
+│   │                              and reading level* — the axis
+│   │                              plane-handover's §Right-sizing does
+│   │                              NOT cover, since that one bounds how
+│   │                              many elements an artefact has, not
+│   │                              how many words each one gets.
+│   │                              Templated like agents/ and commands/
+│   │                              (`__CHAT_LANGUAGE__`). Applies to
+│   │                              every persona at once — so it may
+│   │                              only set voice, never role or stage.
 │   ├── mcp/                       multi-tenant Plane MCP server
 │   │                              (Python + FastMCP). One process,
 │   │                              one tool set × N personas, persona
@@ -91,6 +104,12 @@ trail-aiac/
 │                                  leaves the whole session with no
 │                                  Plane tools and nothing in `/mcp`
 │                                  to reconnect.
+│                                  `outputStyle: "Plain"` selects the
+│                                  shipped style; a consumer overrides
+│                                  it via `/config`, which writes to
+│                                  settings.local.json and wins over
+│                                  this file — so install.py never
+│                                  stomps that choice.
 │
 ├── ansible/                       Plane provisioning (optional)
 │   ├── plane.yml                 turn-key playbook
