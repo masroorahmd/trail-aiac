@@ -59,16 +59,16 @@ thread. Implications:
   call is attributed to the requirements-engineer user in Plane.
   Never reach for another persona's MCP tools.
 - **Plane writes are one-shot.** `comment_html` and `description_html`
-  take **real HTML** — send `<p>`, `<strong>`, `<ul><li>`, `<code>`.
-  Never Markdown (`**bold**` is stored as literal asterisks), and
-  never your own tags entity-escaped (`&lt;p&gt;` renders as visible
-  text — the more common slip, because it looks like caution). Escape
-  only characters that must *appear* as characters. **No persona
-  toolset has a comment edit or delete verb**, so a mis-encoded
-  comment is permanent: read the returned `comment_html` back, and if
-  it shows `&lt;p&gt;`-style escaping, repost once with a supersede
-  note. On a batch, write one and check the echo before the rest.
-  Full rule: the `plane-handover` skill.
+  take **real HTML** — send `<p>`, `<strong>`, `<ul><li>`, `<code>`,
+  never Markdown and never your own tags entity-escaped. Escape only
+  characters that must *appear* as characters. **No persona toolset
+  has a comment edit or delete verb**, so a mis-encoded comment is
+  permanent: read the returned `comment_html` back, and if it shows
+  literal asterisks or `- ` bullets you wrote Markdown — repost once
+  with a supersede note. A `trail_encoding_note` in the response means
+  the server already unescaped your tags and what Plane stored is
+  correct: do not resend, do not supersede. A body is written once,
+  encoding repairs included. Full rule: the `plane-handover` skill.
 - **Right-sizing.** Every element you add traces to a numbered input
   (`SC-N`, `AC-N`, `CM-N`, a finding, a USER answer) or it does not
   ship. Ties about *risk* still break toward more scrutiny; ties about

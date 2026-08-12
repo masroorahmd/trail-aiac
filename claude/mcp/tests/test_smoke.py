@@ -30,6 +30,7 @@ from plane_extras_mcp.plane import (
 from plane_extras_mcp.server import (
     _persona_credentials,
     _persona_tool_prefix,
+    _repair_double_encoded_html,
     mcp,
     register_personas_from_env,
 )
@@ -238,6 +239,143 @@ async def test_update_work_item_only_sends_provided_fields(
     assert body == {"state": target_state}, (
         f"PATCH body should carry state only; got {body}"
     )
+
+
+def test_repair_unescapes_a_wholly_escaped_body() -> None:
+    """The classic slip: the persona escapes its own tags, Plane stores
+    the entities, and the ticket shows markup as visible text.
+    """
+    sent = "&lt;p&gt;&lt;strong&gt;AC-1&lt;/strong&gt; holds&lt;/p&gt;"
+    repaired, changed = _repair_double_encoded_html(sent)
+    assert changed
+    assert repaired == "<p><strong>AC-1</strong> holds</p>"
+
+
+def test_repair_is_the_exact_inverse_of_one_escape_pass() -> None:
+    """Entities the author meant to *render* must survive the repair.
+    ``&amp;rarr;`` is what ``&rarr;`` looks like after escaping, so it
+    must come back as ``&rarr;`` — Plane renders that as →. Unescaping
+    it a second time would destroy the author's intent.
+    """
+    sent = "&lt;p&gt;RM &amp;rarr; USER: a &amp;lt; b&lt;/p&gt;"
+    repaired, changed = _repair_double_encoded_html(sent)
+    assert changed
+    assert repaired == "<p>RM &rarr; USER: a &lt; b</p>"
+
+
+def test_repair_does_not_guess_at_deeper_encodings() -> None:
+    """Triple-encoded input hides the ``&lt;`` marker behind ``&amp;lt;``.
+    Blind extra passes would corrupt an innocent ``a &amp; b``, so the
+    guard declines rather than guesses.
+    """
+    sent = "&amp;lt;p&amp;gt;body&amp;lt;/p&amp;gt;"
+    repaired, changed = _repair_double_encoded_html(sent)
+    assert not changed
+    assert repaired == sent
+
+
+def test_repair_leaves_well_formed_html_alone() -> None:
+    """Real markup, including entities that must render as characters,
+    must pass through byte-identical.
+    """
+    for sent in (
+        "<p>a &lt; b</p>",
+        "<div><p>Handover</p><pre><code>&lt;user&gt;</code></pre></div>",
+        "<p>Plain body, no entities at all.</p>",
+    ):
+        repaired, changed = _repair_double_encoded_html(sent)
+        assert not changed, f"needlessly rewrote {sent}"
+        assert repaired == sent
+
+
+def test_repair_ignores_deliberate_lone_escapes() -> None:
+    """A single escaped tag shown as text, and comparison operators, are
+    intent — not double-encoding. Only a payload that is *all* escaped
+    tags and no real tag gets touched.
+    """
+    for sent in ("a &lt; b &gt; c", "the &lt;title&gt; element", ""):
+        repaired, changed = _repair_double_encoded_html(sent)
+        assert not changed, f"needlessly rewrote {sent!r}"
+        assert repaired == sent
+    assert _repair_double_encoded_html(None) == (None, False)
+
+
+async def test_escaped_body_is_repaired_before_it_reaches_plane(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A body is written once and never edited, so an escaped
+    ``create_work_item`` used to cost a second write with a second
+    modification timestamp. The bad value must never land: the POST
+    carries real HTML, and the caller is told so it does not "repair"
+    what is already correct.
+    """
+    captured: list[dict[str, Any]] = []
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        captured.append({"method": method, "json": kwargs.get("json")})
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 200
+        response.content = b'{"id":"wi-1"}'
+        response.json = lambda: {"id": "wi-1"}
+        response.text = '{"id":"wi-1"}'
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    result = await mcp.call_tool(
+        "business_analyst__create_work_item",
+        {
+            "project_id": PROJECT_UUID,
+            "name": "Escaped body",
+            "description_html": "&lt;p&gt;&lt;strong&gt;Goal&lt;/strong&gt;&lt;/p&gt;",
+        },
+    )
+    posts = [c for c in captured if c["method"] == "POST"]
+    assert posts, "no POST issued"
+    body = posts[-1]["json"]
+    assert body["description_html"] == "<p><strong>Goal</strong></p>", (
+        f"escaped body reached Plane: {body['description_html']!r}"
+    )
+    flat = str(result)
+    assert "trail_encoding_note" in flat, (
+        "caller was not told its payload was repaired"
+    )
+
+
+async def test_escaped_comment_is_repaired_before_it_reaches_plane(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Comments have no edit and no delete verb, so the only repair is a
+    supersede comment. Catch the escaping before the write instead.
+    """
+    captured: list[dict[str, Any]] = []
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        captured.append({"method": method, "json": kwargs.get("json")})
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 200
+        response.content = b'{"id":"c-1"}'
+        response.json = lambda: {"id": "c-1"}
+        response.text = '{"id":"c-1"}'
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    await mcp.call_tool(
+        "release_manager__add_comment",
+        {
+            "project_id": PROJECT_UUID,
+            "work_item_id": WORK_ITEM_UUID,
+            "comment_html": "&lt;p&gt;Handover: RM &amp;rarr; USER&lt;/p&gt;",
+        },
+    )
+    posts = [c for c in captured if c["method"] == "POST"]
+    assert posts, "no POST issued"
+    assert posts[-1]["json"]["comment_html"] == "<p>Handover: RM &rarr; USER</p>"
 
 
 async def test_add_work_items_to_cycle_sends_issues_list(

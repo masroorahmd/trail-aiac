@@ -49,9 +49,13 @@ What you pass is rendered as markup, not as text.
 - Send real tags: `<p>`, `<strong>`, `<ul><li>`, `<code>`, `<h3>`.
 - Do **not** send Markdown. `**bold**` and `- item` are stored as
   literal asterisks and hyphens; Plane does not convert them.
-- Do **not** entity-escape your own tags. `&lt;p&gt;` stores the
-  entities and the comment displays `<p>` as visible text. This is
-  the more common failure, because it looks like caution.
+- Do **not** entity-escape your own tags. `&lt;p&gt;` would store the
+  entities and display `<p>` as visible text. This is the more common
+  failure, because it looks like caution. The MCP server catches a
+  wholly-escaped payload and unescapes it *before* the write, then
+  reports it as `trail_encoding_note` in the response. That note means
+  the stored markup is **already correct** — do not resend it, do not
+  supersede it, do not open a correction. Fix the habit, not the ticket.
 - Entity-escape **only** characters that must appear *as characters*
   in the rendered output — e.g. demonstrating `a &lt; b` or an XML
   snippet inside a `<code>` block.
@@ -81,14 +85,23 @@ replacement work item has produced a duplicate it cannot take back.
 toolsets expose `add_comment` and nothing else. A mis-encoded comment
 is **permanent** — the only repair is a second comment that opens by
 superseding the first, and a human deleting the original in the Plane
-UI. So: get the encoding right on the first call, then **read the
-returned `comment_html` back**. If the echo contains `&lt;p&gt;`-style
-escaping, you double-encoded — repost immediately with a one-line
-supersede note rather than leaving it.
+UI. Escaping is caught server-side now (above); **Markdown is not**, and
+cannot be: `**bold**` is indistinguishable from asterisks you meant
+literally. So read the returned `comment_html` back for *that* — literal
+asterisks or `- ` bullets mean you wrote Markdown, and a supersede
+comment is the only way out.
 
 On a batch of work-items, post/create **one** first, inspect the echo,
-and only then create the rest. Recovering a batch of mis-encoded
-bodies is far more expensive than one extra round-trip.
+and only then create the rest.
+
+**2b. A body is written once — repairs included.** If a body ever does
+reach Plane mangled, the repair is **one** `update_work_item` carrying
+the byte-identical intended content, plus a comment naming it an
+encoding repair and not a content revision. That comment is what stops
+the second modification timestamp reading as a silent rewrite to every
+downstream persona. It is the *only* sanctioned exception to
+*Description-once* — never a replacement work item, never a third
+attempt, and never used to slip in changed content.
 
 ## Right-sizing — what belongs in the artefact at all
 

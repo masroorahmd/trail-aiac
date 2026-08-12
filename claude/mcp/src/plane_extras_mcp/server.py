@@ -21,6 +21,7 @@ here as the "extras" gap. The upstream server is no longer launched.
 
 from __future__ import annotations
 
+import html
 import logging
 import os
 import re
@@ -89,6 +90,56 @@ def _strip_descriptions(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         {k: v for k, v in item.items() if k not in _DESCRIPTION_FIELDS}
         for item in items
     ]
+
+
+_ESCAPED_TAG_RE = re.compile(r"&lt;/?[A-Za-z][A-Za-z0-9]*(?:\s[^&<>]*?)?/?&gt;")
+_REAL_TAG_RE = re.compile(r"<[A-Za-z/]")
+
+ENCODING_REPAIR_NOTE = (
+    "Your HTML arrived entity-escaped (&lt;p&gt; instead of <p>) and was "
+    "unescaped before the write, so what Plane stored is correct markup — "
+    "do NOT resend or supersede this. Pass real tags next time."
+)
+
+
+def _repair_double_encoded_html(value: str | None) -> tuple[str | None, bool]:
+    """Undo a wholly entity-escaped HTML payload before it reaches Plane.
+
+    The single most common persona slip is sending ``&lt;p&gt;…`` instead
+    of ``<p>…`` — it looks like caution, and Plane stores the entities and
+    renders the tags as visible text. Comments cannot be edited or deleted,
+    and a work-item body is written once and never touched again, so the
+    only repairs available downstream are a supersede comment or a second
+    write of the same body — which is exactly the duplicate-timestamp mess
+    this guard exists to prevent. Catching it here means the bad value
+    never lands.
+
+    The signature is narrow on purpose: two or more escaped tags and no
+    real tag at all. Content that *deliberately* shows markup as text —
+    ``a &lt; b``, an XML snippet inside a ``<code>`` block, a lone
+    ``&lt;title&gt;`` in prose — carries a real tag around it, or too few
+    escaped ones, and is left alone.
+
+    One unescape pass is the exact inverse of one escape pass, so entities
+    the author meant to survive stay escaped: ``&amp;rarr;`` comes back as
+    ``&rarr;``, which is what Plane renders as →. Deeper encodings hide the
+    ``&lt;`` marker behind ``&amp;lt;`` and are deliberately *not* guessed
+    at — a second blind pass would corrupt an innocent ``a &amp; b``.
+
+    Returns the value to send plus whether anything was changed.
+    """
+    if not value or _REAL_TAG_RE.search(value):
+        return value, False
+    if len(_ESCAPED_TAG_RE.findall(value)) < 2:
+        return value, False
+    return html.unescape(value), True
+
+
+def _note_repair(result: dict[str, Any], repaired: bool) -> dict[str, Any]:
+    """Tell the caller its payload was fixed, so it does not "fix" it again."""
+    if repaired and isinstance(result, dict):
+        result = {**result, "trail_encoding_note": ENCODING_REPAIR_NOTE}
+    return result
 
 
 def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
@@ -200,9 +251,13 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         target_date: str | None = None,
         estimate_point: str | None = None,
     ) -> dict[str, Any]:
-        """Create a work item. ``parent`` accepts UUID or identifier."""
+        """Create a work item. ``parent`` accepts UUID or identifier.
+        ``description_html`` takes real HTML; an entity-escaped body is
+        unescaped before the write rather than stored as visible markup.
+        """
+        description_html, repaired = _repair_double_encoded_html(description_html)
         async with _client() as c:
-            return await c.create_work_item(
+            result = await c.create_work_item(
                 project_id,
                 name=name,
                 description_html=description_html,
@@ -215,6 +270,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
                 target_date=target_date,
                 estimate_point=estimate_point,
             )
+        return _note_repair(result, repaired)
 
     @mcp.tool(name=f"{prefix}__update_work_item")
     async def update_work_item(
@@ -233,10 +289,12 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
     ) -> dict[str, Any]:
         """Patch a work item — state transitions, handovers, etc. Only
         non-None fields are sent. ``work_item_id`` accepts UUID or
-        identifier.
+        identifier. An entity-escaped ``description_html`` is unescaped
+        before the write.
         """
+        description_html, repaired = _repair_double_encoded_html(description_html)
         async with _client() as c:
-            return await c.update_work_item(
+            result = await c.update_work_item(
                 project_id,
                 work_item_id,
                 name=name,
@@ -250,6 +308,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
                 target_date=target_date,
                 estimate_point=estimate_point,
             )
+        return _note_repair(result, repaired)
 
     # ----- comments -----
 
@@ -261,16 +320,20 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         access: str | None = None,
     ) -> dict[str, Any]:
         """Add a comment to a work item. ``work_item_id`` accepts UUID
-        or identifier. ``access`` is optional and only honoured by
-        newer Plane versions (``internal`` / ``external``).
+        or identifier. ``comment_html`` takes real HTML; an entity-escaped
+        comment is unescaped before the write, because comments cannot be
+        edited or deleted afterwards. ``access`` is optional and only
+        honoured by newer Plane versions (``internal`` / ``external``).
         """
+        comment_html, repaired = _repair_double_encoded_html(comment_html)
         async with _client() as c:
-            return await c.add_comment(
+            result = await c.add_comment(
                 project_id,
                 work_item_id,
                 comment_html=comment_html,
                 access=access,
             )
+        return _note_repair(result, repaired)
 
     @mcp.tool(name=f"{prefix}__list_comments")
     async def list_comments(

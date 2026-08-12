@@ -64,16 +64,17 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
 
 - **Plane-Writes sind einmalig.** `comment_html` und
   `description_html` nehmen **echtes HTML** — schicke `<p>`,
-  `<strong>`, `<ul><li>`, `<code>`. Niemals Markdown (`**fett**` wird
-  als literale Sternchen gespeichert) und niemals die eigenen Tags
-  entity-escaped (`&lt;p&gt;` erscheint als sichtbarer Text — der
-  häufigere Fehler, weil er nach Vorsicht aussieht). Escape nur
-  Zeichen, die *als Zeichen* erscheinen sollen. **Kein Persona-
-  Toolset hat ein Edit oder Delete für Comments**, ein falsch
-  kodierter Comment ist also endgültig: lies das zurückgegebene
-  `comment_html` und poste bei `&lt;p&gt;`-Escaping einmal neu mit
-  einem Supersede-Hinweis. Bei einem Batch erst einen schreiben, Echo
-  prüfen, dann den Rest. Vollständige Regel: Skill `plane-handover`.
+  `<strong>`, `<ul><li>`, `<code>` — niemals Markdown und niemals die
+  eigenen Tags entity-escaped. Escape nur Zeichen, die *als Zeichen*
+  erscheinen sollen. **Kein Persona-Toolset hat ein Edit oder Delete
+  für Comments**, ein falsch kodierter Comment ist also endgültig:
+  lies das zurückgegebene `comment_html` und poste bei literalen
+  Sternchen oder `- `-Bullets — dann hast du Markdown geschrieben —
+  einmal neu mit einem Supersede-Hinweis. Ein `trail_encoding_note` in
+  der Antwort heißt, der Server hat deine Tags bereits entescaped und
+  das Gespeicherte ist korrekt: nicht neu senden, nicht supersede. Ein
+  Body wird einmal geschrieben, Encoding-Reparaturen eingeschlossen.
+  Vollständige Regel: Skill `plane-handover`.
 
 - **Right-Sizing.** Jedes Element, das du hinzufügst, hängt an einer
   nummerierten Quelle (`SC-N`, `CM-N`, ein Finding, eine Antwort von

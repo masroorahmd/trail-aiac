@@ -83,9 +83,10 @@ or a **comment**. See [`WORKFLOW.md`](WORKFLOW.md) for the full table.
 
 Both are effectively **write-once**: bodies by the description-once
 rule, comments because the Plane API exposes no edit or delete verb.
-Personas are told to check the echoed `comment_html` after posting and
-to repost with a supersede note if it came back double-encoded — see
-[`MCP.md`](MCP.md) § *HTML body / comment authoring*.
+The MCP server unescapes a wholly entity-escaped payload before the
+write, so the most common encoding slip never lands; personas still
+check the echoed `comment_html` for Markdown, which no guard can catch
+— see [`MCP.md`](MCP.md) § *HTML body / comment authoring*.
 
 On the filesystem side, a persona's `.claude/context/*.md` and
 `.claude/agent-memory/**` are ordinary files in a single-consumer

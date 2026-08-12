@@ -177,26 +177,52 @@ have re-burned multiple personas across consumer projects:
   already-HTML payload (`&lt;strong&gt;`) makes them render as
   literal text. Conversely, content destined for `_html` fields
   passes through verbatim, so any `<` `>` that should be displayed
-  *as characters* must be entity-encoded by the persona itself —
-  the MCP layer doesn't sanitise.
+  *as characters* must be entity-encoded by the persona itself.
 
 Rule of thumb: every `_html` MCP field accepts raw HTML; if a
 character is special to HTML, encode it before sending.
+
+**The one thing the server does fix.** Double-encoding was the single
+most frequent write defect across consumer projects, and its repair
+cost was out of all proportion to the slip — a permanent comment, or a
+body written twice. So `create_work_item`, `update_work_item` and
+`add_comment` run `_repair_double_encoded_html` on the payload *before*
+the HTTP call: a value carrying two or more entity-escaped tags and no
+real tag at all is unescaped once, and the tool result gains a
+`trail_encoding_note` telling the persona what Plane stored is already
+correct and must not be resent. The signature is deliberately narrow —
+`a &lt; b`, an XML snippet inside a `<code>` block, or a lone
+`&lt;title&gt;` in prose all carry a real tag or too few escaped ones
+and pass through byte-identical. One unescape pass is the exact inverse
+of one escape pass, so `&amp;rarr;` returns as `&rarr;`; deeper
+encodings hide the marker behind `&amp;lt;` and are not guessed at,
+because a second blind pass would corrupt an innocent `a &amp; b`.
+Nothing else is sanitised — Markdown in particular cannot be, since
+`**bold**` is indistinguishable from asterisks the author meant.
 
 **Why this matters more than a normal typo: comments are
 write-once.** No persona toolset exposes a comment edit or delete
 verb — `add_comment` is the whole surface. A mis-encoded comment is
 therefore permanent noise on the ticket; the only remedy is a second
 comment that opens by superseding the first, plus a human deleting
-the original in the Plane UI. Personas are instructed to read the
-returned `comment_html` back and repost immediately if the echo shows
-`&lt;p&gt;`-style escaping, and to write **one** item of a batch first
-and check its echo before creating the rest.
+the original in the Plane UI. With escaping now caught pre-write, the
+echo check personas run is aimed at what the server cannot fix:
+literal asterisks or `- ` bullets in the returned `comment_html` mean
+Markdown, and a supersede comment is the only way out. They still
+write **one** item of a batch first and check its echo before creating
+the rest.
 
 Work-item *bodies* have the same one-shot property for a different
 reason: the framework's description-once rule means a body is written
-at creation and never edited, so a mis-encoded body can only be
-annotated by a follow-up comment.
+at creation and never edited. A mangled body is the more expensive of
+the two failures, because the only ways out are both bad — leave the
+ticket unreadable, or write the body a second time and leave a
+modification timestamp that reads downstream as a silent content
+revision. That is why the guard sits in front of `create_work_item`
+and not only in the prompts. If a body does reach Plane mangled
+anyway, the sanctioned repair is exactly one `update_work_item` with
+byte-identical intended content plus a comment naming it an encoding
+repair — never a replacement work item.
 
 ## Stale PATCH echoes
 
