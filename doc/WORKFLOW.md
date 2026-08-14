@@ -557,7 +557,10 @@ leaves no Plane footprint**: no Story, no sub-work-items, no state
 spine, no assignee chain, no handover comments. The **git commit is
 the only audit artefact**, carrying a `Trail-Lane: quick (<class>)`
 trailer so `git log --grep='Trail-Lane: quick'` reconstructs everything
-that bypassed Plane.
+that bypassed Plane. If USER names a work-item when triggering the
+lane, the commit also carries a `Refs: <PROJ>-123` trailer — a
+back-pointer to the ticket, not a Plane interaction; `/quick` still
+reads and writes nothing in Plane, and adds no ID USER did not give.
 
 It is *not* a persona: no Plane identity, no token, no MCP calls. It
 is gated, not a free pass:

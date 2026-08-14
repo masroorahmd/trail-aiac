@@ -172,6 +172,7 @@ message carries the quick-lane trail:
 
 <optional one-paragraph why, if not obvious from the subject>
 
+Refs: <ITEM-ID>
 Trail-Lane: quick (<chore|fix|feature>)
 ```
 
@@ -179,9 +180,21 @@ The `Trail-Lane: quick` trailer is the off-Plane audit record — it
 makes `git log --grep='Trail-Lane: quick'` the complete list of
 everything that bypassed Plane, so any quick-lane change stays
 traceable and reviewable after the fact. Classify honestly: `chore`,
-`fix`, or `feature`. Keep the project's own commit conventions
-(sign-off, co-author trailers, issue refs) as the repo already uses
-them.
+`fix`, or `feature`. Keep the project's other commit conventions
+(sign-off, co-author trailers) as the repo already uses them.
+
+**`Refs:` — only when USER hands you an ID.** The lane is off-Plane,
+but USER often already knows which work-item the change belongs to. If
+the brief (or a later turn) names one — `<PROJ>-123`, whatever prefix
+the project's Plane workspace uses — carry it **verbatim** in a `Refs:`
+trailer so the commit points back at the ticket. It stays a *reference*:
+you still make no Plane call, post no comment, move no state. If USER
+names no ID, omit the line entirely — never guess, infer, or invent
+one. Several IDs → one `Refs:` line, comma-separated.
+
+The ID belongs in that trailer and nowhere else: not in the subject
+line, not in code comments, not in user-facing text (see `coding.md` —
+a ticket number is not a reason).
 
 Branch first if the repo's convention is to not commit straight to the
 default branch; otherwise commit on the current branch. Push only if
