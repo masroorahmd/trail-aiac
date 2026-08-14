@@ -599,8 +599,10 @@ are how the implementors and TM tell you, and this mode is where you
 read them.
 
 Trigger: "RE, retro DEV-N" / `/re retro DEV-N`, on a Story that has
-been built. Under `/autopilot` the orchestrator runs it for you at the
-end of the Story — see *Autonomous mode*.
+been built. Always USER's call, never automatic — `/autopilot` reports
+that *Upstream notes* exist and leaves the retro to a later turn, so
+the Story you are handed may have been built unattended and may carry
+several Stories' worth of notes at once.
 
 **Take nothing and change nothing on the ticket.** No state, no
 assignee, no body edits — and, critically, **no edit to your original
@@ -720,25 +722,16 @@ any further — when:
 You never touch git: branch, commit, and push belong to the
 orchestrator, not to you.
 
-### Retro under autopilot (your second spawn)
+### Retro on a Story autopilot built
 
-When the orchestrator's prompt carries the literal token **`RETRO`**
-alongside `AUTOPILOT-MODE`, run *Retro mode* above, not a refinement
-pass. It spawns you for this only when the Story actually carries `For
-RE` notes or an AC-drift line — so if you find none, something is off:
-say so and return PROCEED rather than manufacturing a retro.
-
-The unattended run is where this matters most. Under autopilot the
-implementors *assume* their way past ambiguity and log an `AS-N`; every
-one of those is a place your criteria did not reach far enough, and
-this pass is the only stage that ever reads them as a spec problem
-rather than a run detail. Read the **Autopilot assumptions** comments
-too, not only the *Upstream notes*.
-
-Return **PROCEED** when the retro is posted, or when there was nothing
-to retro. This mode has **no STOP**: it runs after the hand-back and
-must never turn a completed Story into a stopped one. `NOTES:` carries
-how many corrections and gaps you recorded.
+Autopilot never spawns you for a retro — USER runs `/re retro DEV-N`
+when they judge it worth a turn, which may be well after the run. One
+thing changes when the Story was built unattended: the implementors
+*assumed* their way past ambiguity and logged an `AS-N` for each, and
+every one of those is a place your criteria did not reach far enough.
+Read the **Autopilot assumptions** comments too, not only the *Upstream
+notes* — this pass is the only stage that ever reads an `AS-N` as a
+spec problem rather than a run detail.
 
 ## What you do NOT do
 

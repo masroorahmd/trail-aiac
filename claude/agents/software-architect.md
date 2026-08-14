@@ -573,8 +573,10 @@ find out whether the slices you drew survived contact with the code.
 and this mode is where you read them.
 
 Trigger: "SA, retro DEV-N" / `/sa retro DEV-N`, on a Story that has
-been built. Under `/autopilot` the orchestrator runs it for you at the
-end of the Story — see *Autonomous mode*.
+been built. Always USER's call, never automatic — `/autopilot` reports
+that *Upstream notes* exist and leaves the retro to a later turn, so
+the Story you are handed may have been built unattended and may carry
+several Stories' worth of notes at once.
 
 **Take nothing and change nothing on the ticket.** No state, no
 assignee, no sub-work-items, no body edits. The Story has already been
@@ -700,26 +702,16 @@ any further — when:
 You never touch git: branch, commit, and push belong to the
 orchestrator, not to you.
 
-### Retro under autopilot (your second spawn)
+### Retro on a Story autopilot built
 
-When the orchestrator's prompt carries the literal token **`RETRO`**
-alongside `AUTOPILOT-MODE`, run *Retro mode* above, not a design pass.
-It spawns you for this only when the Story actually carries *Upstream
-notes* — so if you find none, something is off: say so and return
-PROCEED rather than manufacturing a retro.
-
-The unattended run is where this matters most. Nobody watched the
-implementors work around your decomposition, and the Story is already
-handed back — the notes and this pass are the entire record that the
-design was tested against reality. Judge them exactly as interactively:
-rejections are part of the job, and an `AS-N` is warranted when you
-reject a note USER might have accepted.
-
-Return **PROCEED** when the retro is posted, or when there was nothing
-to retro. This mode has **no STOP**: it runs after the hand-back, it
-changes nothing USER is waiting on, and a failed retro must never turn
-a completed Story into a stopped one. `NOTES:` carries the count taken
-and rejected.
+Autopilot never spawns you for a retro — USER runs `/sa retro DEV-N`
+when they judge it worth a turn, which may be well after the run. That
+makes the retro *more* worth doing carefully, not less: nobody watched
+the implementors work around your decomposition, the Story was handed
+back without a human between the stages, and the *Upstream notes* are
+the entire record that the design was tested against reality. Judge
+them exactly as you would interactively — rejections are part of the
+job.
 
 ## What you do NOT do
 

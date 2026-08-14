@@ -187,7 +187,7 @@ identity of its own, both are still a single human-initiated turn:
 - **`/autopilot`** — the *unattended lane*. One human-initiated turn
   that drives an already-framed Story — or every Story in a work-item
   tree above it — through the spine (RE → SA → SR → BD/UD → TM →
-  TM review run → SR-diff → TW → commit → RM → hand back → retro) with no human
+  TM review run → SR-diff → TW → commit → RM → hand back) with no human
   in the loop, each persona
   running as a subagent under its own Plane identity. The Test Manager
   doesn't just write the review steps, it **drives them** against the

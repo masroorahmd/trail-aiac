@@ -465,11 +465,14 @@ touches the same behaviour. What actually carries the lesson forward is
 incidents — "slices that assume a service layer come back" earns a
 line, "DEV-42's backend slice was wrong" does not.
 
-Under `/autopilot` this is spine step 12, and it is **conditional**: no
-*Upstream notes* on the Story means no spawn at all, which is the
-normal outcome of a Story that went cleanly. It runs after the
-hand-back, writes only inside `.claude/`, and has no STOP — a lost
-lesson must never turn a completed Story into a stopped one.
+**The retro is always a manual turn — `/autopilot` does not run it.**
+The unattended lane still collects the *Upstream notes* and lists them,
+per Story, in its terminal summary with the exact commands to follow
+up. It stops there deliberately: run automatically, the retro fired on
+nearly every Story, and a stage that almost always fires is ceremony,
+not signal. The notes keep on the Story, so nothing is lost by waiting
+— and reading three Stories' notes in one turn surfaces the *pattern*,
+which is the part worth writing to `MEMORY.md` anyway.
 
 ## Risk lanes — how deep the spine runs
 
@@ -621,7 +624,7 @@ spine but removes the human from between its stages. One
 human-initiated turn (USER types `/autopilot DEV-N`) drives an
 already-framed Story — or every Story in a work-item tree above it —
 through the spine: RE → SA → SR → BD/UD → TM → TM review run → SR-diff
-→ TW → commit → RM → hand back → retro, without stopping to ask USER anything. That chain is the
+→ TW → commit → RM → hand back, without stopping to ask USER anything. That chain is the
 *maximum* path: in **lean-lane mode** (the default) the orchestrator
 uses judgement to trim the ceremony a small Story doesn't need (see
 below).

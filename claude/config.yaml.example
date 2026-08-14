@@ -65,7 +65,7 @@ reading:
 # initiated turn drives an already-framed Story — or every Story in a
 # work-item tree above it (Epic → Story → module children, nested to
 # any depth) — through the whole engineering spine (RE → SA → SR →
-# BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back → retro)
+# BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back)
 # with no human in the
 # loop: personas make + log reasonable assumptions instead of asking,
 # and the orchestrator owns git — the implementors run one at a time
