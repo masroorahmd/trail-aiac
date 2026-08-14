@@ -536,9 +536,10 @@ every lane:
 3. **The RM hand-back always runs.** The Story reaches USER
    `In Review`, assigned, with review steps.
 4. **The Story is never skipped.** `light` shortens the path *through*
-   Plane; it does not take work off Plane. Taking work off Plane
-   entirely is `/quick`'s job, and `/quick` leaves no work-item at
-   all — pick one tool or the other, never a silent blend.
+   the spine; it does not take work off it. Taking work off the spine
+   entirely is `/quick`'s job, and `/quick` files no work-item at all —
+   at most it hands back one USER already had. Pick one tool or the
+   other, never a silent blend.
 
 Routing rules:
 

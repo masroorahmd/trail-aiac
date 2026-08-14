@@ -490,8 +490,8 @@ Two properties keep this honest:
 - **No lane buys past a gate.** SR reviews any `CM-3x` surface (as a
   diff pass when there are no children), TM runs wherever behaviour
   changed, the RM hand-back to USER always happens, and the Story is
-  never skipped — taking work off Plane entirely is `/quick`'s gate,
-  below, not a lane's.
+  never skipped — taking work off the spine entirely is `/quick`'s
+  gate, below, not a lane's.
 - **Every trimmed stage leaves a receipt.** The persona handing over
   past a stage writes a `SKIP-N` line into its handover comment —
   the stage, the reason, and the command USER types next. A skip
@@ -553,17 +553,14 @@ whose *risk* is bounded — a trivial chore, a local bug fix, a small
 single-surface feature, or a mechanical sweep repeating one edit shape
 across many files — the full spine costs more than the change is
 worth. The quick lane collapses it into a **single main-loop turn that
-leaves no Plane footprint**: no Story, no sub-work-items, no state
-spine, no assignee chain, no handover comments. The **git commit is
-the only audit artefact**, carrying a `Trail-Lane: quick (<class>)`
-trailer so `git log --grep='Trail-Lane: quick'` reconstructs everything
-that bypassed Plane. If USER names a work-item when triggering the
-lane, the commit also carries a `Refs: <PROJ>-123` trailer — a
-back-pointer to the ticket, not a Plane interaction; `/quick` still
-reads and writes nothing in Plane, and adds no ID USER did not give.
+creates no Plane work**: no Story, no sub-work-items, no state spine,
+no assignee chain. The **git commit is the audit artefact**, carrying a
+`Trail-Lane: quick (<class>)` trailer so
+`git log --grep='Trail-Lane: quick'` reconstructs everything that
+bypassed the spine.
 
-It is *not* a persona: no Plane identity, no token, no MCP calls. It
-is gated, not a free pass:
+It is *not* a persona: no Plane identity and no token of its own. It is
+gated, not a free pass:
 
 - **Eligibility gate (all must hold):** no `control-manifest.md`
   *Security non-negotiable* touched; no new external surface; no
@@ -594,11 +591,27 @@ is gated, not a free pass:
   (typo, dep bump) write nothing. This is the one cross-session
   artefact the quick lane keeps beyond the commit; it is not a gate
   item and never blocks the commit.
+- **The one Plane touch: the hand-back.** Name a work-item when you
+  trigger the lane and the commit carries a `Refs: <PROJ>-123` trailer
+  *and* the ticket gets closed out — read before implementing, then,
+  after the commit, one transition to `In Review` with `assignee =
+  USER` plus one comment carrying the DoD, the commit SHA and the
+  concrete next action. Name none and `/quick` opens no Plane
+  connection at all; it never invents an ID and never creates a
+  work-item. Having no token of its own, it borrows the identity of
+  the persona whose *lane* the change landed in — the same mapping the
+  lane memory uses — so the transition is attributed to
+  `backend-developer`, `ui-developer`, `test-manager` or
+  `technical-writer`, and the comment says the quick lane acted. The
+  commit comes first and Plane last: an unreachable Plane leaves the
+  commit standing and the transition reported as pending, never a
+  rollback.
 
 See [`../claude/workflows/quick-lane.md`](../claude/workflows/quick-lane.md)
 for the full path and triggers. The quick lane does **not** run the
 Story lifecycle, so the ticket-lifecycle and description-once rules
-above simply do not apply to it.
+above do not apply to it — the hand-back above is the whole of its
+Plane surface, and it never closes a ticket: `Done` stays USER's.
 
 ## The autopilot lane (unattended spine, lean by default)
 

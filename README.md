@@ -169,13 +169,16 @@ Typing `/<persona>` puts the main loop into that role until you say `done`
 or start a different `/<persona>`. You trigger every turn — agents do not
 auto-pick up tickets.
 
-Two more commands sit outside the eleven personas — both off-Plane,
-both still a single human-initiated turn:
+Two more commands sit outside the eleven personas — neither has a Plane
+identity of its own, both are still a single human-initiated turn:
 
 - **`/quick`** — the off-Plane *quick lane*. One main-loop turn, no
-  Story, no persona identity, no Plane MCP calls. Implements a
-  bounded-risk change and commits it; the commit is the only artefact.
-  Gated on six eligibility checks (no security surface, no new
+  Story, no persona identity of its own. Implements a bounded-risk
+  change and commits it; the commit is the artefact. Name a work-item
+  and it also closes that loop — the ticket is handed back `In Review`,
+  assigned to you, with one comment — borrowing the identity of the
+  persona whose lane the change landed in. Name none and it touches
+  Plane not at all. Gated on six eligibility checks (no security surface, no new
   external surface, no migration, no risky new dependency, bounded
   **risk**, reversible) — anything that fails routes to `/ba` instead.
   Bounded risk is not bounded size: a mechanical sweep across twenty
@@ -280,8 +283,11 @@ pointed at a known failure rather than a fresh pickup.
 
 ```
 > /quick bump axios to 1.7.9
+> /quick DEV-51: strip the debug banner from the export footer
 ```
-Small, safe, reversible — off-Plane in one turn, no Story needed.
+Small, safe, reversible — off-Plane in one turn, no Story needed. Give
+it a work-item and it hands that ticket back `In Review` when it's
+done; give it none and it never opens Plane.
 
 ```
 > /autopilot DEV-42

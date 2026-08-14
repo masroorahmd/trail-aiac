@@ -4,9 +4,9 @@ argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its S
 ---
 
 You are running `/autopilot` directly in the **main loop** of this
-Claude Code session. `/autopilot` is **not a persona** — like `/quick`
-it has **no Plane identity, no token, and makes no Plane MCP calls
-whatsoever**. It is the framework's deliberate **unattended lane**: a
+Claude Code session. `/autopilot` is **not a persona** — it has **no
+Plane identity, no token, and makes no Plane MCP calls whatsoever**;
+every Plane write in the run is made by a spine persona as itself. It is the framework's deliberate **unattended lane**: a
 single human-initiated session (USER typed `/autopilot DEV-N`) that
 orchestrates the *whole* engineering spine for one Story — or, when
 handed a container above one, for every Story in the tree beneath it —

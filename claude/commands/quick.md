@@ -1,14 +1,20 @@
 ---
-description: Off-Plane quick lane — implement a small or mechanical low-risk change in a single main-loop turn (no Story, no personas, no Plane). Covers both a local tweak and a repetitive sweep across many files, as long as the risk is bounded. Git commit is the only artefact.
-argument-hint: "<short description of the change, e.g. 'fix typo in CLI help', 'bump axios to 1.7.9' or 'strip ticket IDs from user-facing text'>"
+description: Off-Plane quick lane — implement a small or mechanical low-risk change in a single main-loop turn (no Story, no personas, no spine). Covers both a local tweak and a repetitive sweep across many files, as long as the risk is bounded. The git commit is the artefact; if USER names a work-item, the lane also hands that ticket back `In Review` + assigned to USER, under the borrowed identity of the persona whose lane the change lands in.
+argument-hint: "<short description of the change, optionally with the work-item it discharges — e.g. 'fix typo in CLI help', 'bump axios to 1.7.9' or 'PROJ-123: strip ticket IDs from user-facing text'>"
 ---
 
 You are running `/quick` directly in the **main loop** of this Claude
-Code session. `/quick` is **not a persona** — it has no Plane identity,
-no token, and makes **no Plane MCP calls whatsoever**. It is the
-framework's deliberate *off-Plane quick lane*: a single turn that
-implements a small, safe change and commits it. The git commit is the
-**only** audit artefact.
+Code session. `/quick` is **not a persona** — it has no Plane identity
+and no token of its own. It is the framework's deliberate *off-Plane
+quick lane*: a single turn that implements a small, safe change and
+commits it. The git commit is the primary audit artefact.
+
+There is exactly one exception to "off-Plane", and it exists because a
+ticket left in `In Progress` after the change shipped is worse than no
+ticket: **when USER names a work-item, you close the loop on it** — see
+*Plane hand-back*. That is one read, one transition, one comment, on a
+ticket USER pointed at. You never create a work-item, never walk the
+spine, and when USER names no ID you touch Plane not at all.
 
 Use it only for work whose *risk* is genuinely bounded — which
 includes big-but-mechanical work, not only small work. Everything
@@ -75,6 +81,11 @@ Check them out loud against USER's brief before you write a line:
    (patterns that need eyeballing case by case): fail the item and
    bounce.
 6. **Reversible.** A single `git revert` fully undoes it.
+
+**If USER named a work-item, read it while you check these** — see
+*Plane hand-back* §1. The ticket is often where you learn that item 5's
+scope is bigger than the brief made it sound, or that the change is
+spine-shaped after all.
 
 If **any** item fails, do **not** proceed. Say which item failed and
 route USER to the right entry point:
@@ -159,7 +170,7 @@ and its absence on a trivial change is expected. It rides in the **same
 commit** as the code change (see *Output*), so knowledge and change
 land atomically.
 
-## Output — one commit, the only artefact
+## Output — the commit, plus the ticket if USER named one
 
 Make the change with Edit / Write, matching `coding.md`. If the change
 warranted a memory entry (see *Memory*), stage that `MEMORY.md` edit
@@ -176,21 +187,24 @@ Refs: <ITEM-ID>
 Trail-Lane: quick (<chore|fix|feature>)
 ```
 
-The `Trail-Lane: quick` trailer is the off-Plane audit record — it
-makes `git log --grep='Trail-Lane: quick'` the complete list of
-everything that bypassed Plane, so any quick-lane change stays
+The `Trail-Lane: quick` trailer is the lane's audit record — it makes
+`git log --grep='Trail-Lane: quick'` the complete list of
+everything that bypassed the spine, so any quick-lane change stays
 traceable and reviewable after the fact. Classify honestly: `chore`,
 `fix`, or `feature`. Keep the project's other commit conventions
 (sign-off, co-author trailers) as the repo already uses them.
 
-**`Refs:` — only when USER hands you an ID.** The lane is off-Plane,
-but USER often already knows which work-item the change belongs to. If
-the brief (or a later turn) names one — `<PROJ>-123`, whatever prefix
-the project's Plane workspace uses — carry it **verbatim** in a `Refs:`
-trailer so the commit points back at the ticket. It stays a *reference*:
-you still make no Plane call, post no comment, move no state. If USER
-names no ID, omit the line entirely — never guess, infer, or invent
-one. Several IDs → one `Refs:` line, comma-separated.
+**`Refs:` — only when USER hands you an ID.** If the brief (or a later
+turn) names a work-item — `<PROJ>-123`, whatever prefix the project's
+Plane workspace uses — carry it **verbatim** in a `Refs:` trailer so
+the commit points back at the ticket. If USER names no ID, omit the
+line entirely — never guess, infer, or invent one. Several IDs → one
+`Refs:` line, comma-separated.
+
+`Refs:` means **discharged**: every ID on that line is a ticket this
+commit finishes, and every ID on that line gets the hand-back below. A
+ticket the change only touches in passing does not belong there — leave
+it out and say why in chat.
 
 The ID belongs in that trailer and nowhere else: not in the subject
 line, not in code comments, not in user-facing text (see `coding.md` —
@@ -199,6 +213,126 @@ a ticket number is not a reason).
 Branch first if the repo's convention is to not commit straight to the
 default branch; otherwise commit on the current branch. Push only if
 USER asks.
+
+## Plane hand-back — only when USER named a work-item
+
+**No ID → no Plane call.** Not a read, not a comment, nothing. A change
+nobody ticketed has no ticket to move, and you never go looking for
+one. The rest of this section then does not apply and the lane is as
+off-Plane as it ever was.
+
+When USER *did* name an ID, the turn is not finished at the commit: the
+ticket still says the work is running. Closing that loop is a read, a
+transition and a comment.
+
+**Whose identity.** You have no token, so you borrow the persona whose
+*lane* the change lands in — the same mapping the *Memory* table above
+already uses (UI → `ui_developer`, backend → `backend_developer`, tests
+→ `test_manager`, docs → `technical_writer`). Use exactly three tools
+of that **one** persona:
+
+- `plane__<lane_persona>__retrieve_work_item`
+- `plane__<lane_persona>__update_work_item`
+- `plane__<lane_persona>__add_comment`
+
+Nothing else — no `create_work_item`, no second persona's tools, no
+state but `In Review`. If the change spans two lanes, borrow the one
+owning the larger part and name that choice in the comment; one
+identity per hand-back.
+
+**UUIDs come from the cache, not from a listing call.** `project_id`,
+`state` and `assignees` are UUIDs — resolve them out of
+`.claude/cache/plane-ids.yaml` (the `plane-id-cache` skill). If a key
+is missing, run `python3 .claude/skills/plane-id-cache/refresh.py` once
+and re-read. That cache is exactly why `list_states` and
+`list_workspace_members` are not among your three tools.
+`work_item_id` is the exception — it takes the human identifier
+(`PROJ-123`) as-is.
+
+**Resolving USER.** `members.by-persona` holds the personas only; USER
+sits in `members.by-email` as the address that belongs to no persona.
+Exactly one such address → that is USER. More than one (a retired
+persona whose account still exists) → ask USER once in chat which is
+theirs. None resolvable → still make the `In Review` transition and
+tell USER the assignee was left as it was. Never guess: a hand-back
+assigned to the wrong account is worse than one you flagged.
+
+You are **not** invoking the `plane-handover` skill. You borrow two
+things from it and nothing more: its *Before your first write* rules
+(`comment_html` is real HTML, never Markdown, never self-escaped; there
+is no comment edit and no comment delete) and its *Do not trust the
+PATCH echo* rule. No assignee chain, no `Cross-agent handovers` memory
+line, no upstream-authored DoD.
+
+### 1. Read the ticket — before you write a line of code
+
+`retrieve_work_item` as part of the eligibility gate, not after it. You
+are checking three things, and each has one exit:
+
+- **The ID exists, and its scope is the change USER described.** If the
+  ticket says something else, ask USER which one is right — do not
+  reconcile the two yourself.
+- **It is the work-item the change discharges** — not an Epic, not a
+  Story with sub-work-items under it. A parent with children is a sign
+  the work is spine-shaped: ask USER which child to move, or bounce to
+  `/re`.
+- **It is not already `Done` or `Cancelled`.** Then there is nothing to
+  hand back: commit with the `Refs:` trailer, skip the transition, say
+  so in chat.
+
+### 2. Transition — after the commit, never before
+
+Order is fixed: **commit first, Plane last.** The comment points at a
+commit SHA, so the commit has to exist; and if the *bounce rule* fires
+mid-implementation there is nothing posted to take back.
+
+One `update_work_item` carrying both fields: `state` = the `In Review`
+UUID, `assignees` = `[USER's UUID]`. Whatever the ticket's current
+state — `Backlog`, `Todo`, `In Progress` — it goes straight to
+`In Review`: USER's `/quick` invocation *is* the triage signal. Never
+`Done`; agents do not close tickets, USER does.
+
+Then confirm with a second `retrieve_work_item` and report *that*
+reading. The PATCH echo can answer 200 while still carrying the old
+state, so it is not evidence.
+
+### 3. Comment — one, right-sized
+
+The transition alone tells a reviewer nothing. Post exactly one comment,
+on the wire as real HTML:
+
+```html
+<p><strong>Handover: quick lane → USER</strong></p>
+
+<p>Quick-lane change — no persona turn ran; the spine
+(RE → SA → SR → implementor → TM) was skipped by lane choice. Posted
+under &lt;lane-persona&gt;'s identity, which the quick lane borrows.</p>
+
+<h3>Definition of Done</h3>
+<ul>
+  <li>[x] &lt;what changed, one line&gt;</li>
+  <li>[x] Commit &lt;sha&gt; on &lt;branch&gt; — Trail-Lane: quick (&lt;class&gt;)</li>
+  <li>[x] &lt;test evidence: the suite command + its result, or a sweep's
+      enumerating command returning zero&gt;</li>
+</ul>
+
+<h3>For the receiver</h3>
+<ul>
+  <li>&lt;the concrete action USER takes next — "read the diff of
+      &lt;sha&gt; and merge, or bounce it back", never "please review"&gt;</li>
+  <li>&lt;any follow-up you flagged in chat, or "none"&gt;</li>
+</ul>
+```
+
+Every ID on the `Refs:` line gets this same hand-back — including when
+two of them live in different Plane projects.
+
+### If Plane is unreachable
+
+The commit already landed and **stays** — do not revert it. The MCP has
+already retried for ~45s, so do not vary the arguments and do not loop.
+Tell USER which ticket is still un-transitioned and stop; the same call
+works unchanged once Plane is back.
 
 ## Operating mode
 
@@ -224,7 +358,10 @@ chars (`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤`). Columns: `# / Option / Ef
 (DE: `# / Option / Effekt`). Include at minimum:
 
 - A **`★ commit`** row — but only when **all six gate items pass** and
-  the test contract is met. Mark it `★`.
+  the test contract is met. Mark it `★`. When USER named a work-item,
+  the row reads **`★ commit & hand back <ID>`**, because accepting it
+  buys the Plane transition too, and USER should see that before
+  saying `ok`.
 - **One `not yet — <gap>` row per failing gate item or missing test**
   (DE: `noch nicht — <Lücke>`). This is how the gate is enforced in
   the UI: each unmet item is a visible blocker.

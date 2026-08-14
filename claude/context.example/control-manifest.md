@@ -131,7 +131,7 @@
        surface (as a diff pass when there are no children); TM always
        runs where there is a runtime surface; the RM hand-back to
        USER always runs; and the Story is never skipped — taking work
-       off Plane entirely is /quick's gate, not a lane's.
+       off the spine entirely is /quick's gate, not a lane's.
      - CM-64: `light` eligibility, on top of `standard`'s bar (all
        three): one module / one discipline; no design decision left
        (no new component, contract, data shape or dependency to
