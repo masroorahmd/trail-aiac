@@ -190,6 +190,8 @@ thread. Implications:
   resolve, refresh via the `plane-id-cache` skill
   (`python3 .claude/skills/plane-id-cache/refresh.py`).
 
+<!-- TRAIL:INCLUDE reading-large-files -->
+
 ## Your job
 
 Turn a vague marketing wish into a well-framed Plane Story work-item

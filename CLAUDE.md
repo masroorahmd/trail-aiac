@@ -71,6 +71,22 @@ trail-aiac/
 │   │                              (`__CHAT_LANGUAGE__`). Applies to
 │   │                              every persona at once — so it may
 │   │                              only set voice, never role or stage.
+│   ├── partials/                  shared prompt text with ONE source.
+│   │                              `bin/install.py` stitches a partial
+│   │                              into every persona/command file that
+│   │                              carries
+│   │                              `<!-- TRAIL:INCLUDE <name> -->`,
+│   │                              before `__VAR__` substitution. NOT a
+│   │                              deliverable — nothing is copied into
+│   │                              the consumer; it only sees the
+│   │                              expanded text. This is the *ambient*
+│   │                              surface: a rule in force every turn
+│   │                              with nothing to invoke. First and
+│   │                              only tenant: `reading-large-files`
+│   │                              (thresholds from config's `reading:`).
+│   │                              Cross-persona Plane mechanics still
+│   │                              belong in `plane-handover`, voice and
+│   │                              volume in `plain.md`.
 │   ├── mcp/                       multi-tenant Plane MCP server
 │   │                              (Python + FastMCP). One process,
 │   │                              one tool set × N personas, persona
@@ -254,6 +270,10 @@ trail-aiac/
   - Prefer stating a rule **once in a shared skill** over restating it
     in N personas. `plane-handover` is where cross-persona mechanics
     belong; a persona then carries a one-line pointer, not a copy.
+    When a rule must be *ambient* — in force every turn, with nothing
+    to invoke — it goes in `claude/partials/` and is included by
+    marker. That surface is deliberately narrow: it costs tokens in
+    every file it lands in, on every turn.
   - **One check, one home** (canonical: `plane-handover` → *DoD
     hygiene*). The posted DoD holds what the receiver can verify from
     the ticket; the Self-Quality Gate holds what only the author can

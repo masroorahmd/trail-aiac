@@ -41,6 +41,26 @@ model_lanes:
   full: claude-fable-5
   codegen: claude-opus-4-8
 
+# Reading budget. Two thirds of a mature repository's bytes sit in a
+# quarter of its files, and a persona that opens one of those whole
+# spends most of the read on code it will not touch. Every persona (and
+# `/quick`, and `/kickoff`) carries the shared `reading-large-files`
+# rule; these two numbers are what it states. bin/install.py substitutes
+# them as `__LARGE_FILE_LINES__` / `__HEAD_LINES__`.
+#
+#   large_file_lines — at or under this, read the whole file; above it,
+#                      read the head and then the symbol. Lower it for a
+#                      repo of small modules, raise it for one whose
+#                      files are large by convention.
+#   head_lines       — how much of the top counts as "the head": module
+#                      docstring plus imports, where a codebase states
+#                      invariants that bind code far below. This read is
+#                      mandatory, not advisory — it is the mitigation
+#                      for the narrower field of view.
+reading:
+  large_file_lines: 400
+  head_lines: 60
+
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a
 # work-item tree above it (Epic → Story → module children, nested to

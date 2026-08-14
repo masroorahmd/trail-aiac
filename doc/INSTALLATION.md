@@ -178,6 +178,12 @@ tokens.
 | `agent-memory/`                                               | seeded once, **never** overwritten (even with `--force-seed`) |
 | `settings.local.json`, `<consumer>/.mcp.json`, rendered `agents/*.md` | re-rendered on every re-install when config + credentials are populated (mode 0600) |
 
+Rendering also expands the framework's **shared prompt partials**
+(`claude/partials/`) into every persona and command file that carries a
+`<!-- TRAIL:INCLUDE <name> -->` marker — one source, N rendered copies.
+Partials are not copied into the consumer; only their expanded text
+appears. See [`PERSONAS.md`](PERSONAS.md) § *Shared prompt partials*.
+
 `agent-memory/` is permanent: once an agent has accumulated memory,
 re-installing the framework — including `--force-seed` for context —
 never touches those files. To reset memory, remove the directory

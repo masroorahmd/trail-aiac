@@ -75,6 +75,48 @@ Claude Code automatically. When a new model ships, bump the lane in
 `config.yaml` and re-run `bin/install.py` — no framework edit
 required.
 
+## Shared prompt partials
+
+A few rules must be **ambient**: in force for every persona on every
+turn, with nothing to invoke and nothing to remember. Those live once
+in `claude/partials/` and are stitched into each persona and command
+file by `bin/install.py` at render time, wherever the source carries a
+marker on its own line:
+
+```
+<!-- TRAIL:INCLUDE reading-large-files -->
+```
+
+Expansion happens *before* `__VAR__` substitution, so a partial may
+carry placeholders of its own. An unknown partial name aborts the
+install rather than silently shipping a persona that is missing a rule.
+Partials are not a deliverable — the consumer only ever sees the
+expanded text.
+
+| Partial | What it states | Lands in |
+|---|---|---|
+| `reading-large-files` | At or under `reading.large_file_lines` (default 400) read the file whole; above it read the head (`reading.head_lines`, default 60) and then the symbol's neighbourhood. Whole-file reads stay mandatory when the task *is* the whole file — a review, a sweep, a refactor. | all 13 personas, `/quick`, `/kickoff` |
+
+The reading rule trades tokens for field of view: in one measured
+consumer repo, two thirds of the bytes sat in a quarter of the files,
+and opening one of those whole spent 75–94 % of the read on code the
+persona never touched. Its failure mode is equally specific — an
+invariant stated once at the top of a file, binding code far below —
+which is why the head-read is written as a requirement, not advice.
+
+Three homes were rejected before this one: `plain.md` reaches every
+persona but its own text limits it to voice and volume; a skill is
+invoked on demand and this must be ambient; the consumer's `CLAUDE.md`
+is per-repo, so every consumer would re-solve it. Duplicating the
+section into 13 persona files was the remaining option — a partial is
+that, minus the drift.
+
+The bar for a new partial is high. It costs prompt tokens in every file
+it lands in, on every turn, so it earns its place only when the cost of
+a persona *not* knowing the rule is paid every turn too. Cross-persona
+Plane mechanics belong in the `plane-handover` skill; voice and volume
+belong in the `plain.md` output style.
+
 ## Where artefacts live
 
 The framework does **not** use Plane pages. Every persona artefact

@@ -189,6 +189,8 @@ thread. Implications:
   UUIDs are stable per deployment — do not round-trip them
   through MCP every turn.
 
+<!-- TRAIL:INCLUDE reading-large-files -->
+
 ## Your job
 
 Turn a Story's user-facing or developer-facing surface change into

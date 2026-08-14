@@ -34,8 +34,11 @@ One-shot, idempotent. Two stages, run in sequence:
 
        - `<consumer>/.claude/{agents,commands,output-styles}/*.md`
          (mode 0600) — re-templated
-         in place: every `__VAR__` placeholder (`__CHAT_LANGUAGE__`,
-         `__USER_NAME__`, …) is replaced with the real value, and the
+         in place: every `<!-- TRAIL:INCLUDE <name> -->` marker is
+         replaced with the shared partial of that name from the
+         framework's `claude/partials/`, every `__VAR__` placeholder
+         (`__CHAT_LANGUAGE__`, `__USER_NAME__`, …) is replaced with
+         the real value, and the
          conditional USER_NAME bullet is stripped when no name was
          supplied. The persona files do not carry per-persona MCP
          tokens any more — those live exclusively in `.mcp.json`'s
@@ -119,6 +122,15 @@ DEFAULT_MODEL_LANES = {
     "standard": "claude-sonnet-4-6",
     "full": "claude-fable-5",
     "codegen": "claude-opus-4-8",
+}
+
+# Reading budget — the thresholds in the shared `reading-large-files`
+# partial. Defaults applied when the consumer's config.yaml has no
+# `reading:` section. Substituted as `__LARGE_FILE_LINES__` /
+# `__HEAD_LINES__` by render_persona_files().
+DEFAULT_READING = {
+    "large_file_lines": 400,
+    "head_lines": 60,
 }
 
 
@@ -441,6 +453,14 @@ def render_settings(
     for lane, model_id in model_lanes.items():
         env[f"MODEL_{persona_env_prefix(str(lane))}"] = str(model_id)
 
+    # Reading budget: the thresholds the `reading-large-files` partial
+    # states. Consumer config overrides the framework defaults key by
+    # key, so a repo of unusual shape can move the line without a
+    # framework edit.
+    reading = {**DEFAULT_READING, **(config.get("reading") or {})}
+    for key, value in reading.items():
+        env[persona_env_prefix(str(key))] = str(value)
+
     agents = config.get("agents") or {}
     if not agents:
         sys.exit(f"ERROR: {config_path} declares no agents")
@@ -500,7 +520,9 @@ def render_settings(
     )
     mcp_json_path.chmod(0o600)
 
-    rendered_personas = render_persona_files(consumer_claude, env)
+    rendered_personas = render_persona_files(
+        consumer_claude, env, framework_root / "claude" / "partials"
+    )
 
     print(f"  wrote {settings_local_path} (mode 0600)")
     print(f"  wrote {mcp_json_path} (mode 0600)")
@@ -514,14 +536,51 @@ USER_NAME_BLOCK_RE = re.compile(
     re.DOTALL,
 )
 
+# A shared-partial marker, alone on its line:
+#     <!-- TRAIL:INCLUDE reading-large-files -->
+# Replaced (line and all) by claude/partials/<name>.md. One source, N
+# rendered copies — see claude/partials/README.md.
+INCLUDE_RE = re.compile(
+    r"^[ \t]*<!-- TRAIL:INCLUDE ([a-z0-9][a-z0-9-]*) -->[ \t]*\n?",
+    re.MULTILINE,
+)
 
-def render_persona_files(consumer_claude: Path, env_map: dict[str, str]) -> list[Path]:
-    """Substitute `__VAR__` placeholders in each
+
+def expand_includes(text: str, partials_dir: Path, source: Path) -> str:
+    """Replace every `<!-- TRAIL:INCLUDE <name> -->` line with the body of
+    `<partials_dir>/<name>.md`. Expansion is a single pass — a partial
+    may carry `__VAR__` placeholders (substituted afterwards by the
+    caller) but not another include. An unknown name is fatal: a silent
+    no-op would ship a persona missing a rule the framework thinks it
+    has."""
+
+    def replace(match: re.Match) -> str:
+        name = match.group(1)
+        partial = partials_dir / f"{name}.md"
+        if not partial.is_file():
+            sys.exit(
+                f"ERROR: {source} includes unknown partial '{name}'\n"
+                f"       expected {partial}"
+            )
+        body = partial.read_text(encoding="utf-8")
+        return body if body.endswith("\n") else body + "\n"
+
+    return INCLUDE_RE.sub(replace, text)
+
+
+def render_persona_files(
+    consumer_claude: Path, env_map: dict[str, str], partials_dir: Path
+) -> list[Path]:
+    """Expand shared partials, then substitute `__VAR__` placeholders in each
     `<consumer>/.claude/agents/*.md` AND `<consumer>/.claude/commands/*.md`
     with the corresponding value from `env_map`. (Commands carry the
     same placeholders — `/quick` references CHAT_LANGUAGE and the
     user's name.) Files without placeholders are left untouched.
     Returns the list of paths actually rewritten. Rewrites are mode 0600.
+
+    Shared partials: a `<!-- TRAIL:INCLUDE <name> -->` line is replaced
+    by `claude/partials/<name>.md` *before* placeholder substitution, so
+    a partial may carry `__VAR__` placeholders of its own.
 
     Conditional blocks: any text wrapped between `<!-- USER_NAME_LINE -->`
     and `<!-- /USER_NAME_LINE -->` markers is kept (with markers
@@ -541,7 +600,7 @@ def render_persona_files(consumer_claude: Path, env_map: dict[str, str]) -> list
     written: list[Path] = []
     for persona_path in render_targets:
         original = persona_path.read_text(encoding="utf-8")
-        substituted = original
+        substituted = expand_includes(original, partials_dir, persona_path)
         if user_name:
             substituted = substituted.replace("<!-- USER_NAME_LINE -->\n", "")
             substituted = substituted.replace("<!-- /USER_NAME_LINE -->\n", "")

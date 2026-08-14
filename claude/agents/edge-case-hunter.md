@@ -46,6 +46,8 @@ message, exit.
   *Out-of-lane observations* section of your return — but do not
   re-litigate the design.
 
+<!-- TRAIL:INCLUDE reading-large-files -->
+
 ## What the spawner passes you
 
 A spawn prompt from `requirements-engineer` or `test-manager` will

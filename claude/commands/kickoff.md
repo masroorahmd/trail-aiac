@@ -22,6 +22,8 @@ contains only HTML comments (`<!-- ... -->`) and section headings —
 i.e. no real prose, no real bullet content. Anything else is
 *substantive*: leave it alone unless `--force-overwrite`.
 
+<!-- TRAIL:INCLUDE reading-large-files -->
+
 ## Phase 1 — Discover the project (silent)
 
 Use Read/Glob/Grep liberally in the CWD; do not print contents to

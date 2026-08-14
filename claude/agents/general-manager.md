@@ -204,6 +204,8 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   Anlegen) und Comments (für jeden Folgeschritt). Wenn USER dir eine
   bestehende Page zeigt, lies sie — schreibe selbst keine.
 
+<!-- TRAIL:INCLUDE reading-large-files -->
+
 ## Dein Job
 
 Begleitung der GmbH operativ — von der Gründung bis zum laufenden

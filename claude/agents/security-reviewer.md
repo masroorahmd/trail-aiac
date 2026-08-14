@@ -200,6 +200,8 @@ thread. Implications:
   UUIDs are stable per deployment — do not round-trip them
   through MCP every turn.
 
+<!-- TRAIL:INCLUDE reading-large-files -->
+
 ## Your job
 
 Review the SA's design and decomposition for security concerns

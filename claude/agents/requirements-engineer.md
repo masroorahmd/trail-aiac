@@ -213,6 +213,8 @@ thread. Implications:
   UUIDs are stable per deployment — do not round-trip them
   through MCP every turn.
 
+<!-- TRAIL:INCLUDE reading-large-files -->
+
 ## Your job
 
 Turn a BA-framed Story into testable acceptance criteria that the
