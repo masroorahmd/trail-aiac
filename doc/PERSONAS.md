@@ -63,17 +63,30 @@ command files (the framework sources carry `__MODEL_STANDARD__` /
 
 | Lane | Default | Who runs on it |
 |---|---|---|
-| `standard` | `claude-sonnet-4-6` | Routine persona turns: GM, BA, RE, BD, UD, TM, TW, RM, MM. |
-| `full` | `claude-fable-5` | High-stakes, long-horizon reasoning: `/sa` design, `/sr` threat review, and the `edge-case-hunter` subagent. |
-| `codegen` | `claude-opus-4-8` | Volume code-writing subagents: `ui-test-writer`. |
+| `standard` | `claude-opus-5` | Routine persona turns: GM, BA, RE, BD, UD, TM, TW, RM, MM. |
+| `full` | `claude-opus-5` | High-stakes, long-horizon reasoning: `/sa` design, `/sr` threat review, and the `edge-case-hunter` subagent. |
+| `codegen` | `claude-opus-5` | Volume code-writing subagents: `ui-test-writer`. |
 
-Main-loop personas cannot switch models programmatically — the `/sa`
-and `/sr` dispatchers carry a reminder to run `/model <full-lane
-model>` before the turn and to switch back afterwards. Subagent
-frontmatter (`edge-case-hunter`, `ui-test-writer`) is honoured by
-Claude Code automatically. When a new model ships, bump the lane in
-`config.yaml` and re-run `bin/install.py` — no framework edit
-required.
+**Where a lane actually binds — and where it does not.** Only a real
+subagent reads the `model:` frontmatter of its agent file, and exactly
+two are spawned by their own type: `edge-case-hunter` and
+`ui-test-writer`. Every other path runs on the **session model**, the
+one `/model` selects:
+
+- A `/<persona>` turn runs in the main loop by design (see *Personas
+  run in the main loop* in `CLAUDE.md`), so its frontmatter `model:` is
+  inert. `software-architect.md` and `security-reviewer.md` carry the
+  field commented out for exactly this reason.
+- `/autopilot` spawns its personas with `subagent_type:
+  general-purpose`, so they inherit the orchestrator's model rather
+  than their own frontmatter.
+
+The practical consequence: **the lanes cannot pull a persona up, only a
+subagent down.** Keep all three equal to the model you run sessions on;
+a lane set below it means `edge-case-hunter` and `ui-test-writer`
+silently reason at a lower tier than the persona that spawned them.
+When a new model ships, bump the lanes in `config.yaml` and re-run
+`bin/install.py` — no framework edit required.
 
 ## Shared prompt partials
 

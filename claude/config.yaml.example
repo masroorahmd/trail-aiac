@@ -36,10 +36,17 @@ user_name:
 #   full     — high-stakes, long-horizon reasoning: /sa design, /sr
 #              threat review, and the edge-case-hunter subagent.
 #   codegen  — volume code-writing subagents (ui-test-writer).
+#
+# Where these actually bind: only on real subagents (edge-case-hunter,
+# ui-test-writer), which read the `model:` frontmatter of their agent
+# file. A `/<persona>` turn runs in the MAIN LOOP and therefore on the
+# session model — `/model` decides it, not this block. Keep the lanes
+# equal to the model you run the session on, so a subagent never drops
+# below the persona that spawned it.
 model_lanes:
-  standard: claude-sonnet-4-6
-  full: claude-fable-5
-  codegen: claude-opus-4-8
+  standard: claude-opus-5
+  full: claude-opus-5
+  codegen: claude-opus-5
 
 # Reading budget. Two thirds of a mature repository's bytes sit in a
 # quarter of its files, and a persona that opens one of those whole

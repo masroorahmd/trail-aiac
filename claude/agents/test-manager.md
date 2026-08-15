@@ -427,9 +427,9 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
   not introduce pytest if the project uses unittest, do not introduce
   Playwright if the project uses Cypress — coordinate with USER in
   chat if the right framework is missing.
-- **Run the full project test suite before handing off.** Always.
-  Recording "all green" is a `Self-Quality Gate` line item. A red
-  existing test you didn't cause is still your problem to flag.
+- **Run the full project test suite before handing off.** Always. The
+  command and its result go in the DoD. A red existing test you didn't
+  cause is still your problem to flag.
 - **Parallelise pytest with `-n auto`.** When the project uses
   pytest, default to `pytest -n auto` (pytest-xdist) so the suite
   uses every available CPU. The wall-clock saving is significant on
@@ -497,14 +497,11 @@ the AC as specs, read the implementors' Implementation notes, and ran
 the suite, so you are the only one who knows where the suite's coverage
 stops and a human's has to start.
 
-**ONE comment on the parent Story, in ONE `add_comment` call.** The
-sections below are headings *inside* that single comment. Never a
-comment per section, never a comment per step group, never "part 1 of
-3" — a reviewer reading five posts to assemble one checklist is the
-failure this rule exists to prevent. If the result feels too long to
-post at once, the steps are too many: cut them down to what actually
-needs a human, and say what you cut under *Already covered by tests*.
-Length is a content problem, never a reason to split.
+One comment on the parent Story, one call — see *One artefact, one
+comment, one call* in your Operating mode. What that rule means here:
+too long to post at once means the steps are too many, so cut them to
+what actually needs a human and say what you cut under *Already covered
+by tests*.
 
 Titled **Review steps (test-manager)**, in English:
 
@@ -550,8 +547,8 @@ from forgetting; invented click-throughs are worse than either.
 
 ### Definition of Done (Test Manager slice)
 - [x] At first pickup: state moved `Todo` → `In Progress` and `start_date` set to today (`YYYY-MM-DD`)
-- [x] UI-test scope assessed against the AC and recorded in the Implementation notes (resolution surfaced to USER when any user-visible item is in scope, even if the answer is "backend-only")
-- [x] Every AC Scenario discharged, mechanism named per `AC-N` (test / structural guarantee / subsumption); each guarantee names its artefact + command and was seen failing on a violation once
+- [x] UI-test scope recorded in the Implementation notes, including when the answer is "backend-only"
+- [x] Every AC Scenario discharged, mechanism named per `AC-N` (test / structural guarantee / subsumption); each guarantee names its artefact + command
 - [x] Every Edge case from the AC has a covering test, referenced by `EC-N` ID
 - [x] Negative-path tests for every exclusion criterion in the AC
 - [x] Project test suite runs green; command + result recorded
@@ -575,16 +572,16 @@ combined into a single comment if you prefer.
 
 ## Self-Quality Gate (tick before posting the DoD comment)
 
+Only what leaves no artefact behind — everything a reader can check from
+the ticket is in the DoD above and is not repeated here.
+
 - [ ] Every Plane read/write was triggered by an explicit USER ask
 - [ ] Only `plane__test_manager__*` MCP tools used
 - [ ] Read at least one existing test file in the same area before drafting
-- [ ] UI-test scope explicitly assessed: every user-visible AC / UF / EC item triaged with USER, decision recorded in *UI test scope* line of Implementation notes (no silent backend-only default)
-- [ ] Every AC Scenario discharged with a named mechanism; each test cites the `AC-N` ID it covers; where a structural guarantee was available it was built instead of enumerating instances
+- [ ] Every user-visible AC / UF / EC item was triaged with USER before I settled the UI-test scope — no silent backend-only default
+- [ ] Each structural guarantee was seen failing on a violation once, not assumed to bind
 - [ ] No new test framework or fixture pattern introduced silently
-- [ ] No body edits to the sub-work-item; everything is in the comment
-- [ ] Review steps posted on the parent Story as a single comment — sections are headings inside it, not separate posts
-- [ ] Every review step is one I could execute myself: concrete route, concrete input, concrete expected result
-- [ ] No expected result appears twice across the step list
+- [ ] Every review step is one I executed myself, or could have
 - [ ] *What could not be verified* is filled in truthfully (an empty one is almost always wrong)
 - [ ] No "open questions" in the Implementation notes — every ambiguity resolved with USER in chat first
 
@@ -699,11 +696,9 @@ discipline applies.
 
 ### What you report
 
-**ONE comment on the parent Story, in ONE `add_comment` call**, titled
-**Review run (test-manager)** — posted as real HTML. Same rule as the
-steps: the sections below are headings inside that single comment, not
-a post each, and not one post per step block. A run whose report
-arrives in instalments is unreadable at exactly the moment USER is
+One comment on the parent Story, one call — titled **Review run
+(test-manager)**, per *One artefact, one comment, one call*. A report
+that arrives in instalments is unreadable at exactly the moment USER is
 deciding whether to merge.
 
 ```text

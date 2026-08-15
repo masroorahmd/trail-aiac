@@ -26,6 +26,8 @@ What's shared:
     .claude/credentials.yaml
     .claude/context/{product, roadmap, glossary, brand, seo, site-map,
                      company, advisors, funding, compliance}.md
+    .claude/context/<base>-appendix/  (follows <base>.md into whichever
+                     consumers reference it — see the link() loop)
     .claude/agent-memory/<persona>/   (whole dir per persona, all 11)
 
 What stays per-consumer:
@@ -85,6 +87,24 @@ PERSONAS = [
 
 def files_differ(a: Path, b: Path) -> bool:
     return not filecmp.cmp(a, b, shallow=False)
+
+
+def _references(context_dir: Path, entry: Path) -> bool:
+    """True when the consumer's context/ already points at `entry` under any
+    name — `testing.md -> northwind-testing.md` counts, and so does an entry
+    file linked under its own name."""
+    if not context_dir.is_dir():
+        return False
+    target = entry.resolve()
+    for child in context_dir.iterdir():
+        if not child.is_symlink():
+            continue
+        try:
+            if child.resolve() == target:
+                return True
+        except (FileNotFoundError, OSError):
+            continue
+    return False
 
 
 def dirs_differ(a: Path, b: Path) -> bool:
@@ -257,6 +277,28 @@ def link(consumer: Path, shared: Path, force: bool, dry_run: bool) -> int:
             shared / "agent-memory" / persona,
             consumer_claude / "agent-memory" / persona,
             f"agent-memory/{persona}/",
+            is_dir=True,
+        )
+
+    # Appendix directories. A context file that outgrows a whole-file read
+    # is split into a lean entry file plus `<base>-appendix/`, and the entry
+    # file points into it — so the appendix has to travel with its entry
+    # file or the pointers dangle. Pair by name rather than by a hardcoded
+    # list: `<base>-appendix/` follows `<base>.md`, and it is linked into
+    # exactly those consumers that already reference that entry file.
+    for appendix in sorted((shared / "context").glob("*-appendix")):
+        if not appendix.is_dir():
+            continue
+        entry = shared / "context" / f"{appendix.name[: -len('-appendix')]}.md"
+        if not entry.exists():
+            actions.append(f"  skip   context/{appendix.name}/ (no entry file)")
+            continue
+        if not _references(consumer_claude / "context", entry):
+            continue
+        link_path(
+            appendix,
+            consumer_claude / "context" / appendix.name,
+            f"context/{appendix.name}/",
             is_dir=True,
         )
 

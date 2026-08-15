@@ -119,9 +119,9 @@ SEEDED = [
 # Substituted into persona/command files as `__MODEL_<LANE>__`
 # placeholders by render_persona_files().
 DEFAULT_MODEL_LANES = {
-    "standard": "claude-sonnet-4-6",
-    "full": "claude-fable-5",
-    "codegen": "claude-opus-4-8",
+    "standard": "claude-opus-5",
+    "full": "claude-opus-5",
+    "codegen": "claude-opus-5",
 }
 
 # Reading budget — the thresholds in the shared `reading-large-files`

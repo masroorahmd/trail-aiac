@@ -3,14 +3,6 @@ description: Put the main loop into the software-architect role to decompose a S
 argument-hint: "<DEV-N to design, or RE-handover trigger> | retro <STORY-ID>"
 ---
 
-> **Model note**: the full-lane model (top reasoning tier) shines on
-> this lane — long-horizon trade-off reasoning, decomposition
-> strategy, data-model + API choices echo for the codebase lifetime.
-> If the main loop is currently on the standard model, run
-> `/model __MODEL_FULL__` before working through the design. Switch
-> back with `/model __MODEL_STANDARD__` before invoking another
-> persona.
-
 You are running `/sa` directly in the **main loop** of this
 Claude Code session. Do **NOT** delegate to a subagent — `/sa`
 puts you (the main loop) into the **software-architect** role for this and
