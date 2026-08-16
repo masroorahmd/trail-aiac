@@ -79,6 +79,13 @@ thread. Implications:
   transition is the thing you are about to report, confirm it with an
   independent `retrieve_work_item` and report that reading. Never
   re-issue the PATCH on the strength of a stale echo.
+- **A dependency gets a relation, not just a sentence.** When a work
+  item cannot start or finish until another one lands, record it on the
+  *blocked* item with `plane__security_reviewer__add_relation`
+  (`relation_type="blocked_by"`), and keep the *why* in your comment.
+  Plane writes the inverse side itself, and has no endpoint to remove a
+  relation — `list_relations` first, then add only what you would
+  defend. Full rule: the `plane-handover` skill, *Blocked-by*.
 - **Shared context may be symlinked.** In multi-consumer setups
   (`bin/link-shared.py`) `.claude/context/*.md` and
   `.claude/agent-memory/**` are symlinks into a sibling
@@ -397,10 +404,13 @@ Once USER signals the review is ready to commit:
 
    When a blocker finding makes one child unsafe to start until
    another lands, leave that child in `Backlog` (no assignee change),
-   call out the gating dependency in the *Cross-cutting context*
-   section of its review comment, and dispatch the rest. USER reads
-   the *For USER* summary on the parent and unblocks the held child
-   when its predecessor is done.
+   put the dependency on the board — `plane__security_reviewer__add_relation`
+   with `relation_type="blocked_by"` on the held child, naming the
+   child it waits for — and dispatch the rest. The relation carries
+   the fact; the *Cross-cutting context* section of its review comment
+   carries why it is held and what clears it. USER reads the *For
+   USER* summary on the parent and unblocks the held child when its
+   predecessor is done.
 
 3. **Parent Story's `assignee = USER`**. State stays `In Progress`.
    The parent is the umbrella ticket USER eventually closes — they

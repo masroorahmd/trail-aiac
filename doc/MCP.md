@@ -13,7 +13,7 @@ that performed it.
 
 | Server | Where from | Used for | Auth |
 |---|---|---|---|
-| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset), states / labels, modules (list + work-item membership), cycles (sprints, full CRUD + work-item membership + transfer), workspace members, comments. Tool names are prefixed by persona: `business_analyst__list_states`, `release_manager__add_comment`, … | `X-API-Key` against `/api/v1/` |
+| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset), states / labels, modules (list + work-item membership), cycles (sprints, full CRUD + work-item membership + transfer), relations (list + add), workspace members, comments. Tool names are prefixed by persona: `business_analyst__list_states`, `release_manager__add_comment`, … | `X-API-Key` against `/api/v1/` |
 
 > Earlier versions ran two servers per persona — upstream
 > `makeplane/plane-mcp-server` (via `uvx`) plus a supplementary
@@ -155,6 +155,38 @@ assignee change) and writes cross-agent notes via
 encodes the consistent pattern: state transition + assignee change +
 DoD comment, in that order. See [`WORKFLOW.md`](WORKFLOW.md) for the
 full state spine.
+
+### Dependencies (`blocked_by`)
+
+A handover moves one ticket forward; a *dependency* says a ticket may
+not move at all yet. Every persona can record one with
+`plane__<persona_snake>__add_relation` on the **blocked** item
+(`relation_type="blocked_by"`, `related_work_item_ids` naming what it
+waits for), and read the current picture with `list_relations`. Plane
+writes the inverse `blocking` side itself.
+
+Three properties shape how the personas are told to use it:
+
+- **No removal endpoint.** Plane's public API exposes `GET` and `POST`
+  on a work item's `relations/` collection and nothing else, so
+  undoing a relation — or a duplicate add — is a manual step by a
+  human in the Plane UI. The prompts therefore require a
+  `list_relations` read first and treat every add as permanent.
+- **`blocked_by` only.** Plane accepts `blocking`, `duplicate`,
+  `relates_to` and the date types as well; the framework sanctions
+  just the one that changes what a persona does next. The others are
+  reachable but nothing instructs a persona to write them.
+- **It carries the fact, not the reason.** The relation says *this
+  waits for `DEV-42`*. Why it is held and what clears it stays in the
+  comment, and the held ticket still keeps `Backlog` with no assignee
+  — the relation is a signal to the human reading the board, not a
+  trigger, since nothing in Plane starts a persona turn.
+
+The canonical use is the Security Reviewer holding one child of a
+decomposition until a sibling's blocker finding is fixed; the rule
+itself lives once in the
+[`plane-handover`](../claude/skills/plane-handover/SKILL.md) skill,
+*Blocked-by*.
 
 ## HTML body / comment authoring (gotchas)
 

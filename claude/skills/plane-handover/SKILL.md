@@ -185,6 +185,48 @@ Git holds the correction; the file holds the state. Otherwise every
 reader after you pays to read both versions and then work out which
 one binds.
 
+## Blocked-by — the dependency the board can see
+
+A dependency that lives only in prose is invisible to everyone reading
+Plane: the held ticket looks idle rather than blocked, and the reader
+who could unblock it is the one person not looking at your comment.
+Every persona toolset carries `<persona_snake>__add_relation` and
+`<persona_snake>__list_relations`. Use them.
+
+**When.** A work item cannot start or finish until another one lands —
+a child held until its predecessor is fixed, a slice whose contract
+the other side must publish first, a rework that waits on a fix. Not
+for "these two are related": a relation that changes nobody's next
+move is noise on the board.
+
+**How.** One call, on the *blocked* item, naming what it waits for:
+
+```text
+<persona_snake>__add_relation(
+    project_id, work_item_id=<the blocked item>,
+    relation_type="blocked_by",
+    related_work_item_ids=[<what it waits for>])
+```
+
+Plane writes the inverse (`blocking`) on the other side itself — never
+add both directions. Ids take a UUID or an identifier (`DEV-42`).
+
+**`blocked_by` only.** Plane also accepts `blocking`, `duplicate`,
+`relates_to` and the date types. This framework sanctions one of them,
+because it is the only one that changes what somebody does next.
+
+**A relation cannot be taken back.** Plane's public API has no removal
+endpoint — undoing one is a manual step by a human in the UI, and a
+duplicate add is just as permanent. So `list_relations` first, and add
+only the dependency you would defend in your handover comment.
+
+**The relation is the fact; the comment is the reason.** It can say
+*this waits for DEV-42* and nothing more — not why, not what clears
+it. That stays one line in the comment you were writing anyway.
+Neither replaces the state: a held item keeps `Backlog` and no
+assignee, so it stays off every persona's list, and USER still does
+the unblocking, because nothing in Plane triggers a turn.
+
 ## What the skill does
 
 Three Plane API calls, in this order:

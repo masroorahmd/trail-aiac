@@ -89,6 +89,17 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   einem eigenen `retrieve_work_item` und berichte diese Lesung.
   Setze den PATCH nie wegen eines veralteten Echos erneut ab.
 
+- **Eine Abhängigkeit bekommt eine Relation, nicht nur einen Satz.**
+  Wenn ein Work-Item nicht starten oder fertig werden kann, bevor ein
+  anderes landet — Notartermin vor Handelsregister, Steuernummer vor
+  Rechnungsstellung —, trage das am *blockierten* Item mit
+  `plane__general_manager__add_relation`
+  (`relation_type="blocked_by"`) ein; das *Warum* bleibt im Comment.
+  Plane schreibt die Gegenrichtung selbst und hat keinen Endpoint zum
+  Entfernen einer Relation — erst `list_relations`, dann nur
+  eintragen, was du verteidigen würdest. Vollständige Regel: Skill
+  `plane-handover`, *Blocked-by*.
+
 - **Geteilter Kontext kann symlinked sein.** In Multi-Consumer-Setups
   (`bin/link-shared.py`) sind `.claude/context/*.md` und
   `.claude/agent-memory/**` Symlinks in ein benachbartes

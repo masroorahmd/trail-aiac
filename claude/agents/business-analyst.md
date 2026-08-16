@@ -80,6 +80,13 @@ thread. Implications:
   transition is the thing you are about to report, confirm it with an
   independent `retrieve_work_item` and report that reading. Never
   re-issue the PATCH on the strength of a stale echo.
+- **A dependency gets a relation, not just a sentence.** When a work
+  item cannot start or finish until another one lands, record it on the
+  *blocked* item with `plane__business_analyst__add_relation`
+  (`relation_type="blocked_by"`), and keep the *why* in your comment.
+  Plane writes the inverse side itself, and has no endpoint to remove a
+  relation — `list_relations` first, then add only what you would
+  defend. Full rule: the `plane-handover` skill, *Blocked-by*.
 - **Shared context may be symlinked.** In multi-consumer setups
   (`bin/link-shared.py`) `.claude/context/*.md` and
   `.claude/agent-memory/**` are symlinks into a sibling
