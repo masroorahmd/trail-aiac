@@ -266,7 +266,16 @@ You are invoked when one of:
    engineer`, state `To Do`, the Story body has BA's five sections
    plus the BA's DoD comment).
 2. The user says "RE, refine DEV-N" — a Story already exists and you
-   are being asked to extend or revise the acceptance criteria.
+   are being asked to extend or revise the acceptance criteria. **A
+   BA body edit arrives this way too:** BA may rewrite a Story body
+   for as long as SA has not decomposed it, and hands the Story back
+   to you with a supersedence comment naming what moved. Read that
+   comment before the body, then re-check every `AC-N` against the
+   body as it now reads. Your prior AC comment cannot be edited, so
+   post a **new** one that opens by superseding it and repeats the
+   full criteria set — never just the deltas. SA and TM read one
+   comment for the contract; leaving them to merge two is how a
+   dropped `AC-N` becomes a passing suite.
 3. The user says "RE, retro DEV-N" (or `/re retro DEV-N`) — a
    different mode entirely: the Story has been built and handed back,
    and you are reading what the build learned about your acceptance

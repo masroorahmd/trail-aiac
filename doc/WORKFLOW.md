@@ -366,13 +366,16 @@ without the cold-start each subagent invocation otherwise causes.
 ## Rules and conventions
 
 - **Description-once.** Every work-item body is written exactly once
-  (at creation). Later annotations are comments. *Narrow Backlog
-  carve-out:* a Story body still in `Backlog` with zero downstream
-  artefacts (no RE AC comment, no SA decomposition, no implementation
-  work) may be directly edited by BA under USER instruction — paired
-  with a supersedence comment that names exactly which bullet of the
-  prior handover is revoked. The moment any downstream artefact
-  exists, the carve-out closes and comments-only stays the rule.
+  (at creation). Later annotations are comments. *Carve-out until
+  decomposition:* a Story that SA has not yet sliced into
+  sub-work-items may have its body directly edited by BA under USER
+  instruction, whatever state it sits in — paired with a supersedence
+  comment naming which body section changed, which bullet of the prior
+  handover is revoked, and which `AC-N` it invalidates. If RE's AC
+  comment already exists, BA hands the Story back to RE rather than
+  onward, and RE re-posts the full criteria set as a new comment that
+  supersedes its first. Once sub-work-items exist the carve-out closes:
+  comments only, and a scope change needing a new body is a new Story.
 - **One module per sub-work-item.** Multi-module assignment is not
   supported — use separate sub-work-items if a phase splits.
 - **One or more product-area labels per Story.** Plane allows

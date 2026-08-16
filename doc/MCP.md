@@ -75,7 +75,9 @@ The framework's data model on Plane:
 
 Description-once is the rule for every persona: a body is written
 when the work-item is created and never edited afterwards. Later
-annotations and handovers travel as comments.
+annotations and handovers travel as comments. The one carve-out — BA
+rewriting a Story body for as long as SA has not decomposed it — is in
+[`WORKFLOW.md`](WORKFLOW.md) § *Rules and conventions*.
 
 ## Per-persona MCP scope
 

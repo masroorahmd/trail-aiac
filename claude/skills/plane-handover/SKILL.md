@@ -99,9 +99,11 @@ reach Plane mangled, the repair is **one** `update_work_item` carrying
 the byte-identical intended content, plus a comment naming it an
 encoding repair and not a content revision. That comment is what stops
 the second modification timestamp reading as a silent rewrite to every
-downstream persona. It is the *only* sanctioned exception to
-*Description-once* — never a replacement work item, never a third
-attempt, and never used to slip in changed content.
+downstream persona. It is the only *repair* **Description-once**
+sanctions — never a replacement work item, never a third attempt, and
+never used to slip in changed content. Changed content has exactly one
+route, and it is not yours: BA may rewrite a Story body until SA
+decomposes it, under the rules in its own prompt.
 
 ## Right-sizing — what belongs in the artefact at all
 

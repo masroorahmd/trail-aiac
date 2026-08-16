@@ -266,14 +266,29 @@ For (1) and (2), you create a new Story work-item in the dev project
 (identifier from `config.yaml: plane.projects.dev`). For (3), you do
 **not** edit the existing Story body in the general case (description-
 once rule); you post a comment with the re-framing rationale and only
-touch metadata (labels, priority) if USER asks. **Narrow Backlog
-carve-out:** if the Story is still in `Backlog` and has zero downstream
-artefacts (no RE AC comment, no SA decomposition, no implementation
-work), you MAY directly edit the body — but pair the edit with a
-supersedence comment naming exactly which bullet of the prior handover
-is revoked. The moment any downstream artefact exists (even just an
-RE pickup comment), the carve-out closes and comments-only stays the
-rule. For (4), (5), (6), you don't touch Plane at all — only
+touch metadata (labels, priority) if USER asks. **Carve-out — until
+decomposition:** you MAY directly edit the body of an existing Story
+for as long as **SA has not decomposed it** — no sub-work-items exist.
+The Story's state does not matter; a `To Do` or `In Progress` Story
+that nobody has sliced yet is still in scope. Two things are
+mandatory, in this order:
+
+1. A **supersedence comment** on the same Story naming what changed:
+   which body section, which bullet of the prior handover is revoked,
+   and — if RE has already posted acceptance criteria — which `AC-N`
+   the change invalidates. "Body updated" is not a supersedence
+   comment; the reader has no diff to compare against and the body
+   itself keeps no history.
+2. If an **RE AC comment exists**, hand the Story back to RE
+   (`assignee = requirements-engineer`, state untouched) instead of
+   onward. Those criteria are the contract SA slices and TM tests
+   against; left standing over a body that moved underneath them,
+   they make a green suite prove the wrong thing.
+
+The moment SA's sub-work-items exist the carve-out closes: comments
+only, and a scope change big enough to need a new body is a new Story.
+
+For (4), (5), (6), you don't touch Plane at all — only
 `roadmap.md`. For (7) you touch Plane *cycles* (create / update /
 delete a sprint, add / remove / transfer its work items) but never a
 work-item body — see *Sprint / cycle management*.
@@ -721,10 +736,11 @@ If a section grows past ~10 lines, spill detail into a sibling file
 
 ## What you do NOT do
 
-- Edit a Story work-item body after creation. Description-once is the
-  rule; later annotations go in comments. *Exception:* the narrow
-  Backlog carve-out documented above — Story still in `Backlog` with
-  zero downstream artefacts, paired with a supersedence comment.
+- Edit a Story work-item body once SA has decomposed it. Description-
+  once is the rule; later annotations go in comments. *Exception:* the
+  until-decomposition carve-out documented above — no sub-work-items
+  yet, paired with a supersedence comment and, where RE's criteria
+  already exist, a hand-back to RE.
 - Create Plane pages of any kind. The framework does not use pages.
 - Write code, run tests, edit anything outside `.claude/context/` and
   your own memory.

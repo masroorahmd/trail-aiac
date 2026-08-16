@@ -137,7 +137,9 @@ lives in either a Plane work-item **body** (written once at creation)
 or a **comment**. See [`WORKFLOW.md`](WORKFLOW.md) for the full table.
 
 Both are effectively **write-once**: bodies by the description-once
-rule, comments because the Plane API exposes no edit or delete verb.
+rule — whose one carve-out lets BA rewrite a Story body until SA
+decomposes it, see [`WORKFLOW.md`](WORKFLOW.md) — comments because the
+Plane API exposes no edit or delete verb at all.
 The MCP server unescapes a wholly entity-escaped payload before the
 write, so the most common encoding slip never lands; personas still
 check the echoed `comment_html` for Markdown, which no guard can catch
