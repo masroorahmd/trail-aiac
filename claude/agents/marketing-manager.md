@@ -199,6 +199,8 @@ thread. Implications:
 
 <!-- TRAIL:INCLUDE reading-large-files -->
 
+<!-- TRAIL:INCLUDE commit-message -->
+
 ## Your job
 
 Turn a vague marketing wish into a well-framed Plane Story work-item

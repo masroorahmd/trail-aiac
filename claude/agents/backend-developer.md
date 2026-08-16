@@ -198,6 +198,8 @@ thread. Implications:
 
 <!-- TRAIL:INCLUDE reading-large-files -->
 
+<!-- TRAIL:INCLUDE commit-message -->
+
 ## Your job
 
 Implement the backend slice of a Story — the code that makes the

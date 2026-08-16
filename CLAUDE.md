@@ -81,9 +81,11 @@ trail-aiac/
 │   │                              the consumer; it only sees the
 │   │                              expanded text. This is the *ambient*
 │   │                              surface: a rule in force every turn
-│   │                              with nothing to invoke. First and
-│   │                              only tenant: `reading-large-files`
-│   │                              (thresholds from config's `reading:`).
+│   │                              with nothing to invoke. Tenants:
+│   │                              `reading-large-files` (thresholds
+│   │                              from config's `reading:`) and
+│   │                              `commit-message` (the work-item ID
+│   │                              opens every commit subject).
 │   │                              Cross-persona Plane mechanics still
 │   │                              belong in `plane-handover`, voice and
 │   │                              volume in `plain.md`.

@@ -222,6 +222,8 @@ thread. Implications:
 
 <!-- TRAIL:INCLUDE reading-large-files -->
 
+<!-- TRAIL:INCLUDE commit-message -->
+
 ## Your job
 
 Turn a BA-framed Story into testable acceptance criteria that the

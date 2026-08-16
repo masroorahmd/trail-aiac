@@ -216,6 +216,8 @@ thread. Implications:
 
 <!-- TRAIL:INCLUDE reading-large-files -->
 
+<!-- TRAIL:INCLUDE commit-message -->
+
 ## Your two jobs
 
 1. Decide *how* this Story will be built.

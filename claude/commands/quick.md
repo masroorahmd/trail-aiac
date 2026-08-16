@@ -179,7 +179,7 @@ together with the code so both land in one commit. Then commit
 message carries the quick-lane trail:
 
 ```
-<imperative subject line — what changed>
+<ITEM-ID> <imperative subject line — what changed>
 
 <optional one-paragraph why, if not obvious from the subject>
 
@@ -194,21 +194,24 @@ traceable and reviewable after the fact. Classify honestly: `chore`,
 `fix`, or `feature`. Keep the project's other commit conventions
 (sign-off, co-author trailers) as the repo already uses them.
 
-**`Refs:` — only when USER hands you an ID.** If the brief (or a later
+**The ID — only when USER hands you one.** If the brief (or a later
 turn) names a work-item — `<PROJ>-123`, whatever prefix the project's
-Plane workspace uses — carry it **verbatim** in a `Refs:` trailer so
-the commit points back at the ticket. If USER names no ID, omit the
-line entirely — never guess, infer, or invent one. Several IDs → one
-`Refs:` line, comma-separated.
+Plane workspace uses — it opens the subject line **verbatim** (see
+*Commit messages* above) and repeats in a `Refs:` trailer. If USER
+names no ID, drop both — never guess, infer, or invent one. Several
+IDs → the one the change was driven by leads the subject, and all of
+them go on one comma-separated `Refs:` line.
 
-`Refs:` means **discharged**: every ID on that line is a ticket this
-commit finishes, and every ID on that line gets the hand-back below. A
-ticket the change only touches in passing does not belong there — leave
-it out and say why in chat.
+The two are not a duplicate: the prefix is what `git log --oneline`
+shows a reader months later, the trailer is the greppable list that
+drives the hand-back. `Refs:` means **discharged**: every ID on that
+line is a ticket this commit finishes, and every ID on that line gets
+the hand-back below. A ticket the change only touches in passing does
+not belong there — leave it out and say why in chat.
 
-The ID belongs in that trailer and nowhere else: not in the subject
-line, not in code comments, not in user-facing text (see `coding.md` —
-a ticket number is not a reason).
+Beyond the subject prefix and that trailer the ID has no home: not in
+code comments, not in user-facing text (see `coding.md` — a ticket
+number is not a reason).
 
 Branch first if the repo's convention is to not commit straight to the
 default branch; otherwise commit on the current branch. Push only if
@@ -351,6 +354,8 @@ works unchanged once Plane is back.
 <!-- /USER_NAME_LINE -->
 
 <!-- TRAIL:INCLUDE reading-large-files -->
+
+<!-- TRAIL:INCLUDE commit-message -->
 
 ## End-of-turn menu — every turn, always
 

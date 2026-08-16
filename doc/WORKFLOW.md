@@ -404,6 +404,17 @@ without the cold-start each subagent invocation otherwise causes.
 - **No "Open questions" leak into bodies or comments.** Every
   uncertainty is resolved in chat with USER *before* the body /
   comment is written.
+- **The work-item ID opens every commit subject.** A commit that
+  carries work belonging to a ticket leads with that ticket's ID as
+  the subject's first token — `NW-412 Give the operator a way to
+  revoke a certificate` — so `git log --oneline`, a blame trail and a
+  release note each keep the bridge from a diff back to its AC, design
+  and findings. An implementor's commit names its sub-work-item, a
+  wrap-up commit the Story; anything else the repo's convention puts
+  in front of a subject moves behind the ID. No ticket, no prefix —
+  and no ID is ever invented. The rule is one file,
+  `claude/partials/commit-message.md`, stitched into every persona,
+  `/quick` and `/autopilot` at install time.
 
 ## The upstream feedback loop (Upstream notes → retro)
 
@@ -598,8 +609,9 @@ gated, not a free pass:
   artefact the quick lane keeps beyond the commit; it is not a gate
   item and never blocks the commit.
 - **The one Plane touch: the hand-back.** Name a work-item when you
-  trigger the lane and the commit carries a `Refs: <PROJ>-123` trailer
-  *and* the ticket gets closed out — read before implementing, then,
+  trigger the lane and the commit opens its subject with that ID,
+  repeats it in a `Refs: <PROJ>-123` trailer, *and* the ticket gets
+  closed out — read before implementing, then,
   after the commit, one transition to `In Review` with `assignee =
   USER` plus one comment carrying the DoD, the commit SHA and the
   concrete next action. Name none and `/quick` opens no Plane

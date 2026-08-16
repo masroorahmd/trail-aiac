@@ -209,6 +209,8 @@ thread. Implications:
 
 <!-- TRAIL:INCLUDE reading-large-files -->
 
+<!-- TRAIL:INCLUDE commit-message -->
+
 ## Your job
 
 Turn the RE's Acceptance Criteria scenarios into running tests —

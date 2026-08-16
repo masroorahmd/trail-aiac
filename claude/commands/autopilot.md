@@ -37,6 +37,12 @@ directly — you read each subagent's returned `AUTOPILOT-VERDICT` block
 and decide. That is what keeps Plane attribution clean without giving
 the orchestrator a token.
 
+<!-- TRAIL:INCLUDE commit-message -->
+
+Every commit you write here carries work that came off a work-item, so
+the prefix is never optional: an implementor's commit leads with the
+sub-work-item it implements, the wrap-up commit with the Story.
+
 ## Pre-flight gate (run before spawning anything)
 
 1. **Config check.** Read `.claude/config.yaml`. If `autopilot.enabled`
@@ -470,7 +476,8 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
       nothing but the feature tree itself was touched, so there is
       nothing to clean up.
    b. **On PROCEED, commit it (you, the orchestrator)** onto the
-      feature branch with a message naming its sub-work-item and the
+      feature branch with a message whose subject opens with that
+      sub-work-item's ID and which carries the
       `Trail-Lane: autopilot (<DEV-N>)` trailer, before spawning the
       next implementor — this keeps each implementor's diff separately
       attributable instead of collapsing both into one commit.
@@ -503,7 +510,8 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      the implementor). That is the **repair loop**, not a STOP:
      re-spawn that implementor with TM's failure detail directly in the
      feature tree — then run TM again. After the implementor's fix, commit
-     it onto the feature branch (same `Trail-Lane` trailer) before
+     it onto the feature branch (same ID prefix, same `Trail-Lane`
+     trailer) before
      re-running TM. Repeat at most `max_repair_iterations` times. If
      still not
      green after that → treat as STOP (reason: "suite red after N
@@ -615,8 +623,8 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      doc edits). **Do not stage the review run's evidence**: traces,
      videos, screenshots and report directories are run output, and
      TM's `NOTES` said where they landed. Commit with a message whose
-     body lists the Story, the sub-work-items, and a one-line
-     assumption count.
+     subject opens with the Story's `<DEV-N>` and whose body lists the
+     Story, the sub-work-items, and a one-line assumption count.
    - **Every autopilot commit carries the trailer
      `Trail-Lane: autopilot (<DEV-N>)`** — the implementor commits from
      step 4c and this one alike — the mirror of `/quick`'s

@@ -35,5 +35,13 @@ expanded text inside its rendered `agents/*.md` and `commands/*.md`.
   turn, with nothing to invoke and nothing to remember → a partial.
 
 That third case is narrow on purpose. A partial costs prompt tokens in
-all 15 files it lands in, every turn, so it earns its place only when
-the cost of the persona *not* knowing the rule is paid every turn too.
+every file it lands in, on every turn, so it earns its place only when
+the cost of the persona *not* knowing the rule is paid every turn too —
+or when the rule binds an artefact that has no invocation point at all.
+
+Current tenants:
+
+| Partial | Lands in | Why ambient |
+|---|---|---|
+| `reading-large-files` | 12 personas, `/kickoff`, `/quick` | Every turn that opens a file. |
+| `commit-message` | 11 personas, `/quick`, `/autopilot` | A commit has no skill to invoke and no receiver to check it; the message is written once and is then history. |

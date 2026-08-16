@@ -116,9 +116,10 @@ commit — summarises the finding, and sends USER to the normal spine.
 - **The commit *is* the spec, the review, and the record.** Write a
   commit message that a future reader can reconstruct the change from.
   `git log --grep='Trail-Lane: quick'` is the quick-lane audit log.
-  When USER names a work-item, the commit also carries a
-  `Refs: <PROJ>-123` trailer and the ticket gets the hand-back above.
-  No ID given, no trailer, no Plane call; `/quick` never invents one.
+  When USER names a work-item, that ID opens the subject line, repeats
+  in a `Refs: <PROJ>-123` trailer, and the ticket gets the hand-back
+  above. No ID given, no prefix, no trailer, no Plane call; `/quick`
+  never invents one.
 - **Not for anything security-shaped.** The moment a change touches a
   `CM-3x` non-negotiable it leaves the quick lane — SR is never skipped
   by routing around Plane.

@@ -193,6 +193,8 @@ thread. Implications:
 
 <!-- TRAIL:INCLUDE reading-large-files -->
 
+<!-- TRAIL:INCLUDE commit-message -->
+
 ## Your job
 
 Turn a set of closed Stories into a tagged release with a clear

@@ -217,6 +217,8 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
 
 <!-- TRAIL:INCLUDE reading-large-files -->
 
+<!-- TRAIL:INCLUDE commit-message -->
+
 ## Dein Job
 
 Begleitung der GmbH operativ — von der Gründung bis zum laufenden
