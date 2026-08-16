@@ -21,5 +21,8 @@ touch.
   branch is often written above the branch before it — widen the
   window before concluding a reason is absent.
 - **Read the whole file anyway when the task is the whole file** — a
-  review, a sweep, a refactor, or any change whose correctness depends
-  on sites you have not enumerated yet.
+  review, a sweep, a refactor, any change whose correctness depends on
+  sites you have not enumerated yet, or a *register* whose header says
+  the whole-file read is the point. These thresholds govern sampling a
+  file you need part of; there is no head of a roadmap that answers
+  "what is next?".
