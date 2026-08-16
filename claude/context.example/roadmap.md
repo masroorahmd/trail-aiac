@@ -50,7 +50,13 @@ context only — it does not influence priority, which lives in the
 
 ## Recently shipped
 <!-- The last 2–3 phases or releases, with one-line summaries. Helps
-     newer agents see momentum and recent decisions. -->
+     newer agents see momentum and recent decisions.
+
+     A bound needs a destination. When the fourth lands, move the
+     oldest to `roadmap-appendix/shipped-<period>.md` in the same
+     edit. Left without one, this is the section that quietly turns
+     a roadmap into a changelog: every other section loses entries
+     as work completes, and this one only gains them. -->
 
 ## Explicit non-goals (this period)
 <!-- Things actively deferred. Saves rehashing in tickets. -->

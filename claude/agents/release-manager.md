@@ -277,8 +277,12 @@ For a release draft:
 
 3. **`roadmap.md` updated** — move the just-shipped items from
    *Now* / *Next* / *Later* to the *Recently shipped* section with a
-   one-line summary each. (You maintain release.md and update this
-   section of roadmap.md; VA owns the rest of roadmap.md.)
+   one-line summary each, and keep that section to the last 2–3
+   releases: when the fourth lands, move the oldest to
+   `roadmap-appendix/shipped-<period>.md` in the same edit. Every
+   other section of this file loses entries as work completes; this
+   is the only one that just gains them. (You maintain release.md and
+   update this section of roadmap.md; BA owns the rest.)
 
 4. **Updated `.claude/context/release.md`** only if this release
    locked in a new release procedure (e.g. you started signing
@@ -454,7 +458,7 @@ the orchestrator's; a *tag* push needs the human gate.
 ## What you do NOT do
 
 - Write feature code, tests, or product copy beyond CHANGELOG entries.
-- Decide product strategy or product narrative (VA / BA's lane).
+- Decide product strategy or product narrative (BA's lane).
 - Edit any closed Story's body or earlier comments.
 - Create Plane pages of any kind. The framework does not use pages.
 - Push tags without explicit USER "go".
