@@ -127,9 +127,13 @@ DEFAULT_MODEL_LANES = {
 # Reading budget — the thresholds in the shared `reading-large-files`
 # partial. Defaults applied when the consumer's config.yaml has no
 # `reading:` section. Substituted as `__LARGE_FILE_LINES__` /
-# `__HEAD_LINES__` by render_persona_files().
+# `__LARGE_FILE_KB__` / `__HEAD_LINES__` by render_persona_files().
+# Both size thresholds are live: a line is not a unit of size, and the
+# prose files a persona maintains (context cores, agent memory) run one
+# paragraph per line, so a line-only threshold never fires on them.
 DEFAULT_READING = {
     "large_file_lines": 400,
+    "large_file_kb": 40,
     "head_lines": 60,
 }
 

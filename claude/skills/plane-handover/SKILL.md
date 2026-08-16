@@ -141,6 +141,39 @@ skipping a stage the lane did not grant (that is *What no lane may
 buy*), or leaving an `AC-N` undischarged. Right-sizing removes what
 nothing asked for. It never removes what something asked for.
 
+## Durable files — how they stay readable
+
+Right-sizing bounds one artefact. These bound the *file* it lands in,
+across every artefact that will ever land there. They govern the two
+surfaces a persona both writes and re-reads every session:
+`.claude/context/*.md` and `.claude/agent-memory/**`.
+
+**A core states rules; an appendix states what one Story shipped.**
+Each context core carries a byte budget and an appendix directory
+beside it, both declared in its own header. A rule that binds every
+endpoint, every screen, every test belongs in the core. A record of
+what one ticket changed — however load-bearing — goes to
+`<core>-appendix/<TICKET-ID>.md`, and the core keeps a one-line
+pointer where the decision was made:
+
+```markdown
+> **<TICKET-ID> (one-line label)**: `<core>-appendix/<TICKET-ID>.md`
+```
+
+A new `##` section in a core is for a rule, never for a Story. Over
+budget, the answer is never a tighter sentence — it is the appendix.
+Where the consumer ships a context-size lint, a persona that wrote to
+a core runs it before handing over; a budget nobody checks is not a
+budget, and the file it was meant to protect is the one every persona
+downstream has to read.
+
+**State the fact, not the correction.** When you fix something a
+durable file got wrong, write what is true now. Do not write what the
+file used to say, that it has been re-measured, or how wrong it was.
+Git holds the correction; the file holds the state. Otherwise every
+reader after you pays to read both versions and then work out which
+one binds.
+
 ## What the skill does
 
 Three Plane API calls, in this order:
@@ -294,7 +327,7 @@ criterion; it is a wish.
 
 ### 3. Update agent memory
 
-Append a one-line entry to the calling persona's `MEMORY.md` under
+Append one entry to the calling persona's `MEMORY.md` under
 *Cross-agent handovers (recent)*:
 
 ```markdown
@@ -302,6 +335,20 @@ Append a one-line entry to the calling persona's `MEMORY.md` under
 ```
 
 Date must be ISO (YYYY-MM-DD), not relative.
+
+**One line means one line — 300 characters, not one newline.** A
+2 KB paragraph on a single physical line satisfies the shape and
+defeats the purpose: this section is what your *next* session skims
+to find where things stand, and it is only skimmable while the
+entries are lines. When a run genuinely produced more, the summary
+stays here and the narrative goes to a sibling file in the persona's
+memory directory, behind the same one-line pointer a core uses.
+
+**Keep the last ten; spill the rest.** *(recent)* is a bound, not a
+label. When the eleventh entry lands, move the oldest to that sibling
+file in the same edit — and leave no note in the section saying you
+did. The sibling file is the record; a spill marker is one more line
+that is not a handover.
 
 ## Stopping conditions
 
