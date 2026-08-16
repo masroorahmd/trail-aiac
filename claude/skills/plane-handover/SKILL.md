@@ -167,6 +167,17 @@ a core runs it before handing over; a budget nobody checks is not a
 budget, and the file it was meant to protect is the one every persona
 downstream has to read.
 
+**Not every durable file has that split.** A glossary is a list of
+terms, a roadmap a list of items: no rule to keep, no Story record to
+spill, and the read the file exists for is the whole file. An entry
+behind a pointer is an entry nobody finds. Such a file declares itself
+a **register** in its header — `> **Size class**: register — not
+byte-budgeted.` — and states why the split is absent. A register's
+bound is the lifecycle that removes entries, not a ceiling that blocks
+them: an entry leaves when it ships, is dropped, or stops being a term
+anyone uses. If a register feels large, too few entries are leaving,
+and a ceiling would only have hidden that.
+
 **State the fact, not the correction.** When you fix something a
 durable file got wrong, write what is true now. Do not write what the
 file used to say, that it has been re-measured, or how wrong it was.
