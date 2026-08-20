@@ -176,7 +176,15 @@ tokens.
 | `config.yaml`, `credentials.yaml`                             | seeded once, never overwritten thereafter                     |
 | `context/`                                                    | seeded once; preserved unless `--force-seed`                  |
 | `agent-memory/`                                               | seeded once, **never** overwritten (even with `--force-seed`) |
-| `settings.local.json`, `<consumer>/.mcp.json`, rendered `agents/*.md` | re-rendered on every re-install when config + credentials are populated (mode 0600) |
+| `<consumer>/.mcp.json`, rendered `agents/*.md`                | re-rendered on every re-install when config + credentials are populated (mode 0600) |
+| `settings.local.json`                                         | its `env` key is re-rendered; every other key you put there is preserved (mode 0600) |
+
+That last row is what makes `settings.local.json` the right home for a
+consumer's own Claude Code settings. `.claude/settings.json` is a
+framework deliverable and is overwritten on every run, so anything you
+add there is lost. Local scope survives — which is where
+`claude plugin install --scope local` writes `enabledPlugins`, the way
+to give one consumer a plugin such as an LSP server for its stack.
 
 Rendering also expands the framework's **shared prompt partials**
 (`claude/partials/`) into every persona and command file that carries a

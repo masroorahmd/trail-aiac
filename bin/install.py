@@ -17,11 +17,16 @@ One-shot, idempotent. Two stages, run in sequence:
      declared agent set has matching API tokens), the script also
      writes per-persona MCP wiring:
 
-       - `<consumer>/.claude/settings.local.json` (mode 0600) — env
-         block holding shared FRAMEWORK_ROOT / PLANE_BASE_URL /
-         PLANE_WORKSPACE_SLUG plus per-persona PLANE_API_KEY_*. Used
-         by skills and ad-hoc scripts that read these from the
-         process env.
+       - `<consumer>/.claude/settings.local.json` (mode 0600) — the
+         `env` key only, holding shared FRAMEWORK_ROOT /
+         PLANE_BASE_URL / PLANE_WORKSPACE_SLUG plus per-persona
+         PLANE_API_KEY_*. Used by skills and ad-hoc scripts that read
+         these from the process env. The file is MERGED, not replaced:
+         every other key the consumer put there survives. That matters
+         most for `enabledPlugins` — `.claude/settings.json` is a
+         copied deliverable, so local scope is the only durable place
+         a consumer can enable a Claude Code plugin (an LSP server,
+         say) without it reverting on the next install.
 
        - `<consumer>/.mcp.json` (mode 0600, gitignored) — one
          `plane` server entry. A single stdio process holds every
@@ -218,6 +223,42 @@ def load_manifest(consumer_claude: Path) -> dict:
         return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError:
         return {}
+
+
+def load_shared_json(path: Path) -> dict:
+    """Load a JSON object this script co-owns with the consumer.
+
+    `settings.local.json` is not ours alone. `claude plugin install
+    --scope local` writes `enabledPlugins` into it, and a consumer may
+    add local permissions or env of its own. We own exactly one key
+    (`env`); everything else has to survive. Overwriting the file
+    wholesale is how a consumer's local Claude Code configuration
+    silently reverts on every re-install.
+
+    Missing file → {}. Unreadable or non-object content → {}, but the
+    old bytes are parked as `<name>.corrupt-<stamp>` first, so a
+    hand-edit that lost its closing brace costs a rename rather than the
+    consumer's plugin list.
+    """
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        data = None
+    if isinstance(data, dict):
+        return data
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    salvage = path.with_name(f"{path.name}.corrupt-{stamp}")
+    # rename() overwrites on POSIX, and the whole point of the salvage is
+    # that nothing is lost — so step aside for an existing same-second one.
+    nth = 2
+    while salvage.exists():
+        salvage = path.with_name(f"{path.name}.corrupt-{stamp}-{nth}")
+        nth += 1
+    path.rename(salvage)
+    print(f"  WARNING: {path.name} was not a JSON object; kept as {salvage.name}")
+    return {}
 
 
 def detect_drift(consumer_claude: Path, manifest: dict) -> list[str]:
@@ -512,7 +553,12 @@ def render_settings(
     settings_local_path = consumer_claude / "settings.local.json"
     mcp_json_path = consumer_root / ".mcp.json"
 
-    settings_local = {"env": dict(sorted(env.items()))}
+    # Merge, never replace: we own `env`, the consumer owns the rest
+    # (notably `enabledPlugins`, which is the only durable home a
+    # consumer has for a plugin — `.claude/settings.json` is a copied
+    # deliverable and gets overwritten in stage 1).
+    settings_local = load_shared_json(settings_local_path)
+    settings_local["env"] = dict(sorted(env.items()))
     mcp_json = {"mcpServers": dict(sorted(mcp_servers.items()))}
 
     settings_local_path.write_text(
