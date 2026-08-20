@@ -7,6 +7,16 @@
 > work on the timeline, to recognise when a request belongs to a later
 > phase, and — when USER asks the BA to pull from the roadmap — to copy
 > a Story's priority and labels straight into Plane.
+>
+> **Size class**: register — not byte-budgeted. Every entry is a
+> candidate answer to "what is next?", so the read this file exists for
+> is the whole file — there is no head of a roadmap that answers that
+> question. Nothing here is a per-Story record waiting to be spilled,
+> so there is no core/appendix split. The bound is the lifecycle below:
+> an entry leaves when it ships or becomes a non-goal, and *Recently
+> shipped* spills its oldest to `roadmap-appendix/` once it outgrows
+> three. An entry never leaves any other way — not by tidying, not by
+> compacting, not by a rewrite that came for a different line.
 
 ## Entry format
 

@@ -170,15 +170,26 @@ budget, and the file it was meant to protect is the one every persona
 downstream has to read.
 
 **Not every durable file has that split.** A glossary is a list of
-terms, a roadmap a list of items: no rule to keep, no Story record to
-spill, and the read the file exists for is the whole file. An entry
-behind a pointer is an entry nobody finds. Such a file declares itself
-a **register** in its header — `> **Size class**: register — not
-byte-budgeted.` — and states why the split is absent. A register's
-bound is the lifecycle that removes entries, not a ceiling that blocks
-them: an entry leaves when it ships, is dropped, or stops being a term
-anyone uses. If a register feels large, too few entries are leaving,
-and a ceiling would only have hidden that.
+terms, a roadmap a list of items, a product framing all rule and no
+record: nothing to spill to an appendix, and the read the file exists
+for is the whole file. An entry behind a pointer is an entry nobody
+finds. Such a file declares itself a **register** in its header —
+`> **Size class**: register — not byte-budgeted.` — and states why the
+split is absent. A register's bound is the lifecycle that removes
+entries, not a ceiling that blocks them: an entry leaves when it ships,
+is dropped, or stops being a term anyone uses. If a register feels
+large, too few entries are leaving, and a ceiling would only have
+hidden that.
+
+**That lifecycle is the only exit.** An entry leaves a register when a
+named event moves it — it shipped, it was dropped, it was promoted to
+the next horizon, it spilled to the appendix — and never as a side
+effect of an edit that came for something else. Where a register has no
+exit at all, because every line in it binds every Story, the bound is
+what never enters. Either way: edit the entry you came for and leave
+the rest as it stands — a register is not compacted, tidied, or
+rewritten whole. The line you would have trimmed is the one the next
+reader was going to act on.
 
 **State the fact, not the correction.** When you fix something a
 durable file got wrong, write what is true now. Do not write what the

@@ -6,6 +6,13 @@
 > Purpose: a single source of truth for *what we are building and for whom*.
 > Agents consult this before scoping work, writing requirements, or framing
 > a release narrative.
+>
+> **Size class**: register — not byte-budgeted. This is read whole before
+> a Story is scoped, and it stays small by what never enters it: per-Story
+> detail belongs in the Story body, so there is nothing here to spill to an
+> appendix. The bound is that entry rule, not a ceiling — if this file feels
+> large, Story-sized detail has leaked in and belongs back in the tickets.
+> Trimming a line that does bind is not the fix.
 
 ## Product in one paragraph
 <!-- The pitch: the system, its primary user, the problem it removes. -->
