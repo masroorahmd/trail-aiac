@@ -4,8 +4,20 @@
 `claude/partials/commit-message.md` states the rule; this script is what
 makes it hold. It reads the PreToolUse hook payload on stdin, finds the
 commit message inside a `git commit` command line, and denies the tool
-call when the subject does not start with a work-item ID belonging to
-one of the Plane projects this consumer is configured for.
+call when the work-item ID is not the first token of the subject.
+
+How hard it holds is the consumer's call — `hooks.commit_id_required`
+in `.claude/config.yaml`:
+
+  plane-only (default)  Deny only when the message names a work-item ID
+                        that is not leading the subject. A commit that
+                        names no ID at all passes, because `/quick` is
+                        the framework's off-Plane lane and is told never
+                        to invent one. This is the observed failure mode:
+                        the persona has the ticket and buries the ID in
+                        the body or a trailer.
+  strict                Every commit subject must open with an ID.
+  off                   No check.
 
 Deliberately dependency-free (no PyYAML, no `uv`): the hook fires on
 Bash calls, so its start-up cost is paid often enough to matter.
@@ -45,10 +57,41 @@ MESSAGE_RE = re.compile(
     r"(?:'([^']*)'|\"((?:[^\"\\]|\\.)*)\"|(\S+))"
 )
 
-FALLBACK_PREFIX_RE = re.compile(r"^[A-Z][A-Z0-9]{1,15}$")
+# A work-item ID anywhere in the message — used to tell "no ticket" from
+# "ticket named, but buried in the body".
+ID_RE = re.compile(r"\b([A-Za-z][A-Za-z0-9]*)-(\d+)\b")
 
 
-def project_prefixes(root):
+MODES = ("plane-only", "strict", "off")
+DEFAULT_MODE = "plane-only"
+
+
+def config_lines(root):
+    try:
+        with open(os.path.join(root, CONFIG), encoding="utf-8") as handle:
+            return handle.read().splitlines()
+    except OSError:
+        return []
+
+
+def mode(lines):
+    """`hooks.commit_id_required`, defaulting for configs seeded before it."""
+    inside = False
+    for line in lines:
+        if re.match(r"^hooks:\s*(#.*)?$", line):
+            inside = True
+            continue
+        if not inside:
+            continue
+        entry = re.match(r"^\s+commit_id_required:\s*([a-z-]+)\s*(#.*)?$", line)
+        if entry and entry.group(1) in MODES:
+            return entry.group(1)
+        if line.strip() and not line.startswith((" ", "\t")):
+            break
+    return DEFAULT_MODE
+
+
+def project_prefixes(lines):
     """Plane project identifiers from the consumer's config.yaml.
 
     A hand-rolled scan of the `projects:` block rather than a YAML parse —
@@ -57,13 +100,6 @@ def project_prefixes(root):
     config is missing or unreadable, which the caller treats as "accept
     any well-formed identifier".
     """
-    path = os.path.join(root, CONFIG)
-    try:
-        with open(path, encoding="utf-8") as handle:
-            lines = handle.read().splitlines()
-    except OSError:
-        return set()
-
     prefixes = set()
     inside = False
     for line in lines:
@@ -80,19 +116,23 @@ def project_prefixes(root):
     return prefixes
 
 
-def extract_subject(command):
-    """The commit subject line, or None when it cannot be determined."""
+def extract_message(command):
+    """The full commit message, or None when it cannot be determined."""
     tail = command[GIT_COMMIT_RE.search(command).end():]
 
     heredoc = HEREDOC_RE.search(tail)
     if heredoc:
-        rest = tail[heredoc.end():].split("\n")[1:]
-        return rest[0] if rest else None
+        body = tail[heredoc.end():].split("\n")[1:]
+        delimiter = heredoc.group(2)
+        for index, line in enumerate(body):
+            if line.strip() == delimiter:
+                return "\n".join(body[:index])
+        return "\n".join(body)
 
     message = MESSAGE_RE.search(tail)
     if message:
         value = next(g for g in message.groups() if g is not None)
-        return value.replace('\\"', '"').split("\n")[0]
+        return value.replace('\\"', '"')
 
     return None
 
@@ -111,6 +151,21 @@ def deny(reason):
     sys.exit(0)
 
 
+def id_token(text, prefixes):
+    """The first `<PREFIX>-<n>` in `text` that belongs to this deployment.
+
+    Requires the real identifiers: without them `utf-8` and `v1-2` read as
+    work-item IDs, and a false deny on an honest commit costs more than a
+    missed one. No config, no buried-ID check.
+    """
+    if not prefixes:
+        return None
+    for candidate in ID_RE.finditer(text):
+        if candidate.group(1).upper() in prefixes:
+            return candidate.group(0)
+    return None
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -125,46 +180,61 @@ def main():
     if "TRAIL_SKIP_COMMIT_GUARD" in command:
         return 0
 
-    subject = extract_subject(command)
-    if subject is None:
+    lines = config_lines(payload.get("cwd") or os.getcwd())
+    setting = mode(lines)
+    if setting == "off":
         return 0
 
-    subject = subject.strip()
+    message = extract_message(command)
+    if message is None:
+        return 0
+    subject = message.strip().split("\n")[0].strip()
     if not subject:
         return 0
 
-    prefixes = project_prefixes(payload.get("cwd") or os.getcwd())
+    prefixes = project_prefixes(lines)
+    known = ", ".join(sorted(prefixes)) if prefixes else "this project"
 
-    token = subject.split(maxsplit=1)[0]
-    match = re.fullmatch(r"([A-Za-z][A-Za-z0-9]*)-(\d+)", token)
-    if match:
-        prefix = match.group(1).upper()
-        if not prefixes or prefix in prefixes:
-            if len(subject.split(maxsplit=1)) < 2:
-                deny(
-                    f"The commit subject is only the work-item ID ({token}) "
-                    "with no summary after it. Write "
-                    f"`{token} <what the change does>`."
-                )
-            return 0
-        known = ", ".join(sorted(prefixes))
+    head = subject.split(maxsplit=1)
+    leading = re.fullmatch(r"([A-Za-z][A-Za-z0-9]*)-(\d+)", head[0])
+
+    if leading:
+        if prefixes and leading.group(1).upper() not in prefixes:
+            deny(
+                f"`{head[0]}` is not a work-item ID of this project. The "
+                f"Plane projects configured here are: {known}. Use the ID of "
+                "the item the work was done for, and never invent one."
+            )
+        if len(head) < 2:
+            deny(
+                f"The commit subject is only the work-item ID ({head[0]}) "
+                "with no summary after it. Write "
+                f"`{head[0]} <what the change does>`."
+            )
+        return 0
+
+    buried = id_token(message, prefixes)
+    if buried:
         deny(
-            f"`{token}` is not a work-item ID of this project. The Plane "
-            f"projects configured here are: {known}. Use the ID of the item "
-            "the work was done for, and never invent one."
+            f"`{buried}` appears in the commit message but not where a "
+            "reader will find it. The work-item ID is the FIRST token of "
+            f"the subject line: `{buried} {subject[:44]}`. `git log "
+            "--oneline`, blame and the release notes are the only views "
+            "most readers ever get, and an ID that lives only in the body "
+            "or a trailer is absent from every one of them."
         )
 
-    known = ", ".join(sorted(prefixes)) if prefixes else "the project's Plane projects"
-    deny(
-        "The commit subject must open with the work-item ID the work was "
-        f"done for — `<ID> {subject[:40]}…`, where <ID> belongs to {known} "
-        "(the /quick lane uses item 0 of the dev project). `git log "
-        "--oneline`, blame and the release notes are the only views most "
-        "readers get, and the ID is their one bridge back to the acceptance "
-        "criteria. If this change genuinely belongs to no work item, do not "
-        "invent an ID — re-run the command with TRAIL_SKIP_COMMIT_GUARD=1 "
-        "prefixed."
-    )
+    if setting == "strict":
+        deny(
+            "The commit subject must open with the work-item ID the work "
+            f"was done for — `<ID> {subject[:44]}`, where <ID> belongs to "
+            f"{known}. If this change genuinely belongs to no work item, do "
+            "not invent an ID: re-run the command with "
+            "TRAIL_SKIP_COMMIT_GUARD=1 prefixed. (This project runs "
+            "`hooks.commit_id_required: strict`.)"
+        )
+
+    return 0
 
 
 if __name__ == "__main__":

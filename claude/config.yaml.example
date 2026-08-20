@@ -76,6 +76,45 @@ reading:
   large_file_kb: 40
   head_lines: 60
 
+# Hooks — the rules the harness enforces instead of the prompt asking.
+# A rule that is mechanically checkable is the wrong thing to spend
+# prompt tokens on: `claude/hooks/` holds the check, `settings.json`
+# wires it, and the persona prompt keeps only the reasoning a check
+# cannot teach. This block is where a consumer says how hard each one
+# holds — `settings.json` itself is a copied deliverable, overwritten on
+# every install.py run, so a preference expressed there would not
+# survive. (A future hook whose *wiring* must vary — a different event
+# or matcher — would need install.py to render settings.json; today
+# every knob is read by the hook script at run time.)
+#
+#   commit_id_required — how the commit-subject guard behaves when a
+#                        persona runs `git commit`. The rule it enforces
+#                        lives in `claude/partials/commit-message.md`:
+#                        the work-item ID is the first token of the
+#                        subject line.
+#
+#     plane-only  Deny only when the message names a work-item ID that
+#                 is not leading the subject — the ID buried in the body
+#                 or in a `Refs:` trailer. A commit that names no ID at
+#                 all passes: `/quick` is the framework's off-Plane lane
+#                 and is told never to invent one, so a blanket rule
+#                 would force exactly the invention the prompt forbids.
+#                 This is the default, and it catches the failure that
+#                 actually happens.
+#     strict      Every commit subject must open with an ID. For projects
+#                 where all work is ticketed and an ID-less commit is
+#                 always a mistake. The escape hatch for the genuine
+#                 exception is to prefix the command with
+#                 TRAIL_SKIP_COMMIT_GUARD=1 — deliberate and visible in
+#                 the transcript, unlike a made-up ID.
+#     off         No check.
+#
+#   In both live modes an ID whose prefix is not one of the `projects:`
+#   identifiers below is denied as a typo, since a wrong ID is a worse
+#   bridge than no ID.
+hooks:
+  commit_id_required: plane-only
+
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a
 # work-item tree above it (Epic → Story → module children, nested to

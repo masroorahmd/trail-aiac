@@ -96,14 +96,21 @@ trail-aiac/
 │   │                              harder AND the prompt gets smaller,
 │   │                              which is the one move that runs against
 │   │                              the ratchet. Wired in `settings.json`,
-│   │                              not auto-discovered. Tenant:
+│   │                              not auto-discovered — but every KNOB is
+│   │                              read from `config.yaml` at run time, not
+│   │                              baked into `settings.json`, because that
+│   │                              file is a copied deliverable and a
+│   │                              consumer's preference there would not
+│   │                              survive the next install. Tenant:
 │   │                              `commit-msg-guard.py` (PreToolUse/Bash)
-│   │                              denies a `git commit` whose subject does
-│   │                              not open with a work-item ID of a
-│   │                              configured Plane project; reads the
-│   │                              consumer's `config.yaml` for the valid
-│   │                              identifiers, is dependency-free because
-│   │                              it runs on Bash calls, and yields to
+│   │                              holds the commit-subject rule at the
+│   │                              strength `hooks.commit_id_required` asks
+│   │                              for: `plane-only` (default) denies only
+│   │                              an ID buried in the body or a trailer,
+│   │                              `strict` demands one on every commit,
+│   │                              `off` disables it. Dependency-free
+│   │                              because it runs on Bash calls; fails open
+│   │                              with no config; yields to
 │   │                              `TRAIL_SKIP_COMMIT_GUARD=1` for the
 │   │                              commit that genuinely has no work item
 │   │                              (the partial forbids inventing one).
