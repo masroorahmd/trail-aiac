@@ -141,6 +141,11 @@ DEFAULT_READING = {
     "large_file_lines": 400,
     "large_file_kb": 40,
     "head_lines": 60,
+    # The same budget for the other thing a persona reads on every turn:
+    # a Plane comment thread. Passed to the MCP server (which condenses
+    # `list_comments`), not to the partial.
+    "comment_full_bytes": 2000,
+    "comment_head_bytes": 600,
 }
 
 
@@ -538,6 +543,12 @@ def render_settings(
     plane_env: dict[str, str] = {
         "PLANE_BASE_URL": base_url,
         "PLANE_WORKSPACE_SLUG": workspace,
+        # Comment-listing budget. The server condenses `list_comments`
+        # and hands out full bodies via `retrieve_comment`; these two say
+        # where the line sits. Same `reading:` config as the file
+        # thresholds, because it is the same problem.
+        "PLANE_COMMENT_FULL_BYTES": str(reading["comment_full_bytes"]),
+        "PLANE_COMMENT_HEAD_BYTES": str(reading["comment_head_bytes"]),
     }
     for username in agents:
         prefix = persona_env_prefix(username)

@@ -627,6 +627,20 @@ class PlaneClient:
             )
         )
 
+    async def retrieve_comment(
+        self, project_id: str, work_item_ref: str, comment_id: str
+    ) -> dict[str, Any]:
+        """Retrieve one comment in full.
+
+        The counterpart to ``list_comments``, which condenses long bodies:
+        same relationship ``retrieve_work_item`` has to ``list_work_items``.
+        """
+        wid = await self.resolve_work_item(work_item_ref)
+        return await self._pat_request(
+            "GET",
+            f"projects/{project_id}/work-items/{wid}/comments/{comment_id}/",
+        )
+
     async def delete_comment(
         self, project_id: str, work_item_ref: str, comment_id: str
     ) -> None:

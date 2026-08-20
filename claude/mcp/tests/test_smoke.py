@@ -52,6 +52,7 @@ TOOL_VERBS = (
     "update_work_item",
     "add_comment",
     "list_comments",
+    "retrieve_comment",
     "list_cycles",
     "retrieve_cycle",
     "create_cycle",

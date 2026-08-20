@@ -71,10 +71,28 @@ model_lanes:
 #                      invariants that bind code far below. This read is
 #                      mandatory, not advisory — it is the mitigation
 #                      for the narrower field of view.
+#
+#   comment_full_bytes / comment_head_bytes — the same budget for the
+#                      other thing every persona reads on every turn: a
+#                      Plane comment thread. A pickup step names ONE
+#                      comment ("read SR's findings"), but the only way
+#                      to reach it is `list_comments`, which returns the
+#                      whole thread. So the MCP server sends comments as
+#                      plain text and cuts a body over `full_bytes` down
+#                      to `head_bytes`, flagged `truncated`; the persona
+#                      then calls `retrieve_comment` for the one it
+#                      needs. Trail's comment convention puts the author
+#                      and artefact kind on the first line ("Security
+#                      review (security-reviewer)"), which is what makes
+#                      a head of a few hundred bytes selectable. Measured
+#                      on a real nine-comment thread: 19.8k tokens raw,
+#                      2.0k condensed.
 reading:
   large_file_lines: 400
   large_file_kb: 40
   head_lines: 60
+  comment_full_bytes: 2000
+  comment_head_bytes: 600
 
 # Hooks — the rules the harness enforces instead of the prompt asking.
 # A rule that is mechanically checkable is the wrong thing to spend

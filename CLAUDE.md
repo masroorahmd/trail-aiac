@@ -117,7 +117,17 @@ trail-aiac/
 │   ├── mcp/                       multi-tenant Plane MCP server
 │   │                              (Python + FastMCP). One process,
 │   │                              one tool set × N personas, persona
-│   │                              prefix on every tool name.
+│   │                              prefix on every tool name. Listing
+│   │                              tools project and shorten what they
+│   │                              return, because a persona picks up with
+│   │                              a FRESH context and pays the read every
+│   │                              turn: `list_work_items` drops bodies,
+│   │                              `list_comments` converts Plane's HTML to
+│   │                              text and cuts a long comment to its head
+│   │                              (thresholds from config's `reading:`).
+│   │                              Both have a `retrieve_*` counterpart for
+│   │                              the one item the caller actually needs —
+│   │                              which is what a pickup step names anyway.
 │   ├── workflows/                 canonical persona-paths for recurring
 │   │                              kinds of work (greenfield-feature,
 │   │                              bug-fix, security-finding). Reading

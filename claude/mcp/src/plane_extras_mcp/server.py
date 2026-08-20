@@ -92,6 +92,90 @@ def _strip_descriptions(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
+# Comment fields a persona ever reads. Plane returns ~15 more (workspace,
+# project, issue, external_id, updated_by, …) that are pure overhead in a
+# reader's context, plus `comment_json` — the Tiptap document the editor
+# round-trips. Measured on a real 9-comment thread: the metadata is 8% of
+# the payload and the text 90%, so the projection alone is not the win.
+_COMMENT_KEEP_FIELDS = ("id", "created_at")
+
+_COMMENT_BODY_FIELDS = ("comment_html", "comment_stripped", "comment")
+
+# How much of a long comment `list_comments` shows before pointing at
+# `retrieve_comment`. `comment_full_bytes` is the "short enough to send
+# whole" line; anything above it is cut to `comment_head_bytes`. Trail's
+# comment convention puts the author and the kind of artefact on the first
+# line ("Security review (security-reviewer)"), so a head of a few hundred
+# bytes is enough to pick the one comment a pickup step actually names.
+# bin/install.py renders both from the consumer's `reading:` config.
+_COMMENT_FULL_BYTES = int(os.environ.get("PLANE_COMMENT_FULL_BYTES") or 2000)
+_COMMENT_HEAD_BYTES = int(os.environ.get("PLANE_COMMENT_HEAD_BYTES") or 600)
+
+_BLOCK_END_RE = re.compile(r"(?i)</(p|div|li|h[1-6]|tr|blockquote|pre)>")
+_LIST_ITEM_RE = re.compile(r"(?i)<li[^>]*>")
+_HEADING_RE = re.compile(r"(?i)<h([1-6])[^>]*>")
+_BREAK_RE = re.compile(r"(?i)<br\s*/?>")
+_DROP_ELEMENT_RE = re.compile(r"(?is)<(script|style)\b.*?</\1>")
+_ANY_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _html_to_text(value: str | None) -> str:
+    """Plane's stored comment HTML as the plain text an agent reads.
+
+    Not a general HTML renderer: it keeps the structure that carries
+    meaning in a handover comment — paragraph and list breaks, heading
+    level — and drops everything else. `comment_stripped` would be the
+    obvious field to read instead, but Plane leaves it empty on a
+    self-hosted 1.3.0 deployment, so the markup is where the text lives.
+    """
+    if not value:
+        return ""
+    text = _DROP_ELEMENT_RE.sub("", value)
+    text = _BREAK_RE.sub("\n", text)
+    text = _HEADING_RE.sub(lambda m: "\n" + "#" * int(m.group(1)) + " ", text)
+    text = _LIST_ITEM_RE.sub("- ", text)
+    text = _BLOCK_END_RE.sub("\n", text)
+    text = _ANY_TAG_RE.sub("", text)
+    text = html.unescape(text)
+    text = re.sub(r"[ \t]+", " ", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+def _condense_comments(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Project and shorten a comment listing.
+
+    Same contract `_strip_descriptions` gives work-item listings, and the
+    same reason: a pickup step names ONE comment ("read SR's findings"),
+    but the only way to reach it is a listing that returns every comment
+    whole. On a real thread that is ~20k tokens to read ~2.6k worth — paid
+    on every persona turn, because a handover starts with a fresh context.
+
+    A body over the threshold is cut to its head and marked truncated;
+    `retrieve_comment` fetches that one in full.
+    """
+    condensed = []
+    for item in items:
+        kept: dict[str, Any] = {
+            k: v for k, v in item.items() if k in _COMMENT_KEEP_FIELDS
+        }
+        body = next(
+            (item[f] for f in _COMMENT_BODY_FIELDS if item.get(f)), None
+        )
+        text = _html_to_text(body)
+        if len(text) > _COMMENT_FULL_BYTES:
+            kept["comment"] = text[:_COMMENT_HEAD_BYTES]
+            kept["truncated"] = True
+            kept["full_length"] = len(text)
+            kept["note"] = (
+                "Head only. Call retrieve_comment with this id for the "
+                "full text — do not act on the excerpt alone."
+            )
+        else:
+            kept["comment"] = text
+        condensed.append(kept)
+    return condensed
+
+
 _ESCAPED_TAG_RE = re.compile(r"&lt;/?[A-Za-z][A-Za-z0-9]*(?:\s[^&<>]*?)?/?&gt;")
 _REAL_TAG_RE = re.compile(r"<[A-Za-z/]")
 
@@ -340,10 +424,38 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         project_id: str, work_item_id: str
     ) -> list[dict[str, Any]]:
         """List comments on a work item, in Plane's native order.
+
+        Bodies come back as plain text, and a long one is cut to its head
+        and flagged ``truncated`` — the first line carries the author and
+        the kind of artefact, which is what a pickup step selects on. Use
+        ``retrieve_comment`` for the full text of the one you need.
         ``work_item_id`` accepts UUID or identifier.
         """
         async with _client() as c:
-            return await c.list_comments(project_id, work_item_id)
+            return _condense_comments(
+                await c.list_comments(project_id, work_item_id)
+            )
+
+    @mcp.tool(name=f"{prefix}__retrieve_comment")
+    async def retrieve_comment(
+        project_id: str, work_item_id: str, comment_id: str
+    ) -> dict[str, Any]:
+        """Retrieve one comment in full, as plain text.
+
+        The counterpart to ``list_comments``: read the listing, pick the
+        comment your pickup step names, fetch it here.
+        """
+        async with _client() as c:
+            result = await c.retrieve_comment(
+                project_id, work_item_id, comment_id
+            )
+        body = next(
+            (result[f] for f in _COMMENT_BODY_FIELDS if result.get(f)), None
+        )
+        return {
+            **{k: v for k, v in result.items() if k in _COMMENT_KEEP_FIELDS},
+            "comment": _html_to_text(body),
+        }
 
     # ----- cycles (sprints) -----
 
