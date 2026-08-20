@@ -102,6 +102,7 @@ DELIVERABLES = [
     "output-styles",
     "mcp",
     "workflows",
+    "hooks",
     "settings.json",
 ]
 

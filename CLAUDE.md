@@ -89,6 +89,24 @@ trail-aiac/
 │   │                              Cross-persona Plane mechanics still
 │   │                              belong in `plane-handover`, voice and
 │   │                              volume in `plain.md`.
+│   ├── hooks/                     enforcement. Where a rule is
+│   │                              mechanically checkable, a hook holds it
+│   │                              instead of a prompt paragraph asking a
+│   │                              persona to remember — the rule binds
+│   │                              harder AND the prompt gets smaller,
+│   │                              which is the one move that runs against
+│   │                              the ratchet. Wired in `settings.json`,
+│   │                              not auto-discovered. Tenant:
+│   │                              `commit-msg-guard.py` (PreToolUse/Bash)
+│   │                              denies a `git commit` whose subject does
+│   │                              not open with a work-item ID of a
+│   │                              configured Plane project; reads the
+│   │                              consumer's `config.yaml` for the valid
+│   │                              identifiers, is dependency-free because
+│   │                              it runs on Bash calls, and yields to
+│   │                              `TRAIL_SKIP_COMMIT_GUARD=1` for the
+│   │                              commit that genuinely has no work item
+│   │                              (the partial forbids inventing one).
 │   ├── mcp/                       multi-tenant Plane MCP server
 │   │                              (Python + FastMCP). One process,
 │   │                              one tool set × N personas, persona

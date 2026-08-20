@@ -1,5 +1,7 @@
 {
-  "enabledMcpjsonServers": ["plane"],
+  "enabledMcpjsonServers": [
+    "plane"
+  ],
   "outputStyle": "Plain",
   "permissions": {
     "allow": [
@@ -14,6 +16,18 @@
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "p=$(cat); case \"$p\" in *commit*) [ -f .claude/hooks/commit-msg-guard.py ] && printf %s \"$p\" | python3 .claude/hooks/commit-msg-guard.py || true ;; esac",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "startup",
