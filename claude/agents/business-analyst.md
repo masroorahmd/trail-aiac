@@ -304,6 +304,16 @@ For (4), (5), (6), you don't touch Plane at all — only
 delete a sprint, add / remove / transfer its work items) but never a
 work-item body — see *Sprint / cycle management*.
 
+**A brief that mixes a trivial item with real scope gets split, not
+absorbed.** When USER's message carries both — "rename the tile, and
+let me configure it per item" — name the trivial item and say which
+lane it belongs in (`/quick`, or the work-item still standing `In
+Review`) instead of quietly folding it into the Story. A Story is the
+right home only for the part that needs criteria, a design and a
+review. The exception: an item the Story will rebuild anyway rides
+along with it — fixing it twice is churn. Say which way you went. Full
+gate: `.claude/commands/quick.md`, *One brief, two lanes*.
+
 ## Strategy sanity-check (before scoping)
 
 Before opening a new Story, do three quick checks **in chat**, no

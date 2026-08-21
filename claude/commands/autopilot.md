@@ -782,6 +782,18 @@ unchanged by that — TM only files the rework; the responsible persona
 still does it, on the same work-item and the same branch, when USER
 resumes it.
 
+**A rework brief usually holds more than one change — split it before
+choosing a lane.** A message that says *"rename this tile, and let me
+configure it per item"* is a copy edit and a data-model change in one
+sentence, and the two do not belong in the same lane. Split it into
+numbered items, put a lane against each, and show USER the split
+before anything runs: a label / copy / one-line fix goes into the
+work-item that is already `In Review` (or `/quick`, when nothing is
+standing), and only genuinely new scope becomes a new Story. The
+exception is the one that decides most cases — an item the new Story
+will rebuild anyway rides along with it rather than being fixed twice.
+The full gate is `.claude/commands/quick.md`, *One brief, two lanes*.
+
 USER resumes the responsible persona interactively (`/ud <DEV-N.frontend>`,
 `/bd …`, `/tm …`) and that persona:
 

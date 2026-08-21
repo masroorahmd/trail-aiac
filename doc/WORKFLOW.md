@@ -646,8 +646,19 @@ gated, not a free pass:
   a mechanical sweep whose sites one command can both enumerate and
   re-verify; reversible by a single `git revert`. The boundary runs
   along risk, never along file count: a twenty-file sweep is in, a
-  two-file change to an auth path is out. Any failure routes USER to
-  `/ba` (or `/re`).
+  two-file change to an auth path is out. Any failure routes that
+  change to `/ba` (or `/re`).
+- **The gate runs per change, not per message.** A brief that arrives
+  after a review rarely holds one change — "rename the tile, and let
+  me configure it per item" is a copy edit and a data-model change in
+  one sentence. `/quick` splits the brief into numbered items, gates
+  each, and shows USER the split with a lane per item before anything
+  runs. Neither half is bounced because of the other, and neither is
+  smuggled through with the other. One exception decides most real
+  cases: an item the spine-shaped item will rebuild anyway rides along
+  with the spine — fixing it twice is churn, and reviewing the same
+  screen twice is worse. The same split applies to a rework brief
+  after an autopilot hand-back, and to a brief arriving at `/ba`.
 - **Bounce rule:** the gate is re-checked *during* implementation. If
   the change grows past it, `/quick` stops without committing and sends
   USER to the normal spine. Security work never gets routed around SR

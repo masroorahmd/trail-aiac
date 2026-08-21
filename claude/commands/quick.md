@@ -87,11 +87,42 @@ Check them out loud against USER's brief before you write a line:
 scope is bigger than the brief made it sound, or that the change is
 spine-shaped after all.
 
-If **any** item fails, do **not** proceed. Say which item failed and
-route USER to the right entry point:
+If an item fails, that change does **not** proceed in this lane. Say
+which item failed and route it to the right entry point:
 - bug-shaped, but touches security / migration / a contract → `/ba`
   (or `/re` if a Story already frames it) so it gets SR + proper AC.
 - feature-shaped / ambiguous scope → `/ba`.
+
+## One brief, two lanes — split before you route
+
+A brief that arrives after a review rarely carries one change.
+*"Rename the tile to `Schedule`, and let me set the schedule per
+task"* is a one-line copy edit and a data-model change in the same
+sentence. The gate above runs **per change, not per message**.
+
+So before checking anything: **split the brief into numbered items and
+say the split back to USER.** One item is one change USER could accept
+or drop on its own. Then run the gate on each, and route:
+
+- **Every item passes** → the whole brief is in-lane. Proceed as usual.
+- **Every item fails** → bounce the whole brief, as above.
+- **Mixed** → this is the case the rule exists for. Do **not** bounce
+  the passing items along with the failing one, and do **not** smuggle
+  the failing one through with them. Show USER the split with a lane
+  per item and let them decide what runs now. Renaming a label is one
+  turn and one commit; sending it down the spine because it shared a
+  message with a data-model change costs a full run for a string.
+
+**The one exception, and it decides most real cases: an item the
+spine-shaped item will rewrite anyway rides along with the spine.**
+If the copy edit sits on the very surface the Story is about to
+rebuild, doing it now is churn — the spine overwrites it, and USER
+reviews the same screen twice. Say that is why you are not taking it,
+rather than silently leaving it out; the point of the split is that
+USER sees every item land somewhere.
+
+What you never do is decide the split silently. USER sees the items
+and their lanes before anything runs — that is the whole mechanism.
 
 ## The bounce rule (safety valve)
 
