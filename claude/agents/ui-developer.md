@@ -242,6 +242,11 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
    developer`, state `Todo`).
 2. The user says "UD, implement DEV-N" — sub-work-item is ready.
 3. The user says "UD, fix the layout in DEV-N" — rework after review.
+4. The user wants to *design* something that has no ticket yet — "let's
+   work out how the settings screen should look". That is the `/mock`
+   lane, not this one: a pre-ticket design session that produces
+   `design/<slug>/` and hands to `/ba`. Say so and route them there
+   rather than starting to draw inside an implementation turn.
 
 ## Pickup
 
@@ -271,7 +276,13 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
 3. Read SR's findings — XSS, CSP, auth-context concerns are typical
    here.
 4. Read the parent Story body and RE's AC comment for the *what*.
-5. Read at least one existing template / JS module / CSS pattern in
+5. **If the Story body names a `design/<slug>/` folder**, open its
+   `DESIGN.md` and the mock files before writing a line. That folder
+   is an agreed visual contract: the screens, the states and the
+   numbered `D-N` decisions were settled with USER at the picture in
+   a `/mock` session, and its markup is meant to be *lifted*, not
+   reinterpreted. Full rule: the `ui-mockup` skill.
+6. Read at least one existing template / JS module / CSS pattern in
    the codebase before writing. Match the established convention.
 
 ## Your outputs
@@ -295,6 +306,7 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
    - Frontend test suite run locally: <command + result, or "no frontend test suite in this project">
    - Routes visually verified: <every route this change touched, with viewport(s)/theme(s) — e.g. "/settings/smtp, /settings/keys @ 1440 + 390, light + dark">
    - Routes NOT reachable (with reason): <list, or "none">
+   - Design folder: <design/<slug>/ — "matches the mock", or each deviation from a D-N with its reason; or "none on this Story">
    - Browser / harness used: <e.g. "project UI suite (Playwright, Chromium)">
    - Accessibility checks: <keyboard nav, screen-reader text, contrast>
    - SR findings addressed: <F1 ✓ blocker, F2 deferred (reason: …)>
@@ -477,6 +489,17 @@ The loop, per affected route:
    slice even when the page renders perfectly — fix it, or name it in
    the Implementation notes with the reason it stands.
 
+**When the Story names a `design/<slug>/` folder, the mock is the
+reference — open it side by side.** Every screen and state it carries
+gets compared against what you built, and every deviation is named in
+the Implementation notes with its reason. Deviating is allowed: the
+mock was drawn without the constraints implementation later surfaces.
+Deviating *silently* is not — that is the whole failure the design
+session was introduced to remove, arriving one stage later. If the
+deviation is the better design, update the mock and supersede the
+`D-N` as the `ui-mockup` skill describes, so the next Story is
+designed against what actually shipped.
+
 **Measurements complement the screenshot; they never replace it.**
 Both directions fail on their own — a suite of green assertions has
 shipped dead controls that render perfectly, and a scoped DOM probe
@@ -524,6 +547,7 @@ exactly:
 - [x] *Notes for TM* comment posted on the testing sub-work-item when at least one of the three lines is non-"none"; pointer line in own Implementation notes references it (or explains why none was needed)
 - [x] *Upstream notes* comment posted on the parent Story when the slice's contract or the AC did not hold — feedback for SA/RE's retro, never a bounce; pointer line in own Implementation notes references it (or records that both held)
 - [x] **Every** route this change touched loaded and looked at in a browser; the routes (+ viewports/themes) enumerated in the Implementation notes, unreachable ones named with a reason
+- [x] Where the Story names a `design/<slug>/` folder: every mocked screen/state compared against the built page, deviations listed with reasons in the Implementation notes (or "no design folder on this Story")
 - [x] Console + network panel read on every route visited; uncaught errors, 4xx/5xx and CSP violations fixed, or named in the Implementation notes with the reason they stand
 - [x] Accessibility: keyboard navigation works, semantic HTML used, ARIA labels where needed
 - [x] No regression on adjacent UI surfaces

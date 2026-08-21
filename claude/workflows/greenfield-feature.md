@@ -7,6 +7,15 @@ This is the default. Every other workflow is a deviation from this.
 
 ## Persona path
 
+0. **`/mock <screen or flow>`** *(optional — UI-heavy features only)*.
+   UD builds clickable HTML mocks in the project's own CSS; USER walks
+   them in a browser and settles screens, states and flow before a
+   ticket exists. Freezes `design/<slug>/` (mock files + `DESIGN.md`
+   with the screen × state matrix and numbered `D-N` decisions) and
+   commits it. No Plane writes. Skip it when the feature has no
+   user-visible surface, or when the surface is a single obvious
+   addition to a shipped pattern.
+
 1. **`/ba <brief>`** — BA scopes the idea against `control-manifest.md`
    and the roadmap, drafts the parent Story body
    (Problem / Target users / Success criteria / In scope / Out of scope
@@ -54,7 +63,8 @@ This is the default. Every other workflow is a deviation from this.
 
 ## Skip / consolidate
 
-- **No frontend?** SA omits the UI sub-work-item; UD never invoked.
+- **No frontend?** Skip step 0 entirely; SA omits the UI
+  sub-work-item; UD never invoked.
 - **No new docs?** SA omits the documentation sub-work-item; TW
   never invoked. Most internal-only refactors skip TW.
 - **Trivial scope?** SA can decompose into a single combined

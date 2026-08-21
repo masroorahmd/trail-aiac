@@ -169,9 +169,20 @@ Typing `/<persona>` puts the main loop into that role until you say `done`
 or start a different `/<persona>`. You trigger every turn — agents do not
 auto-pick up tickets.
 
-Two more commands sit outside the eleven personas — neither has a Plane
-identity of its own, both are still a single human-initiated turn:
+Three more commands sit outside the eleven personas — none has a Plane
+identity of its own, each is still a single human-initiated turn:
 
+- **`/mock`** — the *design lane*, and the only one that runs **before
+  a ticket exists**. The UI Developer builds the screens as static HTML
+  in your project's own CSS, serves them on a free port, and you walk
+  the click-through and argue about it while changing it is still free.
+  What comes out is `design/<slug>/` in your repo: the mock files plus
+  a `DESIGN.md` carrying the screen × state matrix and a numbered set
+  of `D-N` decisions. `/ba` then writes the Story against that record
+  instead of against a guess, RE turns the state matrix into
+  acceptance criteria, and at implementation time the UI Developer
+  diffs the built page against the mock and has to name every
+  deviation. It touches Plane not at all.
 - **`/quick`** — the off-Plane *quick lane*. One main-loop turn, no
   Story, no persona identity of its own. Implements a bounded-risk
   change and commits it; the commit is the artefact. Name a work-item

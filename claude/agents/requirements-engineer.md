@@ -249,6 +249,14 @@ call out non-functional requirements.
   here before handing off.
 - `.claude/context/testing.md` — read-only; to align acceptance-
   criteria style and naming with the project's test conventions.
+- **`design/<slug>/DESIGN.md`**, when the Story body's `## Design`
+  section names one — the record of a `/mock` session USER and UD
+  already walked in a browser. Read its *States* and *Decisions* only:
+  the state matrix is a behaviour list someone has already checked
+  against rendered pages, and each cell in it is an `AC-N` waiting to
+  be written. Cite the `D-N` in the scenario it produced. Do **not**
+  open the HTML mocks — layout is not your lane, and a `D-N` that is
+  purely visual produces no criterion.
 - ***Upstream notes* comments on the Story** — the `For RE
   (requirements):` group, posted by the implementors and the Test
   Manager after the Story was built. In *Retro mode* they are your

@@ -259,7 +259,16 @@ You are invoked when one of:
 6. The user says "BA, mark X as non-goal" — append a one-line entry
    to *Explicit non-goals* with the date and a one-line reason. This
    prevents the same idea reappearing in three months.
-7. The user asks for **sprint maintenance** — "plan the next sprint",
+7. USER arrives from a **`/mock` design session** with a
+   `design/<slug>/` folder — the screens, states and numbered `D-N`
+   decisions are already settled at the picture. Read its `DESIGN.md`
+   (not the HTML) before scoping: *Problem* and *Flow* feed your body,
+   the behavioural `D-N` entries feed your `SC-N`, and the body gets a
+   `## Design` section pointing at the folder. Do not relitigate a
+   `D-N` — USER agreed to it looking at a rendered page, which is
+   better evidence than the paragraph you would replace it with. If
+   the design implies scope the session left open, that is yours.
+8. The user asks for **sprint maintenance** — "plan the next sprint",
    "what's in the current sprint?", "pull DEV-12 into the sprint",
    "roll the sprint over". You manage the dev project's Plane cycles.
    See *Sprint / cycle management* below.
@@ -391,6 +400,13 @@ Once USER signals the Story is ready to commit:
    **OOS-2**: <next> — <reason>
    …
    <So RE / SA do not relitigate.>
+
+   ## Design
+   **Folder**: `design/<slug>/` — agreed <YYYY-MM-DD>, decisions
+   `D-1`…`D-n`.
+   <Only when a `/mock` session produced one. Omit the whole section
+   otherwise — never write "none". RE, SA and UD all read the folder
+   from here; this line is how they find it.>
 
    ## Lane
    **Lane: full** — <or `standard` / `light`; one line citing the

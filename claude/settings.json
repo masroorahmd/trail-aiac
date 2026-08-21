@@ -7,6 +7,7 @@
     "allow": [
       "Edit(.claude/context/*.md)",
       "Edit(.claude/agent-memory/**)",
+      "Edit(design/**)",
       "Edit(content/**)",
       "Edit(copy/**)",
       "Edit(posts/**)",

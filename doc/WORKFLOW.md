@@ -37,6 +37,7 @@ the previous page-based design fragile. Everything now lives in
 |---|---|---|
 | Founder operations (GM) | HQ-project work-item *body* | Behörden / Notar / Recht / Steuern / Staffing / Förderung / Compliance; no separate page |
 | Marketing & site (MM) | MKT-project work-item *body* | Brand voice, SEO, `.org` narrative / `.com` funnel; hands site code to UD |
+| UI design record (UD, pre-ticket) | `design/<slug>/` in the project repo | Mock HTML + `DESIGN.md` (screens, state matrix, numbered `D-N` decisions). Not in Plane — it predates the Story |
 | Story requirements (BA) | Story work-item *body* | Problem / Target users / Success criteria / In scope / Out of scope |
 | Acceptance Criteria (RE) | Comment on the Story work-item | Or omitted if RE passthroughs |
 | Architecture per module slice (SA) | Each sub-work-item's *body* | Module / AC scenarios covered / Approach / Components / Trade-offs / Notes for SR |
@@ -136,6 +137,49 @@ Conventions:
   transfer unfinished work); the rule governs work-item *bodies*, not
   cycles.
 
+## Stage 0 — the design session (`/mock`, optional)
+
+Everything from BA to SR is prose about the *what*. For a UI-heavy
+Story that means the first artefact anyone can look at is shipped
+code, and USER's first chance to disagree with a layout, a wording or
+a flow arrives at `In Review` — where disagreeing costs a rework
+round. `/mock` moves that decision in front of the ticket.
+
+USER and the **UI Developer** build the screens as static HTML in the
+project's own CSS, serve them on a free port, and walk the
+click-through together. The session touches Plane not at all. Its
+output is `design/<slug>/` at the repo root — git-tracked, and
+deliberately outside `.claude/`, which some consumers gitignore whole:
+
+- `index.html` — the click-through USER opens.
+- `<screen>--<state>.html` — one file per screen × state.
+- `DESIGN.md` — the deliverable: *Problem*, *Screens*, *States* (the
+  full matrix), *Flow*, numbered **`D-N` decisions**, *Rejected*,
+  *Open*, and the shortlist of conventions that belong in `ui.md`.
+
+`D-N` is an ID in the same family as `SC-N`, `AC-N` and `CM-N`, and
+that is what makes the folder bind rather than merely inform:
+
+| Persona | What it takes from the folder |
+|---|---|
+| BA | *Problem* / *Flow* feed the Story body; behavioural `D-N` feed the `SC-N`; the body gains a `## Design` section naming the folder |
+| RE | *States* and *Decisions* only — each state cell becomes an `AC-N`, citing its `D-N`. RE does not open the HTML; layout is not RE's lane |
+| SA | `D-N` are settled input for the `frontend` slice — cited in *Approach*, not re-decided. What SA owes back is the engineering consequence under *Expected shape* |
+| UD | Opens the mock before writing, lifts its markup, and at the visual gate diffs the built page against it — every deviation named in the Implementation notes with its reason |
+
+A deviation is allowed: implementation surfaces constraints the mock
+was drawn without. A *silent* one is not — that is the original
+failure arriving one stage later. When the deviation is the better
+design, UD updates the mock and supersedes the `D-N`, so the next
+Story is designed against what actually shipped. Description-once does
+not apply here: the folder is a repo file, not a Plane body, and it is
+supposed to stay current.
+
+The session is over the moment it wants to touch a real template
+(that is implementation) or needs a backend contract, data model or
+dependency chosen (that is SA's). Full contract: the `ui-mockup`
+skill.
+
 ## Workflow diagram
 
 ```
@@ -143,6 +187,15 @@ Conventions:
 │                            USER                                  │
 │        (dispatcher, reviewer, closes every ticket)               │
 └──────┬───────────────────────────────────────────────────────────┘
+       │ chat (/mock)  ── optional, UI-heavy Stories only
+       ▼
+   ┌─────────┐
+   │   UD    │   builds clickable HTML mocks in the project's own
+   └────┬────┘   CSS; USER walks them in a browser. Freezes
+                 `design/<slug>/` (mocks + DESIGN.md with the
+                 screen × state matrix and numbered `D-N`).
+                 No Plane, no ticket, no production code.
+       │
        │ chat (/ba)
        ▼
    ┌─────────┐
@@ -222,6 +275,13 @@ Conventions:
 ```
 
 ## Walkthrough
+
+0. **USER ↔ UD design session (optional, `/mock`).** For a UI-heavy
+   Story, USER settles the screens before a ticket exists: UD builds
+   the mocks, USER walks them in a browser, and the agreed result is
+   frozen as `design/<slug>/` and committed. Nothing is written to
+   Plane. USER carries the folder path into the next step. See
+   *Stage 0* above.
 
 1. **USER ↔ BA chat.** USER discusses an idea with the Business Analyst
    (`/ba <brief>`) until they agree on a Story. BA creates the parent

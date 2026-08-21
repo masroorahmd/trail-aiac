@@ -44,7 +44,12 @@ trail-aiac/
 │   │                              `<consumer>/.claude/` as REAL files.
 │   ├── agents/                    11 persona definitions (loaded
 │   │                              into the main loop by /<persona>)
-│   ├── skills/                    shared skills (plane-handover —
+│   ├── skills/                    shared skills (ui-mockup — the
+│   │                              /mock design-session contract:
+│   │                              where the mock lives, its fidelity,
+│   │                              the D-N decision record, and how
+│   │                              BA/RE/SA/UD each read it;
+│   │                              plane-handover —
 │   │                              also the single home of the
 │   │                              §Right-sizing rule that bounds how
 │   │                              big any persona's artefact gets;
@@ -56,6 +61,11 @@ trail-aiac/
 │   ├── commands/                  slash-command dispatchers
 │   │                              (/gm, /ba, /re, /sa, /sr, /bd,
 │   │                              /ud, /tm, /tw, /rm, /mm, /kickoff,
+│   │                              /mock — pre-ticket UI design lane
+│   │                              (UD builds clickable HTML mocks in
+│   │                              the project's CSS; output is
+│   │                              design/<slug>/ in the project repo,
+│   │                              never Plane),
 │   │                              /quick — off-Plane quick lane,
 │   │                              /autopilot — unattended full-spine lane)
 │   ├── output-styles/             system-prompt styles for the main

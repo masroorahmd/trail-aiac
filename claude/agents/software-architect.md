@@ -247,6 +247,15 @@ needs to deliver.
   decision this Story locked in.
 - `.claude/context/api.md` — read for current API conventions; you
   also maintain it when this Story changes the public API surface.
+- **`design/<slug>/DESIGN.md`**, when the Story body's `## Design`
+  section names one — the record of a `/mock` session USER walked in a
+  browser before the Story existed. For the `frontend` slice its
+  numbered `D-N` decisions are **settled input, not a proposal**: cite
+  them in *Approach* rather than re-deciding layout, states or flow.
+  What you do owe it is the engineering consequence — a component or
+  dependency the design implies goes under *Expected shape*, and a
+  `D-N` that cannot be built as drawn is a *Stop-on-ambiguity* for
+  USER, never a quiet substitution.
 - `.claude/context/stack.md` — read-only; the project's tech stack.
 - `.claude/context/coding.md` — read-only; coding conventions.
 - `.claude/context/glossary.md` — read-only; for vocabulary
