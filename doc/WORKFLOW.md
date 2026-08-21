@@ -710,10 +710,41 @@ spine but removes the human from between its stages. One
 human-initiated turn (USER types `/autopilot DEV-N`) drives an
 already-framed Story — or every Story in a work-item tree above it —
 through the spine: RE → SA → SR → BD/UD → TM → TM review run → SR-diff
-→ TW → commit → RM → hand back, without stopping to ask USER anything. That chain is the
+→ TW → commit → RM → hand back, without stopping to ask USER anything
+on the way forward. That chain is the
 *maximum* path: in **lean-lane mode** (the default) the orchestrator
 uses judgement to trim the ceremony a small Story doesn't need (see
 below).
+
+**The forward path is unattended; re-entry is not.** Two moments are
+not a continuation of the run but the start of a new one, and they are
+where an unattended run's cost accumulates: a **repair round** (going
+back into a stage that already finished, because TM found a red suite,
+the review run found a defect, or SR's diff pass found something
+fixable) and the **switch to the next Story** of a multi-Story tree.
+With `autopilot.approval.repair_rounds` / `.story_switch` on — the
+default, and the reading for a config that predates the keys — the
+orchestrator does not start either on its own. It **pauses**: the turn
+ends with a decision box carrying the finding verbatim, who would fix
+it, what the round re-runs, and what is already committed; USER picks
+`repair` / `follow-up` / `ride the hand-back` / `stop here`, and the
+run continues in the same thread with everything it has already read.
+
+A pause is deliberately not a STOP: no hand-back, no Plane write, no
+summary — because resuming from a hand-back means every persona reads
+the ticket again, which is the cost the gate exists to remove. And a
+pause is never offered on a hard gate: an SR blocker or high, a
+violated `CM-N`, an app that will not boot are STOPs, because whether
+to ship a security finding is not USER's decision to be asked about.
+Set both knobs `false` for the old behaviour — rounds run automatically
+up to `max_repair_iterations`.
+
+**There is no security pass after the Technical Writer.** TW lands
+after SR's diff pass by construction, so its edits are always
+post-review; that is the design, not a gap. A docs-only diff is what
+SR's own lean-lane rule says to skip, and re-reviewing prose — then
+repairing the prose, then verifying the repair — spends three
+subagents on wording.
 
 **It never merges and never closes.** Autopilot's terminal state is a
 reviewable hand-back: each Story ends `In Review`, assigned to USER,

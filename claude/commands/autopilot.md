@@ -1,5 +1,5 @@
 ---
-description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Before the hand-back the Test Manager **drives its own review steps** against the running app, triaging what it finds back to the owning persona as a rework round — or, when the fix is too large for the slice, into a follow-up work-item. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with those step-by-step review steps and the result of the run; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/review-run/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Before the hand-back the Test Manager **drives its own review steps** against the running app, triaging what it finds back to the owning persona as a rework round — or, when the fix is too large for the slice, into a follow-up work-item. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with those step-by-step review steps and the result of the run; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/review-run/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. The forward path runs hands-off, but **re-entry does not**: with `autopilot.approval` on (the default) the run pauses with a decision box before any repair round and before each Story switch, and resumes in the same thread — so a finding costs a question rather than three cold subagents. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
 argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each>"
 ---
 
@@ -84,7 +84,10 @@ sub-work-item it implements, the wrap-up commit with the Story.
    deliberately auto-allows writes only to context/memory paths — **not**
    the source tree, git, or Plane MCP — so in a default-prompting
    session the implementor subagents *will* pause for approval and the
-   run is no longer hands-off. State this once at the top of the run:
+   run is no longer hands-off. (An *approval gate* is a different
+   thing and is expected: it ends your turn with a question rather
+   than blocking a subagent mid-write.) State this once at the top of
+   the run:
    autopilot is meant to be launched in an accept-edits / non-prompting
    permission mode. If you observe a permission prompt interrupting a
    subagent, surface it in the summary — do **not** ask USER to broaden
@@ -264,8 +267,15 @@ turn (call it `<DEV-N>` throughout the spine):
    are independent as far as you could tell.
 
 2. **On a clean COMPLETED** (spine step 11 handed the Story back to
-   USER): move to the next Story in the list. Nothing is merged and
-   nothing is deleted; the branch stays.
+   USER): nothing is merged and nothing is deleted; the branch stays.
+   Then, when `autopilot.approval.story_switch` is `true` (the
+   default), **pause before starting the next Story** — decision box
+   per *Approval gates*, with the finished Story's outcome, what is
+   still PENDING, and the rows `★ next Story` / `stop here — I'll
+   review this one first`. USER has just gained information the
+   remaining Stories were scoped without, and this is the only moment
+   it is free to act on. With the knob `false`, move straight to the
+   next Story as before.
 3. **On STOP** for any Story: **halt the whole work list.** Do not start
    the remaining Stories. Hand back per *Hand-back on STOP*, and in the
    summary record which Stories COMPLETED, which one STOPPED and why, and
@@ -281,6 +291,96 @@ moving it to `In Review` would say it is.
 For a LEAF work list this loop runs exactly once, with no containers.
 For a NESTED tree it is the same spine, looped once per Story, with the
 container hand-back appended.
+
+## Approval gates — a new round needs USER's word
+
+Two things in this lane are not a continuation of the run but the
+*start of a new one*, and both are where the cost lives:
+
+- **A repair round** — re-entering a stage that already finished,
+  because TM found a red suite (step 5), the review run found a defect
+  (step 6), or SR's diff pass found something fixable (step 7). One
+  round is an implementor subagent *plus* a TM re-run *plus*, at step
+  7, an SR re-run — and each of those subagents starts cold and reads
+  the ticket again.
+- **The next Story** in a multi-Story work list — a fresh branch, a
+  fresh spine, and everything the previous Story just taught USER
+  still unapplied.
+
+When `autopilot.approval.repair_rounds` / `autopilot.approval.story_switch`
+is `true`, you do **not** start these on your own. You **pause**: end
+the turn with the decision box below, and wait.
+
+**Absent means on.** `config.yaml` is a consumer file that survives
+every install, so a project that predates this gate has no `approval:`
+block at all. Read the missing key as `true` — the expensive default
+is the one a consumer has to ask for, not the one they inherit by not
+having been re-configured.
+
+**A pause is not a STOP.** Nothing is handed back, no Plane state is
+touched, no terminal summary is written, the branch and working tree
+stay exactly as they are, and you keep everything you have already
+read. USER answers in the same thread and you continue from precisely
+where you stopped. That is the whole reason this is a pause rather
+than a hand-back: resuming from a hand-back re-reads the ticket, and
+re-reading the ticket is the cost this gate exists to avoid.
+
+### The decision box
+
+Close the turn with a fenced ASCII box titled **`Decision`**
+(DE: **`Entscheidung`**), single-width Unicode box-drawing chars
+(`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤`), columns `# / Option / Effect`
+(DE: `# / Option / Effekt`). Above the box, in prose, state four things
+and nothing else:
+
+1. **What was found** — the finding *verbatim* from the persona's
+   verdict, not your paraphrase of it. USER is deciding on evidence.
+2. **Who would fix it** — the persona `NEXT:` names, and the
+   sub-work-item that owns the slice.
+3. **What the round costs** — which stages it re-runs (implementor +
+   TM, or implementor + TM + SR), and how many rounds the shared
+   budget has left.
+4. **What is already safe** — which stages PROCEEDed, what is
+   committed, on which branch. USER is deciding whether to spend more,
+   and can only judge that against what is already banked.
+
+Rows, at minimum:
+
+- **`★ repair`** — spawn the named persona with the finding, commit the
+  fix, re-run the stages the round requires. Mark it `★` only when the
+  finding blocks the Story's own AC.
+- **`follow-up`** — the owning persona files one `Follow-up: …`
+  work-item, the run continues forward, and the outcome becomes
+  `COMPLETED-WITH-FINDINGS`.
+- **`ride the hand-back`** — the finding is named in the Story comment
+  and USER deals with it during their own review. No extra subagent
+  at all; this is the cheapest row and often the right one.
+- **`stop here`** — end the run per *Hand-back on STOP*, branch intact.
+
+Reply shorthand: bare `ok` / `go` / `weiter` accepts `★`; a number
+selects that row; prose discusses first.
+
+### What a pause never does
+
+- **Never pause on a hard gate.** An SR `blocker` or `high`, a violated
+  `CM-N`, an app that will not boot, a risk-lane breach — those are
+  STOPs and stay STOPs. There is no decision for USER to make about
+  whether to ship a security finding, and offering one would be the
+  wrong question asked politely.
+- **Never pause mid-stage.** A subagent always runs to its verdict; the
+  gate sits *between* stages, where the tree is consistent and the
+  question is answerable.
+- **Never pause on the forward path.** RE → SA → SR → implementors →
+  TM → review run → TW → commit → RM runs unattended exactly as
+  before. The gate is on **re-entry**, never on progress.
+- **Never bank pauses.** One finding, one box. Collecting three
+  findings across two stages and asking once turns a decision into a
+  digest, and USER answers digests worse than they answer decisions.
+
+`max_repair_iterations` still caps the rounds USER *approves* — an
+approval buys one round, not a licence to loop. With both approval
+knobs `false`, the old behaviour applies unchanged: rounds run
+automatically up to the budget.
 
 ## Lean-lane discretion (skip and merge stages to fit the work)
 
@@ -508,8 +608,10 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    - TM PROCEEDs only with a **green suite**.
    - TM returns `REPAIR` for a fixable red suite (with `NEXT:` naming
      the implementor). That is the **repair loop**, not a STOP:
-     re-spawn that implementor with TM's failure detail directly in the
-     feature tree — then run TM again. After the implementor's fix, commit
+     **first pause** per *Approval gates* when
+     `autopilot.approval.repair_rounds` is on; only once USER picks
+     `repair` do you re-spawn that implementor with TM's failure detail
+     directly in the feature tree — then run TM again. After the implementor's fix, commit
      it onto the feature branch (same ID prefix, same `Trail-Lane`
      trailer) before
      re-running TM. Repeat at most `max_repair_iterations` times. If
@@ -543,14 +645,18 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    - **REPAIR** — a defect in a slice this Story delivered. TM has
      already filed the *Rework request* on the owning sub-work-item and
      set its assignee back to that persona; `NEXT:` names the persona.
-     Re-spawn that implementor with TM's finding detail, in the feature
-     tree, then re-spawn TM's review run for the next round (it re-runs
+     **Pause first** per *Approval gates* when
+     `autopilot.approval.repair_rounds` is on — this is the stage that
+     produces the most rounds, so it is the one the gate is really for.
+     On `repair`, re-spawn that implementor with TM's finding detail, in
+     the feature tree, then re-spawn TM's review run for the next round (it re-runs
      the suite itself and re-drives only the failed and dependent
      steps). Commit the implementor's fix onto the feature branch with
      the `Trail-Lane` trailer before the re-run, same as step 4b.
-     **This is the intended common case** — the branch is standing and
-     the persona that built the slice is one spawn away, which is
-     exactly why routing a defect back beats filing it.
+     Routing a defect back to the persona that built the slice is
+     cheap in *mechanism* — the branch is standing and the persona is
+     one spawn away — but it is not cheap in tokens, and whether it is
+     worth a round is USER's call, not yours.
    - **Budget exhausted** — TM converts the remaining findings into
      follow-up work-items and returns PROCEED rather than leaving the
      Story stranded. Record it in the summary and set the outcome to
@@ -596,8 +702,11 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    words go to what is new.
 
    On a fixable finding SR returns `REPAIR` with `NEXT:` naming the
-   implementor, exactly as TM does — re-spawn, commit the fix, re-run
-   TM then SR. Draws on the same shared `max_repair_iterations` budget
+   implementor, exactly as TM does — **pause** per *Approval gates*
+   first when `autopilot.approval.repair_rounds` is on, then on
+   `repair`: re-spawn, commit the fix, re-run TM then SR. This is the
+   most expensive round in the spine (three subagents), which is why
+   the gate matters most here. Draws on the same shared `max_repair_iterations` budget
    as steps 5 and 6. When the fix touches a surface the review run
    exercised, re-run step 6 for the affected steps too.
 
@@ -609,7 +718,17 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
 
 8. **Technical Writer** — spawn with persona `technical-writer` only if
    SA created a documentation sub-work-item. TW updates user-facing
-   docs. (Internal-only changes skip this — no STOP.) **Lean-lane:** you
+   docs. (Internal-only changes skip this — no STOP.)
+
+   **There is no SR pass after TW, and step 7's re-run rule does not
+   reach here.** TW lands after SR's diff pass by construction, so
+   "TW's edits are unreviewed code" is true of every run and is not a
+   finding. A docs-only diff is exactly what step 7's own lean-lane
+   rule tells you to skip, and re-running SR over prose — then TW to
+   repair the prose, then SR to verify it — is three subagents spent
+   on wording. If TW's edit somehow touches executable code or a
+   security-relevant config value, that is not a doc edit: it is a
+   slice, and it goes back through step 7 as one, with the gate. **Lean-lane:** you
    may also skip TW even when a doc item exists, if the change is
    internal-only or the doc delta is trivially self-evident — log a
    `SKIP-N`.
@@ -841,6 +960,12 @@ covering:
   here rather than a silent doubling of what USER has to read.
 - Each gate decision (SR verdict, repair iterations used out of the
   shared budget, and which stage spent them).
+- **Every approval gate that fired** — what was found, what it would
+  have cost, and what USER chose (`repair` / `follow-up` / `ride the
+  hand-back` / `stop here`). A run that reached the hand-back without
+  a single gate firing says that in one line: it means nothing
+  re-entered a finished stage, which is the cheap outcome and worth
+  naming.
 - **Upstream notes left for a retro** — per driven Story, which
   *Upstream notes* comments were posted and by whom, split into `For SA
   (decomposition)` and `For RE (requirements)` / AC-drift. Autopilot
@@ -885,10 +1010,13 @@ covering:
 ## Operating mode (the orchestrator itself)
 
 - **Main loop, not a subagent.** You stay the orchestrator for this
-  turn. Unlike the personas, you self-finalize: you do not present an
-  end-of-turn menu and you do not pause between stages to ask USER —
-  the whole point is one unattended run. The *only* legitimate pause is
-  the pre-flight (missing ticket ID / dirty tree / autopilot disabled).
+  turn, and across every turn a pause spans. On the **forward path**
+  you self-finalize: no end-of-turn menu, no asking between stages —
+  that is what makes the lane unattended. You pause in exactly three
+  places and nowhere else: the pre-flight (missing ticket ID / dirty
+  tree / autopilot disabled), an **approval gate** (*Approval gates* —
+  a repair round or a Story switch), and a STOP. Everything else runs
+  to the hand-back without you asking anything.
 - **You never call a `plane__*` tool.** If you catch yourself wanting
   to read or write Plane, that work belongs in a persona subagent —
   spawn it.

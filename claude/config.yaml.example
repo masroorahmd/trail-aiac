@@ -194,12 +194,43 @@ hooks:
 #                           review steps. Set false to force the full
 #                           spine every run (compliance-heavy projects).
 #                           Default true.
+# Autopilot — the unattended lane.
+#
+#   max_repair_iterations — how many repair rounds the shared budget
+#                     allows across TM's suite gate, the review run and
+#                     SR's diff pass. Still a cap on rounds USER
+#                     *approves* when the gates below are on.
+#   approval        — the two moments that are not a continuation of the
+#                     run but the start of a new one, and where the cost
+#                     of an unattended run actually accumulates. With
+#                     these on, autopilot's forward path stays
+#                     hands-off and only *re-entry* needs a word from
+#                     USER — it ends its turn with a decision box and
+#                     resumes in the same thread, keeping everything it
+#                     has already read.
+#
+#     repair_rounds Pause before re-entering a stage that already
+#                   finished (TM's red suite, a review-run defect, an
+#                   SR-diff finding). One round is an implementor plus a
+#                   TM re-run plus, at SR, an SR re-run — three cold
+#                   subagents that each re-read the ticket. Hard gates
+#                   (SR blocker/high, a violated CM-N, an app that will
+#                   not boot) are never a pause: they stay STOPs.
+#     story_switch  Pause before starting the next Story of a
+#                   multi-Story tree, so what the finished Story taught
+#                   can still change what the next one does.
+#
+#                   Set both to `false` for the old fully-unattended
+#                   behaviour: rounds run automatically up to the budget.
 autopilot:
   enabled: false
   max_repair_iterations: 2
   max_risk_lane: standard
   lean_lane: true
   review_run: true
+  approval:
+    repair_rounds: true
+    story_switch: true
 
 # Plane ticket system configuration. Any Plane deployment works — cloud or
 # self-hosted. Tokens per agent go into credentials.yaml.

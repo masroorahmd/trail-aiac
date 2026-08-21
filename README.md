@@ -199,8 +199,15 @@ identity of its own, each is still a single human-initiated turn:
   that drives an already-framed Story — or every Story in a work-item
   tree above it — through the spine (RE → SA → SR → BD/UD → TM →
   TM review run → SR-diff → TW → commit → RM → hand back) with no human
-  in the loop, each persona
-  running as a subagent under its own Plane identity. The Test Manager
+  in the loop **on the way forward**, each persona
+  running as a subagent under its own Plane identity. Going *back* is
+  different: before any repair round — a red suite, a review-run
+  defect, an SR-diff finding — and before switching to the next Story
+  of a tree, it pauses with a decision box (`repair` / `follow-up` /
+  `ride the hand-back` / `stop here`) and resumes in the same thread,
+  so a finding costs you a question instead of three cold subagents.
+  Hard gates never become a question: an SR blocker, a violated `CM-N`
+  or an app that won't boot still STOP. The Test Manager
   doesn't just write the review steps, it **drives them** against the
   running app and routes each defect back to the persona that owns the
   slice. **It never merges and never closes:** one feature branch per
