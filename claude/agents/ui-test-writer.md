@@ -45,7 +45,7 @@ write tests, run them, return one summary message, exit.
   fail, and flag the failure in your return message. Do not patch
   production code to make a test go green.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 ## What test-manager passes you
 

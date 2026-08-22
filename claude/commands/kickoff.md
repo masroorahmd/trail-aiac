@@ -22,7 +22,7 @@ contains only HTML comments (`<!-- ... -->`) and section headings —
 i.e. no real prose, no real bullet content. Anything else is
 *substantive*: leave it alone unless `--force-overwrite`.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 ## Phase 1 — Discover the project (silent)
 

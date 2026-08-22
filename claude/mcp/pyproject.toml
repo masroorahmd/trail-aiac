@@ -1,7 +1,7 @@
 [project]
 name = "plane-extras-mcp"
 version = "0.1.0"
-description = "Multi-tenant MCP server for Plane: every persona's API token in one stdio process, tools name-prefixed by persona."
+description = "Multi-tenant MCP server for Plane: every persona's API token in one stdio process, one tool set routed by a persona argument."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

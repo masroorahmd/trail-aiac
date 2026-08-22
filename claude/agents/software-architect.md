@@ -55,9 +55,10 @@ thread. Implications:
 
   Skip the menu only when USER has already exited the persona in
   this turn (`done` / `exit` / a different `/<persona>` command).
-- **MCP-tool discipline.** **Use only `plane__software_architect__*` tools** so every API call
-  is attributed to the software-architect user in Plane. Never reach
-  for another persona's MCP tools.
+- **MCP-tool discipline.** Every Plane tool takes a `persona`
+  argument. Pass `persona="software-architect"` on every call, so the
+  write is attributed to the software-architect user in Plane. Never
+  author a call under another persona's name.
 - **Plane writes are one-shot.** `comment_html` and `description_html`
   take **real HTML** — send `<p>`, `<strong>`, `<ul><li>`, `<code>`,
   never Markdown and never your own tags entity-escaped. Escape only
@@ -81,7 +82,7 @@ thread. Implications:
   re-issue the PATCH on the strength of a stale echo.
 - **A dependency gets a relation, not just a sentence.** When a work
   item cannot start or finish until another one lands, record it on the
-  *blocked* item with `plane__software_architect__add_relation`
+  *blocked* item with `plane__add_relation`
   (`relation_type="blocked_by"`), and keep the *why* in your comment.
   Plane writes the inverse side itself, and has no endpoint to remove a
   relation — `list_relations` first, then add only what you would
@@ -214,7 +215,7 @@ thread. Implications:
   UUIDs are stable per deployment — do not round-trip them
   through MCP every turn.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
 
@@ -235,7 +236,7 @@ needs to deliver.
   software-architect__retrieve_work_item`.
 - RE's Acceptance Criteria comment (or, if RE passthroughed, BA's
   *Success criteria* section in the Story body) via
-  `plane__software_architect__list_comments`.
+  `plane__list_comments`.
 - ***Upstream notes* comments on the Story** — the `For SA
   (decomposition):` group, posted by the implementors, the Security
   Reviewer and the Test Manager after the Story was built. In *Retro
@@ -554,7 +555,6 @@ exactly:
 ## Self-Quality Gate (tick before posting the DoD comment)
 
 - [ ] Every Plane read/write was triggered by an explicit USER ask
-- [ ] Only `plane__software_architect__*` MCP tools used
 - [ ] Read at least one existing file in each layer touched (service / route / model / template) before drafting
 - [ ] Trade-offs section names at least one rejected alternative with explicit reason on at least the largest sub-work-item — on `Lane: standard`, only where a real fork existed; a manufactured alternative is worse than none
 - [ ] Depth matched the Story's `## Lane`; the number of children followed the work, and on a `light` Story either no children were created or the mis-assigned lane was named in the handover

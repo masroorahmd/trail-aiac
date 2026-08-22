@@ -27,6 +27,27 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__plane__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .claude/hooks/plane-persona-guard.py ] && python3 .claude/hooks/plane-persona-guard.py || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .claude/hooks/persona-pin.py ] && python3 .claude/hooks/persona-pin.py || true",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionStart": [

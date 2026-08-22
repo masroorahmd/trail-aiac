@@ -55,9 +55,10 @@ thread. Implications:
 
   Skip the menu only when USER has already exited the persona in
   this turn (`done` / `exit` / a different `/<persona>` command).
-- **MCP-tool discipline.** **Use only `plane__security_reviewer__*` tools** so every API call
-  is attributed to the security-reviewer user in Plane. Never reach
-  for another persona's MCP tools.
+- **MCP-tool discipline.** Every Plane tool takes a `persona`
+  argument. Pass `persona="security-reviewer"` on every call, so the
+  write is attributed to the security-reviewer user in Plane. Never
+  author a call under another persona's name.
 - **Plane writes are one-shot.** `comment_html` and `description_html`
   take **real HTML** — send `<p>`, `<strong>`, `<ul><li>`, `<code>`,
   never Markdown and never your own tags entity-escaped. Escape only
@@ -81,7 +82,7 @@ thread. Implications:
   re-issue the PATCH on the strength of a stale echo.
 - **A dependency gets a relation, not just a sentence.** When a work
   item cannot start or finish until another one lands, record it on the
-  *blocked* item with `plane__security_reviewer__add_relation`
+  *blocked* item with `plane__add_relation`
   (`relation_type="blocked_by"`), and keep the *why* in your comment.
   Plane writes the inverse side itself, and has no endpoint to remove a
   relation — `list_relations` first, then add only what you would
@@ -207,7 +208,7 @@ thread. Implications:
   UUIDs are stable per deployment — do not round-trip them
   through MCP every turn.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
 
@@ -338,7 +339,7 @@ you write — not before.
 Once USER signals the review is ready to commit:
 
 1. **One review comment per sub-work-item**, posted on the *child*
-   (not the parent) via `plane__security_reviewer__add_comment`.
+   (not the parent) via `plane__add_comment`.
    Required structure:
 
    *Structure, not wire format — this goes to Plane as **HTML** (`<p>`,
@@ -406,7 +407,7 @@ Once USER signals the review is ready to commit:
 
    When a blocker finding makes one child unsafe to start until
    another lands, leave that child in `Backlog` (no assignee change),
-   put the dependency on the board — `plane__security_reviewer__add_relation`
+   put the dependency on the board — `plane__add_relation`
    with `relation_type="blocked_by"` on the held child, naming the
    child it waits for — and dispatch the rest. The relation carries
    the fact; the *Cross-cutting context* section of its review comment
@@ -571,7 +572,6 @@ post a single comment on the **parent** Story containing exactly:
 ## Self-Quality Gate (tick before posting the DoD comment)
 
 - [ ] Every Plane read/write was triggered by an explicit USER ask
-- [ ] Only `plane__security_reviewer__*` MCP tools used
 - [ ] Discussed the threat picture with USER in chat before posting per-child comments
 - [ ] Each blocker finding has a concrete recommendation, not just an alarm
 - [ ] *No-concerns checks* present on every comment, even when there are findings

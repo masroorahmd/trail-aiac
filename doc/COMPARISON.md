@@ -161,7 +161,7 @@ In BMAD, the agent persona is a prompt frame; the bus author of
 every artefact is the human user (or whatever account commits to
 git). We push identity all the way down: every persona has its own
 Plane account with its own API token, and the persona prompt
-restricts that agent to its own `plane__<persona_snake>__*` tools
+restricts that agent to its own `persona` on every Plane call
 on the multi-tenant `plane` MCP server, which routes the call to
 the matching token internally.
 

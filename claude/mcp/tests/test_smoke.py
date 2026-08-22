@@ -1,8 +1,8 @@
 """Smoke tests — no Plane connection required.
 
-These verify the package loads, the per-persona tool prefixing works,
-calls route to the right token, and the PlaneClient constructs URLs
-correctly.
+These verify the package loads, one tool set serves every persona,
+calls route to the right token for the ``persona`` argument they carry,
+and the PlaneClient constructs URLs correctly.
 """
 
 from __future__ import annotations
@@ -29,14 +29,13 @@ from plane_extras_mcp.plane import (
 )
 from plane_extras_mcp.server import (
     _persona_credentials,
-    _persona_tool_prefix,
     _repair_double_encoded_html,
     mcp,
     register_personas_from_env,
 )
 
-# Tools registered per persona — kept in sync with server.py's
-# _register_persona_tools. Order matches the source for readability.
+# The whole tool set — kept in sync with server.py's _register_tools.
+# Order matches the source for readability.
 TOOL_VERBS = (
     "list_projects",
     "list_workspace_members",
@@ -70,14 +69,28 @@ PROJECT_UUID = "11111111-2222-3333-4444-555555555555"
 WORK_ITEM_UUID = "92493a08-d1f2-496f-81d0-07a9a6d6d389"
 
 
-def _clear_persona_tools(personas: list[str]) -> None:
-    for persona in personas:
-        prefix = _persona_tool_prefix(persona)
-        for verb in TOOL_VERBS:
-            try:
-                mcp.remove_tool(f"{prefix}__{verb}")
-            except ToolError:
-                pass
+def _clear_tools() -> None:
+    for verb in TOOL_VERBS:
+        try:
+            mcp.remove_tool(verb)
+        except ToolError:
+            pass
+
+
+async def call_tool(name: str, args: dict[str, Any]) -> Any:
+    """Call a tool the way the persona-prefixed names used to read.
+
+    Identity moved from the tool name into an argument, but every call
+    site here still says which persona is calling, and that is the
+    property the routing tests assert on — so the shim translates
+    ``business_analyst__add_comment`` into ``add_comment`` plus
+    ``persona="business-analyst"`` instead of rewriting 20 call sites
+    into something less legible.
+    """
+    persona, _, verb = name.partition("__")
+    return await mcp.call_tool(
+        verb, {"persona": persona.replace("_", "-"), **args}
+    )
 
 
 def _clear_plane_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -93,8 +106,7 @@ def two_personas_registered(monkeypatch: pytest.MonkeyPatch):
     Tests share the module-level ``mcp`` instance, so we tear the
     registered tools back down afterwards to keep the suite isolated.
     """
-    personas = ["business-analyst", "release-manager"]
-    _clear_persona_tools(personas)
+    _clear_tools()
 
     _clear_plane_env(monkeypatch)
     monkeypatch.setenv("PLANE_WORKSPACE_SLUG", "test-ws")
@@ -107,43 +119,69 @@ def two_personas_registered(monkeypatch: pytest.MonkeyPatch):
     try:
         yield {"business-analyst": "ba-token", "release-manager": "rm-token"}
     finally:
-        _clear_persona_tools(personas)
+        _clear_tools()
 
 
 def test_package_has_version() -> None:
     assert __version__
 
 
-async def test_tools_register_per_persona(two_personas_registered) -> None:
-    """Every configured persona has the full tool set under its prefix."""
-    tools = await mcp.list_tools()
-    names = {t.name for t in tools}
-    for persona in two_personas_registered:
-        prefix = _persona_tool_prefix(persona)
-        for verb in TOOL_VERBS:
-            assert f"{prefix}__{verb}" in names, (
-                f"missing tool {prefix}__{verb}"
-            )
+async def test_tool_set_is_registered_once(two_personas_registered) -> None:
+    """Two personas configured, one tool set — not one set each.
 
-
-async def test_no_legacy_tool_names(two_personas_registered) -> None:
-    """The previous flat names (`add_comment`, `list_comments`) and
-    the removed page tools must not appear — every tool now lives
-    behind a persona prefix.
+    This is the whole point of the argument-over-prefix layout: the
+    schemas sit in the system prompt of every session on every turn, so
+    the count is a per-turn cost, not a one-off.
     """
     tools = await mcp.list_tools()
     names = {t.name for t in tools}
-    legacy = {
-        "add_comment",
-        "list_comments",
+    assert set(TOOL_VERBS) <= names
+    assert len([n for n in names if n in TOOL_VERBS]) == len(TOOL_VERBS)
+
+
+async def test_every_tool_requires_the_persona(two_personas_registered) -> None:
+    """No tool may be callable without saying who is calling."""
+    tools = {t.name: t for t in await mcp.list_tools()}
+    for verb in TOOL_VERBS:
+        required = tools[verb].inputSchema.get("required") or []
+        assert "persona" in required, f"{verb} does not require a persona"
+
+
+async def test_no_legacy_tool_names(two_personas_registered) -> None:
+    """No persona-prefixed name and no removed page tool may reappear.
+
+    A leftover prefixed registration would silently restore the 286-tool
+    surface this layout exists to remove.
+    """
+    tools = await mcp.list_tools()
+    names = {t.name for t in tools}
+    prefixed = {n for n in names if "__" in n}
+    assert not prefixed, f"persona-prefixed tools still registered: {prefixed}"
+    pages = {
         "create_page",
         "list_pages",
         "retrieve_page",
         "update_page_description",
         "delete_page",
     }
-    leaked = names & legacy
+    leaked = names & pages
     assert not leaked, f"unexpected legacy tool names still registered: {leaked}"
+
+
+async def test_unknown_persona_is_refused(two_personas_registered) -> None:
+    """A persona with no configured token must not fall back to another's.
+
+    The tool name no longer carries the identity, so this is the check
+    that keeps a typo from writing to Plane under the wrong account.
+    """
+    with pytest.raises(ToolError) as exc_info:
+        await mcp.call_tool(
+            "list_states",
+            {"persona": "software-architect", "project_id": PROJECT_UUID},
+        )
+    message = str(exc_info.value)
+    assert "unknown persona" in message
+    assert "business-analyst" in message, "the error must name the valid ones"
 
 
 async def test_persona_routing_uses_correct_token(
@@ -175,7 +213,7 @@ async def test_persona_routing_uses_correct_token(
 
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
-    await mcp.call_tool(
+    await call_tool(
         "business_analyst__add_comment",
         {
             "project_id": PROJECT_UUID,
@@ -190,7 +228,7 @@ async def test_persona_routing_uses_correct_token(
     assert "/workspaces/test-ws/" in captured[-1]["url"]
 
     captured.clear()
-    await mcp.call_tool(
+    await call_tool(
         "release_manager__add_comment",
         {
             "project_id": PROJECT_UUID,
@@ -226,7 +264,7 @@ async def test_update_work_item_only_sends_provided_fields(
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
     target_state = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-    await mcp.call_tool(
+    await call_tool(
         "business_analyst__update_work_item",
         {
             "project_id": PROJECT_UUID,
@@ -325,7 +363,7 @@ async def test_escaped_body_is_repaired_before_it_reaches_plane(
 
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
-    result = await mcp.call_tool(
+    result = await call_tool(
         "business_analyst__create_work_item",
         {
             "project_id": PROJECT_UUID,
@@ -366,7 +404,7 @@ async def test_escaped_comment_is_repaired_before_it_reaches_plane(
 
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
-    await mcp.call_tool(
+    await call_tool(
         "release_manager__add_comment",
         {
             "project_id": PROJECT_UUID,
@@ -409,7 +447,7 @@ async def test_add_work_items_to_cycle_sends_issues_list(
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
     cycle_uuid = "abcdabcd-1111-2222-3333-abcdabcdabcd"
-    await mcp.call_tool(
+    await call_tool(
         "business_analyst__add_work_items_to_cycle",
         {
             "project_id": PROJECT_UUID,
@@ -456,7 +494,7 @@ async def test_add_work_items_to_module_sends_issues_list(
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
     module_uuid = "feedface-1111-2222-3333-feedfacefeed"
-    await mcp.call_tool(
+    await call_tool(
         "business_analyst__add_work_items_to_module",
         {
             "project_id": PROJECT_UUID,
@@ -492,7 +530,7 @@ async def test_create_cycle_omits_unset_dates(
 
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
-    await mcp.call_tool(
+    await call_tool(
         "business_analyst__create_cycle",
         {"project_id": PROJECT_UUID, "name": "Sprint 1"},
     )
@@ -527,7 +565,7 @@ async def test_list_work_items_strips_descriptions_by_default(
 
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
-    result = await mcp.call_tool(
+    result = await call_tool(
         "business_analyst__list_work_items", {"project_id": PROJECT_UUID}
     )
     flat = str(result)
@@ -535,7 +573,7 @@ async def test_list_work_items_strips_descriptions_by_default(
     assert "description_html" not in flat
     assert "huge body" not in flat
 
-    result = await mcp.call_tool(
+    result = await call_tool(
         "business_analyst__list_work_items",
         {"project_id": PROJECT_UUID, "include_description": True},
     )
@@ -565,7 +603,7 @@ async def test_add_to_module_survives_list_shaped_response(
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
     module_uuid = "feedface-1111-2222-3333-feedfacefeed"
-    result = await mcp.call_tool(
+    result = await call_tool(
         "business_analyst__add_work_items_to_module",
         {
             "project_id": PROJECT_UUID,
@@ -577,7 +615,7 @@ async def test_add_to_module_survives_list_shaped_response(
     assert "added" in flat and WORK_ITEM_UUID in flat
 
     cycle_uuid = "abcdabcd-1111-2222-3333-abcdabcdabcd"
-    result = await mcp.call_tool(
+    result = await call_tool(
         "business_analyst__add_work_items_to_cycle",
         {
             "project_id": PROJECT_UUID,
@@ -614,7 +652,7 @@ async def test_add_relation_posts_relation_contract(
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
 
     other_uuid = "abcdabcd-9999-8888-7777-abcdabcdabcd"
-    result = await mcp.call_tool(
+    result = await call_tool(
         "business_analyst__add_relation",
         {
             "project_id": PROJECT_UUID,
@@ -653,10 +691,35 @@ def test_register_personas_skips_blank_tokens(
     assert set(creds) == {"release-manager"}
 
 
-def test_persona_tool_prefix_converts_hyphens() -> None:
-    assert _persona_tool_prefix("business-analyst") == "business_analyst"
-    assert _persona_tool_prefix("technical-writer") == "technical_writer"
-    assert _persona_tool_prefix("ba") == "ba"
+async def test_persona_argument_tolerates_spelling(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`business_analyst` and stray case reach the same credentials.
+
+    The snake-case spelling is what the old tool names used, so it is
+    the mistake a persona is most likely to make; refusing it would cost
+    a round-trip to fix a name that is not ambiguous.
+    """
+    seen: list[str | None] = []
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        seen.append(self.headers.get("X-API-Key"))
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 200
+        response.content = b"[]"
+        response.json = lambda: []
+        response.text = "[]"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    for spelling in ("business_analyst", "Business-Analyst", " business-analyst "):
+        await mcp.call_tool(
+            "list_states", {"persona": spelling, "project_id": PROJECT_UUID}
+        )
+    assert seen == ["ba-token", "ba-token", "ba-token"]
 
 
 # ---------------------------------------------------------------------------

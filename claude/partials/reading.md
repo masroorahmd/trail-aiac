@@ -26,3 +26,21 @@ touch.
   the whole-file read is the point. These thresholds govern sampling a
   file you need part of; there is no head of a roadmap that answers
   "what is next?".
+
+## Reading in one round-trip
+
+A pickup step numbers the things you must read. The numbers say
+*what*, not *in what order* — and a read you sent by itself is a whole
+turn spent waiting, because your prompt, your context files and the
+ticket are re-sent before every single one.
+
+- **Send independent reads together.** Every file read, and every
+  Plane retrieve whose target you already know, goes out in ONE
+  message. A five-file pickup is one round-trip, not five.
+- **Split only where the target depends on an answer.**
+  `list_comments` is what tells you which comment id to fetch, so
+  `retrieve_comment` waits for it. Reading the ticket does not tell
+  you where `coding.md` lives.
+- **Writes stay one at a time.** A Plane comment cannot be edited and
+  a state transition has an order, so you read each result before
+  sending the next. This rule is about reads.

@@ -92,7 +92,7 @@ trail-aiac/
 │   │                              expanded text. This is the *ambient*
 │   │                              surface: a rule in force every turn
 │   │                              with nothing to invoke. Tenants:
-│   │                              `reading-large-files` (thresholds
+│   │                              `reading` (thresholds
 │   │                              from config's `reading:`) and
 │   │                              `commit-message` (the work-item ID
 │   │                              opens every commit subject).
@@ -111,7 +111,22 @@ trail-aiac/
 │   │                              baked into `settings.json`, because that
 │   │                              file is a copied deliverable and a
 │   │                              consumer's preference there would not
-│   │                              survive the next install. Tenant:
+│   │                              survive the next install. Tenants:
+│   │                              `persona-pin.py` (UserPromptSubmit) records
+│   │                              which `/<persona>` USER started (one pin file
+│   │                              per session, so parallel sessions each keep
+│   │                              their own), derived from
+│   │                              the agents/*.md file that command loads, so a
+│   │                              twelfth persona needs no hook change;
+│   │                              `plane-persona-guard.py`
+│   │                              (PreToolUse/`mcp__plane__*`) denies a Plane
+│   │                              call whose `persona` argument disagrees, at
+│   │                              the strength `hooks.persona_identity` asks
+│   │                              for (`strict` / `ask` / `off`). Those two are
+│   │                              what replaced the persona tool-name prefix,
+│   │                              which only ever looked like a guarantee. Both
+│   │                              fail open on every uncertain case, because a
+│   │                              false deny costs more than a missed check.
 │   │                              `commit-msg-guard.py` (PreToolUse/Bash)
 │   │                              holds the commit-subject rule at the
 │   │                              strength `hooks.commit_id_required` asks
@@ -125,9 +140,15 @@ trail-aiac/
 │   │                              commit that genuinely has no work item
 │   │                              (the partial forbids inventing one).
 │   ├── mcp/                       multi-tenant Plane MCP server
-│   │                              (Python + FastMCP). One process,
-│   │                              one tool set × N personas, persona
-│   │                              prefix on every tool name. Listing
+│   │                              (Python + FastMCP). One process, ONE
+│   │                              tool set for all N personas: identity
+│   │                              travels in a `persona` argument, not in
+│   │                              the tool name. A prefix per persona
+│   │                              meant 286 tool schemas (~45k tokens) in
+│   │                              every session's system prompt to serve
+│   │                              the 26 one persona holds; the argument
+│   │                              costs ~5.9k, and the identity is now
+│   │                              actually checked (see hooks/). Listing
 │   │                              tools project and shorten what they
 │   │                              return, because a persona picks up with
 │   │                              a FRESH context and pays the read every
@@ -238,8 +259,8 @@ trail-aiac/
 - **Ticket system is Plane** (cloud or self-hosted). JIRA/Confluence
   ruled out over Atlassian's AI/usage terms. MCP via a single
   multi-tenant server in `claude/mcp/` that holds every persona's
-  Plane token and routes calls by tool-name prefix
-  (`business_analyst__list_states`, `release_manager__add_comment`, …).
+  Plane token and routes each call by the `persona` argument every
+  tool takes.
 - **No Plane pages.** Every persona artefact lives either in a
   work-item *body* (written once at creation) or in a *comment*.
   Plane v1.3.0's pages sit on the internal app API behind a
@@ -259,9 +280,10 @@ trail-aiac/
   "exit" or starts a different `/<persona>`. Identity separation in
   Plane is preserved by per-persona API tokens — all collected in the
   single `plane` MCP server's env block in `.mcp.json` — and routed
-  inside the server by the persona-prefixed tool name. The persona's
-  prompt explicitly constrains it to only its own
-  `plane__<persona_snake>__*` tools.
+  inside the server by the `persona` argument every tool takes. The
+  persona's prompt says which value to pass;
+  `hooks/plane-persona-guard.py` is what checks it against the
+  `/<persona>` USER actually started.
 
 ## Where to find the details
 
@@ -271,7 +293,7 @@ trail-aiac/
 | Plane provisioning via Ansible (host pre-conditions, TLS, idempotency, secret rotation, tear-down) | [`doc/PROVISIONING.md`](doc/PROVISIONING.md) |
 | The eleven personas — what each one reads, writes, and when to invoke | [`doc/PERSONAS.md`](doc/PERSONAS.md) |
 | Story lifecycle, state spine, handover protocol over Plane tickets | [`doc/WORKFLOW.md`](doc/WORKFLOW.md) |
-| MCP scoping, the multi-tenant `plane` server design, tool-name prefix convention | [`doc/MCP.md`](doc/MCP.md) |
+| MCP scoping, the multi-tenant `plane` server design, `persona`-argument routing + the identity guard | [`doc/MCP.md`](doc/MCP.md) |
 | Plane public + internal API surface | [`doc/PLANE_API.md`](doc/PLANE_API.md) |
 | Comparison vs. BMAD-METHOD (collaboration bus, identity, ID convention, what we did and didn't borrow) | [`doc/COMPARISON.md`](doc/COMPARISON.md) |
 

@@ -51,7 +51,7 @@ model_lanes:
 # Reading budget. Two thirds of a mature repository's bytes sit in a
 # quarter of its files, and a persona that opens one of those whole
 # spends most of the read on code it will not touch. Every persona (and
-# `/quick`, and `/kickoff`) carries the shared `reading-large-files`
+# `/quick`, and `/kickoff`) carries the shared `reading`
 # rule; these three numbers are what it states. bin/install.py
 # substitutes them as `__LARGE_FILE_LINES__` / `__LARGE_FILE_KB__` /
 # `__HEAD_LINES__`.
@@ -130,8 +130,35 @@ reading:
 #   In both live modes an ID whose prefix is not one of the `projects:`
 #   identifiers below is denied as a typo, since a wrong ID is a worse
 #   bridge than no ID.
+#
+#   persona_identity — every Plane MCP tool takes a `persona` argument
+#                      naming who authors the call. This checks it
+#                      against the `/<persona>` command USER actually
+#                      started (recorded by `persona-pin.py`), so a
+#                      write cannot land under the wrong Plane account.
+#                      The identity used to live in the tool *name* —
+#                      one full tool set per persona, 286 schemas in
+#                      every session's system prompt — to express a
+#                      constraint nothing ever checked. This is that
+#                      constraint, checked, at a tenth of the tokens.
+#
+#     strict      Deny the mismatch. A persona's role ends when USER
+#                 starts a different `/<persona>`, so a call under
+#                 another name is a bug in every case the guard can see.
+#                 Default.
+#     ask         Put the mismatch to USER as a permission prompt.
+#     off         No check.
+#
+#   Every uncertain case passes: a session with no `/<persona>` yet, a
+#   multi-persona lane (`/autopilot`, `/quick`, `/kickoff`). A missed
+#   check costs one wrongly-attributed comment; a false deny stops work
+#   USER asked for. Parallel sessions are unaffected — the pin lives at
+#   `.claude/cache/persona/<session-id>.json`, one per session, so `/ba`
+#   in one terminal and `/tm` in another are each checked against their
+#   own role.
 hooks:
   commit_id_required: plane-only
+  persona_identity: strict
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a
@@ -176,6 +203,13 @@ hooks:
 #                           un-driven and the run continues. Set false to
 #                           turn the stage off for projects with no
 #                           executable surface worth driving. Default true.
+#                           For a one-off run without the Test Manager at
+#                           all — suite gate AND review run — pass
+#                           `/autopilot DEV-N --no-tm` instead of editing
+#                           this file: config is "not here", the flag is
+#                           "not this time". `--no-review-run` is the
+#                           narrower per-run twin of this key — TM still
+#                           writes tests and steps, nobody drives them.
 #   max_risk_lane         — the highest risk tier autopilot may carry on
 #                           its own (`standard`). Anything the personas
 #                           judge above this is handed back to a human.

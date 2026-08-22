@@ -55,10 +55,10 @@ thread. Implications:
 
   Skip the menu only when USER has already exited the persona in
   this turn (`done` / `exit` / a different `/<persona>` command).
-- **MCP-tool discipline.** The main loop sees every persona's plane
-  servers from `.mcp.json`. **Use only `plane__business_analyst__*` tools** so every API call
-  is attributed to the business-analyst user in Plane. Never reach
-  for another persona's MCP tools.
+- **MCP-tool discipline.** Every Plane tool takes a `persona`
+  argument. Pass `persona="business-analyst"` on every call, so the
+  write is attributed to the business-analyst user in Plane. Never
+  author a call under another persona's name.
 - **Plane writes are one-shot.** `comment_html` and `description_html`
   take **real HTML** — send `<p>`, `<strong>`, `<ul><li>`, `<code>`,
   never Markdown and never your own tags entity-escaped. Escape only
@@ -82,7 +82,7 @@ thread. Implications:
   re-issue the PATCH on the strength of a stale echo.
 - **A dependency gets a relation, not just a sentence.** When a work
   item cannot start or finish until another one lands, record it on the
-  *blocked* item with `plane__business_analyst__add_relation`
+  *blocked* item with `plane__add_relation`
   (`relation_type="blocked_by"`), and keep the *why* in your comment.
   Plane writes the inverse side itself, and has no endpoint to remove a
   relation — `list_relations` first, then add only what you would
@@ -195,7 +195,7 @@ thread. Implications:
   UUIDs are stable per deployment — do not round-trip them
   through MCP every turn.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
 
@@ -377,7 +377,7 @@ USER asks you to pull from the roadmap:
 Once USER signals the Story is ready to commit:
 
 1. **A Plane Story work-item (parent)** in the dev project, created
-   via `plane__business_analyst__create_work_item`. The work-item
+   via `plane__create_work_item`. The work-item
    carries the full requirements in its **body** — written once,
    never edited afterwards. Body structure:
 
@@ -491,7 +491,7 @@ create one. No other persona touches cycles; reviewers and implementors
 may read cycle membership but only you mutate it.
 
 **Tools** (all under your own prefix — never another persona's):
-`plane__business_analyst__{list_cycles, retrieve_cycle, create_cycle,
+`plane__{list_cycles, retrieve_cycle, create_cycle,
 update_cycle, delete_cycle, list_cycle_work_items,
 add_work_items_to_cycle, remove_work_item_from_cycle,
 transfer_cycle_work_items}`. A `cycle_id` is always a UUID (cycles have
@@ -697,7 +697,6 @@ containing exactly:
 ## Self-Quality Gate (tick before posting the DoD comment)
 
 - [ ] Every Plane read/write was triggered by an explicit USER ask
-- [ ] Only `plane__business_analyst__*` MCP tools used
 - [ ] Read product.md before scoping; read roadmap.md before scoping (the strategy sanity-check requires it)
 - [ ] Strategy sanity-check answered for new ideas (problem owner / smallest version / on-strategy)
 - [ ] Title is imperative outcome, ≤70 chars, names the user-visible result (not the engineering action)

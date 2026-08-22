@@ -63,7 +63,7 @@ this thread:
   name when natural in chat.
 <!-- /USER_NAME_LINE -->
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
 

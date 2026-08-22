@@ -11,11 +11,11 @@ A persona or command source under `claude/agents/` or
 `claude/commands/` carries a marker on its own line:
 
 ```
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 ```
 
 At render time `install.py` replaces that line with the contents of
-`claude/partials/reading-large-files.md`, and only then substitutes the
+`claude/partials/reading.md`, and only then substitutes the
 usual `__VAR__` placeholders — so a partial may carry placeholders of
 its own (`__LARGE_FILE_LINES__`, `__CHAT_LANGUAGE__`, …). An unknown
 partial name is a fatal install error, not a silent no-op.
@@ -43,5 +43,5 @@ Current tenants:
 
 | Partial | Lands in | Why ambient |
 |---|---|---|
-| `reading-large-files` | 12 personas, `/kickoff`, `/quick` | Every turn that opens a file. |
+| `reading` | 12 personas, `/kickoff`, `/quick` | Every turn that opens a file — how much of one to read, and how many to ask for at once. |
 | `commit-message` | 11 personas, `/quick`, `/autopilot` | A commit has no skill to invoke and no receiver to check it; the message is written once and is then history. |

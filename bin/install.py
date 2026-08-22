@@ -30,12 +30,11 @@ One-shot, idempotent. Two stages, run in sequence:
 
        - `<consumer>/.mcp.json` (mode 0600, gitignored) — one
          `plane` server entry. A single stdio process holds every
-         persona's API token in its env block and registers every
-         tool N×, prefixed by the persona's snake-case username
-         (e.g. `business_analyst__list_states`). Replaces the
-         pre-refactor 22-entry explosion (one upstream
-         `plane-mcp-server` + one `plane-extras-mcp` per persona),
-         which cost ~2 GB of RSS per Claude session.
+         persona's API token in its env block and registers ONE tool
+         set; each tool takes a `persona` argument that selects the
+         token. Replaces the pre-refactor 22-entry explosion (one
+         upstream `plane-mcp-server` + one `plane-extras-mcp` per
+         persona), which cost ~2 GB of RSS per Claude session.
 
        - `<consumer>/.claude/{agents,commands,output-styles}/*.md`
          (mode 0600) — re-templated
@@ -130,7 +129,7 @@ DEFAULT_MODEL_LANES = {
     "codegen": "claude-opus-5",
 }
 
-# Reading budget — the thresholds in the shared `reading-large-files`
+# Reading budget — the thresholds in the shared `reading`
 # partial. Defaults applied when the consumer's config.yaml has no
 # `reading:` section. Substituted as `__LARGE_FILE_LINES__` /
 # `__LARGE_FILE_KB__` / `__HEAD_LINES__` by render_persona_files().
@@ -354,8 +353,9 @@ def ensure_gitignore_entries(
     if not to_append:
         return []
     block = (
-        "\n# Trail framework — these hold inlined Plane API\n"
-        "# tokens / UI passwords / multi-tenant MCP wiring; never commit.\n"
+        "\n# Trail framework — inlined Plane API tokens / UI passwords /\n"
+        "# multi-tenant MCP wiring, plus per-session scratch state\n"
+        "# (.claude/cache/). Never commit.\n"
         + "\n".join(to_append) + "\n"
     )
     if existing and not existing.endswith("\n"):
@@ -504,7 +504,7 @@ def render_settings(
     for lane, model_id in model_lanes.items():
         env[f"MODEL_{persona_env_prefix(str(lane))}"] = str(model_id)
 
-    # Reading budget: the thresholds the `reading-large-files` partial
+    # Reading budget: the thresholds the `reading` partial
     # states. Consumer config overrides the framework defaults key by
     # key, so a repo of unusual shape can move the line without a
     # framework edit.
@@ -536,10 +536,11 @@ def render_settings(
 
     plane_mcp_dir = framework_root / "claude" / "mcp"
     # Single multi-tenant MCP server entry. The server reads
-    # PLANE_API_KEY_<PERSONA_PREFIX> from its env block at startup,
-    # registers every tool N×, prefixed by persona snake. Per-persona
-    # tokens MUST be inlined here because stdio MCP servers do not
-    # inherit the consumer's settings.local.json env automatically.
+    # PLANE_API_KEY_<PERSONA_PREFIX> from its env block at startup and
+    # registers ONE tool set, each tool selecting a token from its
+    # `persona` argument. Per-persona tokens MUST be inlined here
+    # because stdio MCP servers do not inherit the consumer's
+    # settings.local.json env automatically.
     plane_env: dict[str, str] = {
         "PLANE_BASE_URL": base_url,
         "PLANE_WORKSPACE_SLUG": workspace,
@@ -599,7 +600,7 @@ USER_NAME_BLOCK_RE = re.compile(
 )
 
 # A shared-partial marker, alone on its line:
-#     <!-- TRAIL:INCLUDE reading-large-files -->
+#     <!-- TRAIL:INCLUDE reading -->
 # Replaced (line and all) by claude/partials/<name>.md. One source, N
 # rendered copies — see claude/partials/README.md.
 INCLUDE_RE = re.compile(
@@ -771,7 +772,7 @@ def main() -> int:
             fresh_seeds.add(target_name)
 
     gitignore_added = ensure_gitignore_entries(
-        consumer_root, [".mcp.json", ".claude/agents/"]
+        consumer_root, [".mcp.json", ".claude/agents/", ".claude/cache/"]
     )
 
     print(f"Installed framework into {consumer_claude}")
@@ -787,7 +788,10 @@ def main() -> int:
     if gitignore_added:
         print(f"Added to {consumer_root}/.gitignore: {', '.join(gitignore_added)}")
     else:
-        print(f"{consumer_root}/.gitignore already covers .mcp.json + .claude/agents/")
+        print(
+            f"{consumer_root}/.gitignore already covers .mcp.json + "
+            ".claude/agents/ + .claude/cache/"
+        )
     print()
 
     # Stage 2 — render MCP wiring iff config + credentials look populated.

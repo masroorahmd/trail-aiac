@@ -2,16 +2,26 @@
 
 Multi-tenant by design: one stdio process serves all configured
 personas. At startup the server scans the environment for
-``PLANE_API_KEY_<PERSONA_PREFIX>`` variables and registers every tool
-N×, prefixed by the persona's snake-case username — e.g.
-``business_analyst__list_states`` for ``business-analyst``. Each
-registered tool closes over its persona's credentials, so the call
-lands in Plane authored by that persona regardless of which model
-session invoked it.
+``PLANE_API_KEY_<PERSONA_PREFIX>`` variables and registers **one** tool
+set — every tool takes a ``persona`` argument naming whose turn it is,
+and the call lands in Plane authored by that persona regardless of
+which model session invoked it.
 
-This replaces the previous one-process-per-persona layout, which
+The identity used to live in the tool *name*
+(``business_analyst__list_states``), which meant registering all 26
+tools once per persona: 286 tools whose schemas measured 179 KB
+(~45k tokens) in the system prompt of every session, on every turn, so
+that one persona could reach the 26 it actually holds. Moving the
+identity into an argument leaves 26 tools and ~4k tokens. What the
+prefix appeared to guarantee — a persona cannot reach another
+persona's tools — was never enforced by anything but the prompt asking
+it to; ``.claude/hooks/plane-persona-guard.py`` now checks the argument
+against the persona USER actually started, which is a check the tool
+name could not perform.
+
+This also replaces the older one-process-per-persona layout, which
 spawned ~22 stdio MCP servers per Claude session (upstream
-``plane-mcp-server`` + ``plane-extras-mcp``, both ×N personas) and
+``plane-mcp-server`` + ``plane-extras-mcp``, both xN personas) and
 consumed ~2 GB of RSS. The tool surface here is the union of the
 upstream ``plane-mcp-server`` operations the persona prompts actually
 reference (projects, work-items CRUD subset, states/labels/modules,
@@ -63,11 +73,6 @@ def _persona_credentials() -> dict[str, dict[str, str]]:
             "workspace_slug": workspace,
         }
     return creds
-
-
-def _persona_tool_prefix(persona: str) -> str:
-    """``business-analyst`` → ``business_analyst`` (MCP tool name prefix)."""
-    return persona.replace("-", "_")
 
 
 _DESCRIPTION_FIELDS = (
@@ -226,16 +231,48 @@ def _note_repair(result: dict[str, Any], repaired: bool) -> dict[str, Any]:
     return result
 
 
-def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
-    """Define and register every Plane tool for one persona.
+_PERSONA_NOTE = (
+    "\n\n``persona`` is the username of the persona making the call — the "
+    "one whose `/<persona>` command is running (e.g. "
+    "``backend-developer``). It decides which Plane token authors the "
+    "call, so it is your own name, never the receiver's."
+)
 
-    The inner functions close over ``creds``; each call to this helper
-    produces a fresh scope, so the closures route to the correct token
-    for their persona.
+
+def _tool(fn):
+    """Register one tool under its plain function name.
+
+    Appends the ``persona`` note to the docstring here rather than in 26
+    docstrings: the tools differ in what they do, not in what that
+    argument means.
     """
-    prefix = _persona_tool_prefix(persona)
+    fn.__doc__ = (fn.__doc__ or "").rstrip() + _PERSONA_NOTE
+    return mcp.tool(name=fn.__name__)(fn)
 
-    def _client() -> PlaneClient:
+
+def _register_tools(creds_by_persona: dict[str, dict[str, str]]) -> None:
+    """Define and register the tool set once, for every persona at once.
+
+    ``persona`` is a *parameter*, not a name prefix. The earlier layout
+    registered all 26 tools per configured persona — 286 tools, whose
+    JSON schemas measured 179 KB (~45k tokens) in the system prompt of
+    every session, on every turn, to serve one persona holding 26 of
+    them. The identity that a prefix used to carry now travels in the
+    argument, and `.claude/hooks/plane-persona-guard.py` is what holds
+    it: the argument is checked against the persona USER actually
+    started, which a tool name never was.
+    """
+    known = ", ".join(sorted(creds_by_persona))
+
+    def _client(persona: str) -> PlaneClient:
+        key = (persona or "").strip().lower().replace("_", "-")
+        creds = creds_by_persona.get(key)
+        if creds is None:
+            raise ValueError(
+                f"unknown persona {persona!r}. Pass the username of the "
+                f"persona whose turn this is, exactly as spelled here: "
+                f"{known}."
+            )
         return PlaneClient(
             api_key=creds["api_key"],
             workspace_slug=creds["workspace_slug"],
@@ -244,42 +281,43 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
 
     # ----- workspace-scoped lookups -----
 
-    @mcp.tool(name=f"{prefix}__list_projects")
-    async def list_projects() -> list[dict[str, Any]]:
+    @_tool
+    async def list_projects(persona: str) -> list[dict[str, Any]]:
         """List projects in the workspace."""
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.list_projects()
 
-    @mcp.tool(name=f"{prefix}__list_workspace_members")
-    async def list_workspace_members() -> list[dict[str, Any]]:
+    @_tool
+    async def list_workspace_members(persona: str) -> list[dict[str, Any]]:
         """List members of the workspace (for assignee + author lookups)."""
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.list_workspace_members()
 
     # ----- per-project metadata -----
 
-    @mcp.tool(name=f"{prefix}__list_states")
-    async def list_states(project_id: str) -> list[dict[str, Any]]:
+    @_tool
+    async def list_states(persona: str, project_id: str) -> list[dict[str, Any]]:
         """List workflow states defined on a project."""
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.list_states(project_id)
 
-    @mcp.tool(name=f"{prefix}__list_labels")
-    async def list_labels(project_id: str) -> list[dict[str, Any]]:
+    @_tool
+    async def list_labels(persona: str, project_id: str) -> list[dict[str, Any]]:
         """List labels defined on a project."""
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.list_labels(project_id)
 
-    @mcp.tool(name=f"{prefix}__list_modules")
-    async def list_modules(project_id: str) -> list[dict[str, Any]]:
+    @_tool
+    async def list_modules(persona: str, project_id: str) -> list[dict[str, Any]]:
         """List modules defined on a project."""
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.list_modules(project_id)
 
     # ----- work items -----
 
-    @mcp.tool(name=f"{prefix}__list_work_items")
+    @_tool
     async def list_work_items(
+        persona: str,
         project_id: str,
         state: str | None = None,
         assignees: str | None = None,
@@ -297,7 +335,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         exceeds 2 MB); set ``include_description=true`` only when you
         truly need every body, else use ``retrieve_work_item``.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             items = await c.list_work_items(
                 project_id,
                 state=state,
@@ -311,18 +349,20 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
             )
         return items if include_description else _strip_descriptions(items)
 
-    @mcp.tool(name=f"{prefix}__retrieve_work_item")
+    @_tool
     async def retrieve_work_item(
+        persona: str,
         project_id: str, work_item_id: str
     ) -> dict[str, Any]:
         """Retrieve a work item. ``work_item_id`` accepts UUID or
         human-readable identifier (e.g. ``INT-1``).
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.retrieve_work_item(project_id, work_item_id)
 
-    @mcp.tool(name=f"{prefix}__create_work_item")
+    @_tool
     async def create_work_item(
+        persona: str,
         project_id: str,
         name: str,
         description_html: str | None = None,
@@ -340,7 +380,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         unescaped before the write rather than stored as visible markup.
         """
         description_html, repaired = _repair_double_encoded_html(description_html)
-        async with _client() as c:
+        async with _client(persona) as c:
             result = await c.create_work_item(
                 project_id,
                 name=name,
@@ -356,8 +396,9 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
             )
         return _note_repair(result, repaired)
 
-    @mcp.tool(name=f"{prefix}__update_work_item")
+    @_tool
     async def update_work_item(
+        persona: str,
         project_id: str,
         work_item_id: str,
         name: str | None = None,
@@ -377,7 +418,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         before the write.
         """
         description_html, repaired = _repair_double_encoded_html(description_html)
-        async with _client() as c:
+        async with _client(persona) as c:
             result = await c.update_work_item(
                 project_id,
                 work_item_id,
@@ -396,8 +437,9 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
 
     # ----- comments -----
 
-    @mcp.tool(name=f"{prefix}__add_comment")
+    @_tool
     async def add_comment(
+        persona: str,
         project_id: str,
         work_item_id: str,
         comment_html: str,
@@ -410,7 +452,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         honoured by newer Plane versions (``internal`` / ``external``).
         """
         comment_html, repaired = _repair_double_encoded_html(comment_html)
-        async with _client() as c:
+        async with _client(persona) as c:
             result = await c.add_comment(
                 project_id,
                 work_item_id,
@@ -419,8 +461,9 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
             )
         return _note_repair(result, repaired)
 
-    @mcp.tool(name=f"{prefix}__list_comments")
+    @_tool
     async def list_comments(
+        persona: str,
         project_id: str, work_item_id: str
     ) -> list[dict[str, Any]]:
         """List comments on a work item, in Plane's native order.
@@ -431,13 +474,14 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         ``retrieve_comment`` for the full text of the one you need.
         ``work_item_id`` accepts UUID or identifier.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             return _condense_comments(
                 await c.list_comments(project_id, work_item_id)
             )
 
-    @mcp.tool(name=f"{prefix}__retrieve_comment")
+    @_tool
     async def retrieve_comment(
+        persona: str,
         project_id: str, work_item_id: str, comment_id: str
     ) -> dict[str, Any]:
         """Retrieve one comment in full, as plain text.
@@ -445,7 +489,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         The counterpart to ``list_comments``: read the listing, pick the
         comment your pickup step names, fetch it here.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             result = await c.retrieve_comment(
                 project_id, work_item_id, comment_id
             )
@@ -459,22 +503,24 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
 
     # ----- cycles (sprints) -----
 
-    @mcp.tool(name=f"{prefix}__list_cycles")
-    async def list_cycles(project_id: str) -> list[dict[str, Any]]:
+    @_tool
+    async def list_cycles(persona: str, project_id: str) -> list[dict[str, Any]]:
         """List cycles (sprints) defined on a project."""
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.list_cycles(project_id)
 
-    @mcp.tool(name=f"{prefix}__retrieve_cycle")
+    @_tool
     async def retrieve_cycle(
+        persona: str,
         project_id: str, cycle_id: str
     ) -> dict[str, Any]:
         """Retrieve one cycle by UUID (metadata + progress counters)."""
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.retrieve_cycle(project_id, cycle_id)
 
-    @mcp.tool(name=f"{prefix}__create_cycle")
+    @_tool
     async def create_cycle(
+        persona: str,
         project_id: str,
         name: str,
         description: str | None = None,
@@ -484,7 +530,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         """Create a cycle. ``start_date`` / ``end_date`` are ISO
         ``YYYY-MM-DD``; Plane requires both dates together or neither.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.create_cycle(
                 project_id,
                 name=name,
@@ -493,8 +539,9 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
                 end_date=end_date,
             )
 
-    @mcp.tool(name=f"{prefix}__update_cycle")
+    @_tool
     async def update_cycle(
+        persona: str,
         project_id: str,
         cycle_id: str,
         name: str | None = None,
@@ -505,7 +552,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         """Patch a cycle. Only non-None fields are sent, so a date-only
         reschedule leaves the name untouched.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.update_cycle(
                 project_id,
                 cycle_id,
@@ -515,29 +562,31 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
                 end_date=end_date,
             )
 
-    @mcp.tool(name=f"{prefix}__delete_cycle")
-    async def delete_cycle(project_id: str, cycle_id: str) -> dict[str, Any]:
+    @_tool
+    async def delete_cycle(persona: str, project_id: str, cycle_id: str) -> dict[str, Any]:
         """Delete a cycle. The work items it held are not deleted — they
         only leave the cycle. Irreversible; prefer transferring unfinished
         items to another cycle first.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             await c.delete_cycle(project_id, cycle_id)
             return {"deleted": cycle_id}
 
-    @mcp.tool(name=f"{prefix}__list_cycle_work_items")
+    @_tool
     async def list_cycle_work_items(
+        persona: str,
         project_id: str, cycle_id: str, include_description: bool = False
     ) -> list[dict[str, Any]]:
         """List the work items assigned to a cycle. Body fields are
         omitted by default; use ``retrieve_work_item`` for full bodies.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             items = await c.list_cycle_work_items(project_id, cycle_id)
         return items if include_description else _strip_descriptions(items)
 
-    @mcp.tool(name=f"{prefix}__add_work_items_to_cycle")
+    @_tool
     async def add_work_items_to_cycle(
+        persona: str,
         project_id: str, cycle_id: str, work_item_ids: list[str]
     ) -> dict[str, Any]:
         """Add one or more work items to a cycle. Each entry of
@@ -545,7 +594,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         ``DEV-12``). A work item lives in at most one cycle — adding it
         to a new cycle moves it.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             await c.add_work_items_to_cycle(
                 project_id, cycle_id, work_item_ids
             )
@@ -555,47 +604,51 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         # a summary we construct ourselves instead.
         return {"added": work_item_ids, "cycle_id": cycle_id}
 
-    @mcp.tool(name=f"{prefix}__remove_work_item_from_cycle")
+    @_tool
     async def remove_work_item_from_cycle(
+        persona: str,
         project_id: str, cycle_id: str, work_item_id: str
     ) -> dict[str, Any]:
         """Remove a single work item from a cycle. ``work_item_id``
         accepts a UUID or human identifier. The work item is not deleted.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             await c.remove_work_item_from_cycle(
                 project_id, cycle_id, work_item_id
             )
             return {"removed": work_item_id, "cycle": cycle_id}
 
-    @mcp.tool(name=f"{prefix}__transfer_cycle_work_items")
+    @_tool
     async def transfer_cycle_work_items(
+        persona: str,
         project_id: str, cycle_id: str, new_cycle_id: str
     ) -> dict[str, Any]:
         """Transfer the *incomplete* work items of one cycle into another
         — Plane's "carry unfinished work into the next sprint" action.
         ``new_cycle_id`` is the destination cycle's UUID.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.transfer_cycle_work_items(
                 project_id, cycle_id, new_cycle_id
             )
 
     # ----- modules (membership) -----
 
-    @mcp.tool(name=f"{prefix}__list_module_work_items")
+    @_tool
     async def list_module_work_items(
+        persona: str,
         project_id: str, module_id: str, include_description: bool = False
     ) -> list[dict[str, Any]]:
         """List the work items assigned to a module. Body fields are
         omitted by default; use ``retrieve_work_item`` for full bodies.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             items = await c.list_module_work_items(project_id, module_id)
         return items if include_description else _strip_descriptions(items)
 
-    @mcp.tool(name=f"{prefix}__add_work_items_to_module")
+    @_tool
     async def add_work_items_to_module(
+        persona: str,
         project_id: str, module_id: str, work_item_ids: list[str]
     ) -> dict[str, Any]:
         """Add one or more work items to a module. Each entry of
@@ -603,7 +656,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         ``DEV-12``). A work item may belong to several modules at once —
         adding it here leaves its other module memberships intact.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             await c.add_work_items_to_module(
                 project_id, module_id, work_item_ids
             )
@@ -611,15 +664,16 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         # a self-constructed summary so the dict output schema holds.
         return {"added": work_item_ids, "module_id": module_id}
 
-    @mcp.tool(name=f"{prefix}__remove_work_item_from_module")
+    @_tool
     async def remove_work_item_from_module(
+        persona: str,
         project_id: str, module_id: str, work_item_id: str
     ) -> dict[str, Any]:
         """Remove a single work item from a module. ``work_item_id``
         accepts a UUID or human identifier. The work item itself is not
         deleted, and its other module memberships are untouched.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             await c.remove_work_item_from_module(
                 project_id, module_id, work_item_id
             )
@@ -627,19 +681,21 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
 
     # ----- relations (blocked_by / blocking / duplicate / relates_to) -----
 
-    @mcp.tool(name=f"{prefix}__list_relations")
+    @_tool
     async def list_relations(
+        persona: str,
         project_id: str, work_item_id: str
     ) -> dict[str, Any]:
         """List a work item's relations, grouped by type (``blocking``,
         ``blocked_by``, ``duplicate``, ``relates_to``, ``start_*``,
         ``finish_*``). ``work_item_id`` accepts UUID or identifier.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.list_relations(project_id, work_item_id)
 
-    @mcp.tool(name=f"{prefix}__add_relation")
+    @_tool
     async def add_relation(
+        persona: str,
         project_id: str,
         work_item_id: str,
         relation_type: str,
@@ -652,7 +708,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
         *removal* endpoint — undoing a relation stays a manual UI step,
         so add relations deliberately.
         """
-        async with _client() as c:
+        async with _client(persona) as c:
             return await c.add_relation(
                 project_id,
                 work_item_id,
@@ -662,7 +718,7 @@ def _register_persona_tools(persona: str, creds: dict[str, str]) -> None:
 
 
 def register_personas_from_env() -> dict[str, dict[str, str]]:
-    """Register tools for every persona found in the environment.
+    """Register the tool set against every persona found in the environment.
 
     Returns the credential map that was applied, so callers can decide
     whether to start the server (non-empty) or abort with a clear
@@ -671,8 +727,8 @@ def register_personas_from_env() -> dict[str, dict[str, str]]:
     ``monkeypatch.setenv``.
     """
     creds_by_persona = _persona_credentials()
-    for persona, creds in creds_by_persona.items():
-        _register_persona_tools(persona, creds)
+    if creds_by_persona:
+        _register_tools(creds_by_persona)
     return creds_by_persona
 
 

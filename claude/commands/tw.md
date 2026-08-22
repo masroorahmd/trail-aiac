@@ -15,8 +15,8 @@ thread:
 
 1. `.claude/agents/technical-writer.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
-   section: no self-finalisation, MCP-tool discipline (only
-   `plane__technical_writer__*`), chat-first /
+   section: no self-finalisation, MCP-tool discipline (every Plane call
+   carries `persona="technical-writer"`), chat-first /
    write-on-USER-trigger, no Plane pages.
 2. `.claude/agent-memory/technical-writer/MEMORY.md` — your persistent notes
    from previous sessions. Use them to avoid repeating earlier

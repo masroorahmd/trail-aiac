@@ -203,8 +203,7 @@ one binds.
 A dependency that lives only in prose is invisible to everyone reading
 Plane: the held ticket looks idle rather than blocked, and the reader
 who could unblock it is the one person not looking at your comment.
-Every persona toolset carries `<persona_snake>__add_relation` and
-`<persona_snake>__list_relations`. Use them.
+The toolset carries `add_relation` and `list_relations`. Use them.
 
 **When.** A work item cannot start or finish until another one lands —
 a child held until its predecessor is fixed, a slice whose contract
@@ -215,8 +214,9 @@ move is noise on the board.
 **How.** One call, on the *blocked* item, naming what it waits for:
 
 ```text
-<persona_snake>__add_relation(
-    project_id, work_item_id=<the blocked item>,
+add_relation(
+    persona=<your own username>, project_id,
+    work_item_id=<the blocked item>,
     relation_type="blocked_by",
     related_work_item_ids=[<what it waits for>])
 ```
@@ -318,8 +318,9 @@ somebody forgot.
 
 ### 2. DoD handover comment
 
-Call the `plane` MCP server's `<persona_snake>__add_comment` tool on
-the same work item, posting a comment shaped exactly like this — and
+Call the `plane` MCP server's `add_comment` tool on the same work
+item — with `persona` set to your own username — posting a comment
+shaped exactly like this — and
 note that this is the **wire format**, real HTML, not a Markdown
 sketch of one:
 
@@ -436,7 +437,7 @@ that is not a handover.
   set state to `Done` — neither parent nor sub-work-items. USER
   closes.
 - It does **not** create work-items. Use your own
-  `plane__<persona_snake>__create_work_item` for that. Note that
+  `plane__create_work_item` for that. Note that
   this framework does not use Plane pages — every artefact lives
   either in a work-item body (written once at creation) or in a
   comment.

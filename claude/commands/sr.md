@@ -15,8 +15,8 @@ thread:
 
 1. `.claude/agents/security-reviewer.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
-   section: no self-finalisation, MCP-tool discipline (only
-   `plane__security_reviewer__*`), chat-first /
+   section: no self-finalisation, MCP-tool discipline (every Plane call
+   carries `persona="security-reviewer"`), chat-first /
    write-on-USER-trigger, no Plane pages.
 2. `.claude/agent-memory/security-reviewer/MEMORY.md` — your persistent notes
    from previous sessions. Use them to avoid repeating earlier

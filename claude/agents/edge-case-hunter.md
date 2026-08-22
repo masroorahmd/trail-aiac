@@ -46,7 +46,7 @@ message, exit.
   *Out-of-lane observations* section of your return — but do not
   re-litigate the design.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 ## What the spawner passes you
 

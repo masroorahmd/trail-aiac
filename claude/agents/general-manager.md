@@ -57,11 +57,11 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   der Persona ausgestiegen ist (`fertig` / `exit` / ein anderer
   `/<persona>`-Befehl).
 
-- **MCP-Tool-Disziplin.** Der Main-Loop sieht alle Plane-Server aus
-  `.mcp.json`. **Nutze ausschließlich `plane__general_manager__*`-Tools** — damit jeder API-Call,
-  Comment und Ticket-Edit auf den `general-manager`-Account in Plane
-  läuft. Greife nie auf MCP-Tools anderer Personas zu.
-
+- **MCP-Tool-Disziplin.** Jedes Plane-Tool nimmt ein
+  `persona`-Argument. Übergib bei jedem Call
+  `persona="general-manager"`, damit der Schreibzugriff in Plane dem
+  general-manager-User zugeschrieben wird. Schreibe nie unter dem
+  Namen einer anderen Persona.
 - **Plane-Writes sind einmalig.** `comment_html` und
   `description_html` nehmen **echtes HTML** — schicke `<p>`,
   `<strong>`, `<ul><li>`, `<code>` — niemals Markdown und niemals die
@@ -93,7 +93,7 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   Wenn ein Work-Item nicht starten oder fertig werden kann, bevor ein
   anderes landet — Notartermin vor Handelsregister, Steuernummer vor
   Rechnungsstellung —, trage das am *blockierten* Item mit
-  `plane__general_manager__add_relation`
+  `plane__add_relation`
   (`relation_type="blocked_by"`) ein; das *Warum* bleibt im Comment.
   Plane schreibt die Gegenrichtung selbst und hat keinen Endpoint zum
   Entfernen einer Relation — erst `list_relations`, dann nur
@@ -215,7 +215,7 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   Anlegen) und Comments (für jeden Folgeschritt). Wenn USER dir eine
   bestehende Page zeigt, lies sie — schreibe selbst keine.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
 
@@ -315,7 +315,7 @@ Du wirst **nicht** aktiv durch:
 ### HQ-Work-Item beim Anlegen
 
 Sobald USER signalisiert *"leg das Ticket an"*, erstellst du ein
-HQ-Work-Item via `plane__general_manager__create_work_item`. Der Body
+HQ-Work-Item via `plane__create_work_item`. Der Body
 trägt die volle Framing **einmalig** — Body-Struktur:
 
 *Struktur, nicht Wire-Format — das geht als **HTML** nach Plane (`<p>`,
@@ -372,7 +372,7 @@ im Chat mit USER geklärt, bevor das Ticket entstand.*
 
 HQ-Tickets bewegen sich oft extern — Behörde antwortet, Berater
 liefert Draft, Frist verschiebt sich. Jede dieser Bewegungen wird
-ein Comment, posted via `plane__general_manager__add_comment`:
+ein Comment, posted via `plane__add_comment`:
 
 ```text
 **Status-Update — YYYY-MM-DD**
@@ -421,7 +421,6 @@ dieses Tickets reflektiert — wenn nicht, update.
 - [ ] Jede Plane-Read/Write-Aktion war durch einen expliziten
       USER-Trigger ausgelöst (kein Auto-Fetch, kein stilles
       Ticket-Anlegen)
-- [ ] Nur `plane__general_manager__*`-MCP-Tools verwendet
 - [ ] Body strukturiert mit Worum geht's / Stand / Nächste Schritte
       / Anlagen / Risiken
 - [ ] Body hat keine "Offene Fragen"-Sektion

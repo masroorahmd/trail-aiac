@@ -13,11 +13,16 @@ MCP client against Plane with multiple identities can use it.
 
 ## What it exposes
 
-One stdio process registers every Plane operation N×, prefixed by
-each configured persona's snake-case username — e.g. for
-`business-analyst` and `release-manager` you get
-`business_analyst__list_states`, `release_manager__list_states`, etc.
-Twenty verbs per persona:
+One stdio process registers every Plane operation **once**. Each
+tool takes a `persona` argument — the username of whoever is calling —
+and the server looks that persona's API token up from it, so the write
+lands in Plane under the right account.
+
+Registering the set once per persona instead (the earlier layout, with
+the identity in the tool name) put 286 tool schemas — 179 KB, ~45k
+tokens — into the system prompt of every session, on every turn, so
+that one persona could reach the 26 it actually holds. Twenty-six
+verbs, one set:
 
 | Verb | Endpoint |
 |---|---|
@@ -68,9 +73,12 @@ module memberships intact.
 ## Auth model
 
 Public REST only: `X-API-Key` header against `/api/v1/`. No
-session-cookie auth, no UI credentials needed. Per-persona tokens
-are kept inside one process and selected by the prefix on each
-incoming tool call.
+session-cookie auth, no UI credentials needed. Per-persona tokens are
+kept inside one process and selected by the `persona` argument on each
+incoming tool call; an unknown persona is refused rather than falling
+back to another's token. Whether the argument *matches the role USER
+started* is a separate question, and the consumer's
+`.claude/hooks/plane-persona-guard.py` is what answers it.
 
 ## Env vars
 

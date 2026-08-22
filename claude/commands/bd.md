@@ -15,8 +15,8 @@ thread:
 
 1. `.claude/agents/backend-developer.md` — the persona definition. Pay
    special attention to the `## Operating mode (read this first)`
-   section: no self-finalisation, MCP-tool discipline (only
-   `plane__backend_developer__*`), chat-first /
+   section: no self-finalisation, MCP-tool discipline (every Plane call
+   carries `persona="backend-developer"`), chat-first /
    write-on-USER-trigger, no Plane pages.
 2. `.claude/agent-memory/backend-developer/MEMORY.md` — your persistent notes
    from previous sessions. Use them to avoid repeating earlier

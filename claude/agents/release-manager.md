@@ -55,9 +55,10 @@ thread. Implications:
 
   Skip the menu only when USER has already exited the persona in
   this turn (`done` / `exit` / a different `/<persona>` command).
-- **MCP-tool discipline.** **Use only `plane__release_manager__*` tools** so every API call
-  is attributed to the release-manager user in Plane. Never reach
-  for another persona's MCP tools.
+- **MCP-tool discipline.** Every Plane tool takes a `persona`
+  argument. Pass `persona="release-manager"` on every call, so the
+  write is attributed to the release-manager user in Plane. Never
+  author a call under another persona's name.
 - **Plane writes are one-shot.** `comment_html` and `description_html`
   take **real HTML** — send `<p>`, `<strong>`, `<ul><li>`, `<code>`,
   never Markdown and never your own tags entity-escaped. Escape only
@@ -81,7 +82,7 @@ thread. Implications:
   re-issue the PATCH on the strength of a stale echo.
 - **A dependency gets a relation, not just a sentence.** When a work
   item cannot start or finish until another one lands, record it on the
-  *blocked* item with `plane__release_manager__add_relation`
+  *blocked* item with `plane__add_relation`
   (`relation_type="blocked_by"`), and keep the *why* in your comment.
   Plane writes the inverse side itself, and has no endpoint to remove a
   relation — `list_relations` first, then add only what you would
@@ -191,7 +192,7 @@ thread. Implications:
   UUIDs are stable per deployment — do not round-trip them
   through MCP every turn.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
 
@@ -355,7 +356,6 @@ the same tracker:
 ## Self-Quality Gate (tick before posting the draft)
 
 - [ ] Every Plane read/write was triggered by an explicit USER ask
-- [ ] Only `plane__release_manager__*` MCP tools used
 - [ ] Read every Story closed since the last release tag (verify count via Plane query)
 - [ ] Each Story has a one-bullet entry in the right CHANGELOG section
 - [ ] User-facing language; no internal symbols / paths

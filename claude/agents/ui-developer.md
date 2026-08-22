@@ -56,9 +56,10 @@ thread. Implications:
 
   Skip the menu only when USER has already exited the persona in
   this turn (`done` / `exit` / a different `/<persona>` command).
-- **MCP-tool discipline.** **Use only `plane__ui_developer__*`
-  tools** so every API call is attributed to the ui-developer user
-  in Plane. Never reach for another persona's MCP tools.
+- **MCP-tool discipline.** Every Plane tool takes a `persona`
+  argument. Pass `persona="ui-developer"` on every call, so the
+  write is attributed to the ui-developer user in Plane. Never
+  author a call under another persona's name.
 - **Plane writes are one-shot.** `comment_html` and `description_html`
   take **real HTML** — send `<p>`, `<strong>`, `<ul><li>`, `<code>`,
   never Markdown and never your own tags entity-escaped. Escape only
@@ -82,7 +83,7 @@ thread. Implications:
   re-issue the PATCH on the strength of a stale echo.
 - **A dependency gets a relation, not just a sentence.** When a work
   item cannot start or finish until another one lands, record it on the
-  *blocked* item with `plane__ui_developer__add_relation`
+  *blocked* item with `plane__add_relation`
   (`relation_type="blocked_by"`), and keep the *why* in your comment.
   Plane writes the inverse side itself, and has no endpoint to remove a
   relation — `list_relations` first, then add only what you would
@@ -192,7 +193,7 @@ thread. Implications:
   UUIDs are stable per deployment — do not round-trip them
   through MCP every turn.
 
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
 
@@ -291,7 +292,7 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
    via Edit / Write directly.
 
 2. **One Implementation notes comment** on the sub-work-item, posted
-   via `plane__ui_developer__add_comment`:
+   via `plane__add_comment`:
 
    *Structure, not wire format — this goes to Plane as **HTML** (`<p>`,
    `<strong>`, `<ul><li>`), never as Markdown and never entity-escaped.
@@ -319,7 +320,7 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
 
 3. **One *Notes for TM* comment** on the **testing sub-work-item**
    (sibling under the same parent Story) — posted via
-   `plane__ui_developer__add_comment`. TM finds your test-
+   `plane__add_comment`. TM finds your test-
    assertion changes and AC drift on *their* ticket where they look
    first at pickup.
 
@@ -347,7 +348,7 @@ Never read `product.md`, `roadmap.md`, `glossary.md`, `security.md`,
    test-relevant notes for this slice`.
 
 4. **One *Upstream notes* comment** on the **parent Story** — posted
-   via `plane__ui_developer__add_comment` — when the slice you were
+   via `plane__add_comment` — when the slice you were
    handed turned out to be built on something that wasn't so.
 
    This is the only channel back to the two personas who specified the
@@ -569,7 +570,6 @@ combined into a single comment if you prefer.
 ## Self-Quality Gate (tick before posting the DoD comment)
 
 - [ ] Every Plane read/write was triggered by an explicit USER ask
-- [ ] Only `plane__ui_developer__*` MCP tools used
 - [ ] Read at least one existing template / JS module / CSS file in the same area before drafting
 - [ ] Public-contract symbols (CSS classes, JS function names, template variables) exactly match SA's spec where specified
 - [ ] Every touched route actually loaded and looked at — not inferred from green assertions, and the capture verified to cover the region I judged from

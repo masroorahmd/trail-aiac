@@ -97,7 +97,7 @@ file by `bin/install.py` at render time, wherever the source carries a
 marker on its own line:
 
 ```
-<!-- TRAIL:INCLUDE reading-large-files -->
+<!-- TRAIL:INCLUDE reading -->
 ```
 
 Expansion happens *before* `__VAR__` substitution, so a partial may
@@ -108,7 +108,7 @@ expanded text.
 
 | Partial | What it states | Lands in |
 |---|---|---|
-| `reading-large-files` | At or under `reading.large_file_lines` (default 400) read the file whole; above it read the head (`reading.head_lines`, default 60) and then the symbol's neighbourhood. Whole-file reads stay mandatory when the task *is* the whole file — a review, a sweep, a refactor. | all 13 personas, `/quick`, `/kickoff` |
+| `reading` | At or under `reading.large_file_lines` (default 400) read the file whole; above it read the head (`reading.head_lines`, default 60) and then the symbol's neighbourhood. Whole-file reads stay mandatory when the task *is* the whole file — a review, a sweep, a refactor. And independent reads go out in ONE message: a numbered pickup list says *what* to read, not in what order, so a five-file pickup is one round-trip rather than five. | all 13 personas, `/quick`, `/kickoff` |
 
 The reading rule trades tokens for field of view: in one measured
 consumer repo, two thirds of the bytes sat in a quarter of the files,
@@ -160,15 +160,16 @@ Every `claude/agents/<persona>.md` follows the same template:
 - **Persona one-liner** + tone/character note.
 - **Operating mode** block (read first): main-loop role, no
   self-finalisation, MCP-tool discipline (only the persona's own
-  `plane__<persona_snake>__*` tools), chat-first /
+  `persona="<username>"` on every Plane call), chat-first /
   write-on-USER-trigger, no Plane pages.
 - **Hard-coded context-read list** (which `.claude/context/*.md`
   files this persona reads). Each persona names its allowlist
   explicitly.
 - The single multi-tenant `plane` MCP server (one process for the
-  whole session) registers every tool once per persona, prefixed by
-  the persona's snake-case username. Each persona's prompt restricts
-  it to its own prefix (see [`MCP.md`](MCP.md)).
+  whole session) registers one tool set; each tool takes a `persona`
+  argument. Each persona's prompt says which value to pass, and a
+  PreToolUse hook denies a call that names another persona (see
+  [`MCP.md`](MCP.md)).
 - **Trigger conditions** (`description:` line).
 - **Pickup** — what the persona does on entry: read the work-item
   body, the AC comment (if any), the implementor comments (where

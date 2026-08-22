@@ -3,17 +3,18 @@
 One multi-tenant MCP server reaches Plane on behalf of every persona.
 It launches once per Claude Code session via the consumer's
 `.mcp.json`, holds every persona's API token inside its own env
-block, and registers every tool N× — once per persona, prefixed by
-the persona's snake-case username. The persona prompt picks the
-right prefix; the server picks the right token. Every comment and
-state change therefore still lands in Plane attributed to the agent
-that performed it.
+block, and registers **one** tool set. Every tool takes a `persona`
+argument; the persona prompt says which value to pass, the server
+picks the token from it, and a PreToolUse hook checks it against the
+`/<persona>` USER actually started. Every comment and state change
+therefore still lands in Plane attributed to the agent that performed
+it.
 
 ## Server in play
 
 | Server | Where from | Used for | Auth |
 |---|---|---|---|
-| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset), states / labels, modules (list + work-item membership), cycles (sprints, full CRUD + work-item membership + transfer), relations (list + add), workspace members, comments. Tool names are prefixed by persona: `business_analyst__list_states`, `release_manager__add_comment`, … | `X-API-Key` against `/api/v1/` |
+| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset), states / labels, modules (list + work-item membership), cycles (sprints, full CRUD + work-item membership + transfer), relations (list + add), workspace members, comments. 26 tools, each taking a `persona` argument that selects whose token authors the call. | `X-API-Key` against `/api/v1/` |
 
 > Earlier versions ran two servers per persona — upstream
 > `makeplane/plane-mcp-server` (via `uvx`) plus a supplementary
@@ -87,28 +88,49 @@ live inside a single `plane` MCP entry in the consumer's `.mcp.json`
 `credentials.yaml`). The entry's `env:` block carries one
 `PLANE_API_KEY_<PERSONA_PREFIX>` per declared persona; the server
 reads them at startup, builds a `{persona → PlaneClient}` map, and
-registers every tool N× with the persona's snake-case username as a
-prefix — `business_analyst__list_states`,
-`release_manager__add_comment`, and so on. Each registered tool is
-a closure over its persona's client, so the call lands in Plane
-under the right token regardless of which slash command invoked it.
+registers **one** tool set. Every tool takes a `persona` argument
+naming who is calling; the server looks the token up from that
+argument, so the call lands in Plane under the right account
+regardless of which slash command invoked it.
 
-When a slash command (`/gm`, `/ba`, …) puts the main loop into a
-persona's role, the main loop sees every persona's tools. The
-persona prompt explicitly constrains it: *"use only
-`plane__<persona_snake>__*` tools so every API call is attributed to
-the &lt;persona&gt; user in Plane."* Identity separation is therefore
-prompt-discipline rather than a hard MCP-scope barrier.
+The identity used to live in the tool *name* instead —
+`business_analyst__list_states`, `release_manager__add_comment` —
+which meant registering all 26 tools once per persona. Measured on the
+eleven-persona set: **286 tools, 179 KB of JSON schema, ~45k tokens**,
+sitting in the system prompt of every session on every turn so that
+one persona could reach the 26 it actually holds. One tool set is 26
+tools and ~5.9k tokens. The prefix bought nothing in exchange: the
+main loop saw every persona's tools either way, and nothing but the
+prompt asked it to stay in its own lane.
+
+**Identity separation is now a hook, not a naming convention.**
+`.claude/hooks/persona-pin.py` (UserPromptSubmit) records which
+`/<persona>` command USER started — derived from the
+`.claude/agents/<persona>.md` file that command loads, so a twelfth
+persona needs no hook change. `.claude/hooks/plane-persona-guard.py`
+(PreToolUse on `mcp__plane__*`) denies a Plane call whose `persona`
+argument disagrees with it. Strength is the consumer's call via
+`hooks.persona_identity` (`strict` / `ask` / `off`); every uncertain
+case passes — a session that has not run a `/<persona>` yet, a
+multi-persona lane (`/autopilot`, `/quick`, `/kickoff` pin `*`) —
+because a missed check costs one wrongly-attributed comment and a
+false deny stops work USER asked for.
+
+The pin lives at `.claude/cache/persona/<session-id>.json`, one file
+per Claude session. Running `/ba` in one terminal and `/tm` in another
+against the same repo is a normal way to work here, so the sessions
+must not share a pin: a single file would hand the check to whichever
+session submitted a prompt last and silently drop it for the other.
+Per-session files also mean two sessions never write the same path.
+Stale pins are pruned after seven days.
 
 > A previous design used Claude Code subagents with per-subagent
 > `mcpServers:` frontmatter to enforce identity separation at the
 > MCP layer. We moved to a main-loop / role-switch model because
 > subagents start cold on every invocation and lose conversational
 > context between turns, which broke the multi-turn discussion
-> phases each persona depends on. The trade is real: a persona can
-> in principle reach for another persona's tool prefix. Persona
-> prompts close that gap with explicit "use only your own"
-> instructions.
+> phases each persona depends on. The trade — a persona reaching for
+> another persona's identity — is what the guard hook now covers.
 
 ## Non-Plane MCP servers (browser automation)
 
@@ -144,16 +166,15 @@ content — a browser entry added there is silently dropped at the next
 install. `claude mcp add --scope user …` (or the extension's own
 wiring) survives.
 
-These servers carry no Plane identity, so the "use only
-`plane__<persona_snake>__*`" rule does not reach them; the persona
-prompts say so explicitly where the behaviour is expected.
+These servers carry no Plane identity, so neither the `persona`
+argument nor the guard hook reaches them; the persona prompts say so
+explicitly where the behaviour is expected.
 
 ## Handover semantics
 
-A persona walks a work-item forward via its own
-`plane__<persona_snake>__update_work_item` (state transition +
-assignee change) and writes cross-agent notes via
-`plane__<persona_snake>__add_comment`. The `plane-handover` skill
+A persona walks a work-item forward via `plane__update_work_item`
+(state transition + assignee change) and writes cross-agent notes via
+`plane__add_comment`, both carrying its own `persona`. The `plane-handover` skill
 encodes the consistent pattern: state transition + assignee change +
 DoD comment, in that order. See [`WORKFLOW.md`](WORKFLOW.md) for the
 full state spine.
@@ -162,7 +183,7 @@ full state spine.
 
 A handover moves one ticket forward; a *dependency* says a ticket may
 not move at all yet. Every persona can record one with
-`plane__<persona_snake>__add_relation` on the **blocked** item
+`plane__add_relation` on the **blocked** item
 (`relation_type="blocked_by"`, `related_work_item_ids` naming what it
 waits for), and read the current picture with `list_relations`. Plane
 writes the inverse `blocking` side itself.
