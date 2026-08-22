@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<!--
+  Source for .github/assets/trail-spine-light.png and trail-spine-dark.png.
+
+  One file, both themes: render with data-theme="light" / "dark" on <html>.
+  Rebuild (Chrome headless, 2x for retina):
+
+    for t in light dark; do
+      sed "s/data-theme=\"light\"/data-theme=\"$t\"/" trail-spine.src.html > /tmp/s.html
+      google-chrome --headless --disable-gpu --hide-scrollbars \
+        --virtual-time-budget=10000 --force-device-scale-factor=2 \
+        --window-size=1200,560 --screenshot="trail-spine-$t.png" /tmp/s.html
+    done
+
+  Palette and type stack are the Waymark spec — see trail-brand-spec.png.
+-->
+<html data-theme="light">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ground:  #F5F2EC;
+    --ink:     #2A3742;
+    --slate:   #3C4F5C;
+    --blaze:   #FD9841;
+    --muted:   #6D675E;
+    --rule:    rgba(60,79,92,.26);
+    --card:    #FFFFFF;
+    --cardline:rgba(60,79,92,.16);
+    --code-bg: rgba(60,79,92,.07);
+  }
+  [data-theme="dark"] {
+    --ground:  #0D1117;
+    --ink:     #F5F2EC;
+    --slate:   #EFE9DD;
+    --blaze:   #FFA65C;
+    --muted:   #9A9488;
+    --rule:    rgba(239,233,221,.24);
+    --card:    #161B22;
+    --cardline:rgba(239,233,221,.14);
+    --code-bg: rgba(239,233,221,.08);
+  }
+
+  html, body { margin:0; padding:0; width:1200px; height:560px; overflow:hidden; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'Work Sans', system-ui, sans-serif;
+    position: relative;
+  }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  /* ---- top edge, same signature as the banner ---- */
+  .edge { position:absolute; left:0; top:0; right:0; height:8px; background:var(--slate); }
+
+  .frame { position:absolute; left:56px; right:56px; top:44px; }
+
+  /* ---- band 1: the human ---- */
+  .human {
+    display:flex; align-items:center; gap:14px;
+    border:1.5px solid var(--slate); border-radius:6px;
+    padding:11px 18px; background:transparent;
+  }
+  .human .who { font-size:15px; font-weight:700; letter-spacing:.14em; }
+  .human .what { font-size:15px; color:var(--muted); }
+
+  /* ticks from the human band down onto every station */
+  .ticks { position:relative; height:26px; }
+  .ticks i {
+    position:absolute; top:0; width:1.5px; height:26px;
+    background:var(--rule); display:block;
+  }
+
+  /* ---- band 2: the stations ---- */
+  .stations { display:grid; grid-template-columns:repeat(6, 1fr); gap:14px; }
+  .cmd { font-size:19px; font-weight:700; color:var(--ink); }
+  .who2 { font-size:13.5px; color:var(--muted); margin-top:3px; line-height:1.3; min-height:36px; }
+
+  /* ---- band 3: the path with its waymarks ---- */
+  .path { position:relative; height:54px; margin-top:2px; }
+  .path .line { position:absolute; left:0; right:0; top:26px; height:2px; background:var(--rule); }
+  .mark { position:absolute; top:8px; width:34px; }
+  .mark b { position:absolute; display:block; border-radius:5px; }
+  .mark b.a { left:2px;  top:10px; width:11px; height:26px; background:var(--slate); transform:rotate(-3.5deg); }
+  .mark b.o { left:19px; top:2px;  width:11px; height:18px; background:var(--blaze); transform:rotate(4deg); }
+
+  /* ---- band 4: what each turn deposits ---- */
+  .deposits { display:grid; grid-template-columns:repeat(6, 1fr); gap:14px; margin-top:4px; }
+  .card {
+    border:1px solid var(--cardline); border-radius:7px; background:var(--card);
+    padding:12px 13px 13px; min-height:126px; box-sizing:border-box;
+    display:flex; flex-direction:column;
+  }
+  .card .where { font-size:11.5px; white-space:nowrap; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); }
+  .card .thing { font-size:14.5px; margin-top:6px; padding-bottom:10px; line-height:1.32; }
+  .card .id {
+    align-self:flex-start; margin-top:auto; padding:2.5px 7px; border-radius:4px;
+    background:var(--code-bg); font-size:13px; font-weight:500; color:var(--ink);
+  }
+  .card .id.gate { background:transparent; border:1.5px solid var(--blaze); color:var(--blaze); font-weight:700; }
+
+  /* ---- hand-backs ---- */
+  .handback { position:absolute; top:-86px; height:112px; width:0;
+    border-left:2px dashed var(--blaze); }
+  .handback span {
+    position:absolute; top:1px; font-size:12.5px; font-weight:600;
+    letter-spacing:.03em; color:var(--blaze); white-space:nowrap;
+  }
+  .handback.l span { right:10px; }
+  .handback.r span { left:10px; }
+
+  /* ---- band 5: the trail past the ticket ---- */
+  .git {
+    margin-top:20px; border-top:1px solid var(--rule); padding-top:16px;
+    display:flex; align-items:baseline; gap:20px;
+  }
+  .git .label { font-size:12px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+  .git .lines { font-size:14.5px; line-height:1.55; color:var(--ink); }
+  .git .sha { color:var(--muted); }
+  .git .key { color:var(--blaze); font-weight:700; }
+
+  .foot {
+    position:absolute; left:56px; bottom:22px; right:56px;
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .foot .l { font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+</style>
+</head>
+<body>
+  <div class="edge"></div>
+
+  <div class="frame">
+
+    <div class="human">
+      <span class="who mono">USER</span>
+      <span class="what">types every command · receives every hand-back · closes every ticket</span>
+    </div>
+
+    <div class="ticks" id="ticks"></div>
+
+    <div class="stations">
+      <div><div class="cmd mono">/ba</div><div class="who2">Business Analyst</div></div>
+      <div><div class="cmd mono">/re</div><div class="who2">Requirements Engineer</div></div>
+      <div><div class="cmd mono">/sa</div><div class="who2">Software Architect</div></div>
+      <div><div class="cmd mono">/sr</div><div class="who2">Security Reviewer</div></div>
+      <div><div class="cmd mono">/bd&nbsp;&nbsp;/ud</div><div class="who2">Backend &amp; UI Developer</div></div>
+      <div><div class="cmd mono">/tm</div><div class="who2">Test Manager</div></div>
+    </div>
+
+    <div class="path" id="path"><div class="line"></div></div>
+
+    <div class="deposits">
+      <div class="card">
+        <div class="where">Story body</div>
+        <div class="thing">Problem, scope, success criteria — written once, never edited</div>
+        <div class="id mono">SC-1</div>
+      </div>
+      <div class="card">
+        <div class="where">AC comment</div>
+        <div class="thing">Gherkin acceptance criteria and edge cases</div>
+        <div class="id mono">AC-1.1</div>
+      </div>
+      <div class="card">
+        <div class="where">Sub-items</div>
+        <div class="thing">One per module, each carrying its design slice</div>
+        <div class="id mono">DEV-43…46</div>
+      </div>
+      <div class="card">
+        <div class="where">SR findings</div>
+        <div class="thing">A blocker stops the lane — no risk lane buys past it</div>
+        <div class="id mono gate">CM-7</div>
+      </div>
+      <div class="card">
+        <div class="where">Code + commit</div>
+        <div class="thing">Implementation notes back on the sub-work-item</div>
+        <div class="id mono">DEV-43: …</div>
+      </div>
+      <div class="card">
+        <div class="where">Tests + steps</div>
+        <div class="thing">Every criterion discharged by a named mechanism</div>
+        <div class="id mono">// AC-1.1</div>
+      </div>
+    </div>
+
+    <div class="git">
+      <div class="label">and past the ticket</div>
+      <div class="lines mono">
+        <span class="sha">a1b2c3d</span> &nbsp;<span class="key">DEV-43</span>: add CSV export endpoint<br>
+        <span class="sha">9f4e7c1</span> &nbsp;<span class="key">DEV-44</span>: wire the export button to the new route
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <div class="l">eleven named hands · one marked path</div>
+    <div class="l">every state change attributed by role account</div>
+  </div>
+
+<script>
+  // place the ticks and the waymarks on the same six column centres
+  const cols = 6, frame = document.querySelector('.frame');
+  const W = frame.getBoundingClientRect().width, gap = 14;
+  const colW = (W - gap * (cols - 1)) / cols;
+  const centre = i => i * (colW + gap) + colW / 2;
+
+  const ticks = document.getElementById('ticks');
+  const path  = document.getElementById('path');
+  for (let i = 0; i < cols; i++) {
+    const t = document.createElement('i');
+    t.style.left = (centre(i) - 0.75) + 'px';
+    ticks.appendChild(t);
+
+    const m = document.createElement('div');
+    m.className = 'mark';
+    m.style.left = (centre(i) - 17) + 'px';
+    m.innerHTML = '<b class="a"></b><b class="o"></b>';
+    path.appendChild(m);
+  }
+
+  // hand-backs: after the security gate, and after the test run
+  // a hand-back returns the work to USER: after the security gate, and after the run
+  const add = (x, side, text) => {
+    const el = document.createElement('div');
+    el.className = 'handback ' + side;
+    el.style.left = x + 'px';
+    el.innerHTML = '<span>hands back to USER</span>';
+    path.appendChild(el);
+  };
+  add(centre(3) + colW / 2 + gap / 2, 'r');   // SR → USER
+  add(W - 8, 'l');                                // TM → USER, at the end of the path
+</script>
+</body>
+</html>

@@ -1,380 +1,267 @@
-# Trail
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"
+            srcset=".github/assets/trail-hero-dark.png">
+    <source media="(prefers-color-scheme: light)"
+            srcset=".github/assets/trail-hero-light.png">
+    <img alt="Trail — the audit trail for AI-assisted spec-driven engineering."
+         src=".github/assets/trail-hero-light.png">
+  </picture>
+</h1>
 
-*The audit trail for AI-assisted spec-driven engineering.*
+<p align="center">
+  <strong>Engineering discipline for software you have to defend.</strong>
+</p>
 
-**Engineering discipline for software you have to defend.**
+Eleven role-specific [Claude Code](https://claude.com/claude-code) agents take
+a feature from idea to release through a [Plane](https://plane.so) workspace.
+Each holds its own ticket-system account, so every requirement, review, commit
+and test is attributable to a named hand — and the board becomes the audit log
+you can hand to a regulator.
 
-A spec-driven methodology with audit-trail-by-construction: every
-code change is attributable — in the project's ticket system, by
-named role-account — to a designer, security reviewer, implementor,
-and tester. The same ticket carries the requirement that motivated
-the change, the acceptance scenarios it satisfies, and the test that
-proves it.
+> **Status:** early design / beta. Installable today — see [Install](#install).
 
-> **Status:** early design / beta. Installable today via the
-> `install-helper` agent (see [Install](#install)).
+## The 60-second version
 
-## What the discipline buys you
+```
+> /ba "Users want a CSV export of their issue list"
+    Story DEV-42. Body written once: problem, scope, SC-1…SC-3, risk lane.
 
-- **Description-once.** A Story body is written once on creation
-  and never edited. Later annotation is comment-only — original
-  intent stays readable, no version-skew.
-- **Stable per-criterion IDs.** Every success criterion (`SC-N`),
-  acceptance scenario (`AC-N`), edge case (`EC-N`), and
-  non-functional requirement (`NFR-N`) carries a persistent,
-  append-only ID that travels into test code as a comment. Trace
-  any test back to the requirement it covers; any requirement back
-  to the conversation in which it was settled.
-- **Global hard guardrails.** A *control manifest* holds the
-  non-negotiables — security, compliance, quality floors,
-  architectural invariants — each with a stable `CM-N` ID. A Story
-  that violates one is rejected at framing time, not at code
-  review.
-- **Per-role identity in the ticket bus.** Every comment and state
-  change is attributed by role-account; the board *is* the audit
-  log. Open it, scan a column, see who designed, reviewed,
-  implemented, and tested any change.
-- **Human-initiated, never ticket-triggered.** Nothing in Plane drives
-  Claude Code — the ticket's `assignee` is a TODO list, not a trigger,
-  and every run starts from a slash command a human issued. Autonomy is
-  opt-in and bounded: the default lane runs one persona turn per command,
-  while the opt-in `/autopilot` lane drives a framed Story through the
-  spine unattended — but still from a single human-initiated turn,
-  risk-capped (`autopilot.max_risk_lane`), and built to **stop and hand
-  back rather than guess** the moment a change leaves its lane.
+> /re DEV-42
+    Comment on DEV-42: Gherkin criteria AC-1.1…AC-3.2, edge cases EC-1.1.a…
 
-## What enforces it
+> /sa DEV-42
+    DEV-43 backend · DEV-44 frontend · DEV-45 testing · DEV-46 docs.
+    Each body carries its own design slice.
 
-Role-specific [Claude Code](https://claude.com/claude-code) agents
-— one per discipline (business analyst, requirements engineer,
-software architect, security reviewer, backend developer, …) —
-each constrained to a role-specific prompt, MCP scope, and
-[Plane](https://www.plane.so) account. The agents do not act
-autonomously; they execute the discipline above, so it does not
-slip under deadline pressure. Intent and accountability stay with
-the human.
+> /sr DEV-42
+    Findings per child. One blocker cites CM-7 and stops the lane.
+    ⇒ back to you — read them, curate them, dispatch.
 
-What the discipline produces in practice is a single, append-only
-chain of stable IDs — from the requirement that motivated the work
-down to the test that proves it:
+> /bd DEV-43        > /ud DEV-44
+    Code, plus an Implementation notes comment. Commits open with "DEV-43: ".
 
-```mermaid
-flowchart TB
-    subgraph Story["📋 Story body — BA writes once"]
-        SC1["<b>SC-1</b><br/>Customer receives an order confirmation"]
-    end
-
-    subgraph ACCmt["💬 AC comment on the Story — RE"]
-        direction LR
-        AC11["<b>AC-1.1</b><br/>Email arrives within 60s"]
-        AC12["<b>AC-1.2</b><br/>Order has a unique, stable number"]
-        EC11a["<b>EC-1.1.a</b><br/>Payment provider timeout → retry 3×"]
-    end
-
-    subgraph TestCode["🧪 Test code in the repo — BD / TM"]
-        direction LR
-        T1["test_confirmation_arrives()<br/>// AC-1.1"]
-        T2["test_order_number_unique()<br/>// AC-1.2"]
-        T3["test_payment_retry_on_timeout()<br/>// EC-1.1.a"]
-    end
-
-    SC1 ==> AC11
-    SC1 ==> AC12
-    AC11 ==> EC11a
-    AC11 -.-> T1
-    AC12 -.-> T2
-    EC11a -.-> T3
+> /tm DEV-45        > /tw DEV-46
+    Tests carrying // AC-1.1. Review steps posted on DEV-42.
+    ⇒ back to you — In Review, assigned to you. You merge, you close.
 ```
 
-A `grep` for `AC-1.1` traces a single criterion from BA intent down
-to the line of code that proves it. The chain works in both
-directions — intent → code (forward) or code → why (backward) —
-and stays legible without anyone having to interpret it.
+Seven commands, seven artefacts, one chain of IDs. Nothing was triggered by the
+ticket system: you typed every line.
+
+## The bet
+
+Most agentic coding frameworks optimise for velocity. They wire up a planner,
+an architect, a coder, a reviewer, and let them produce working code faster
+than a human would. That is fine — until you have to defend the code.
+
+A regulator asks who signed off on the threat model behind an auth shortcut. A
+customer asks which acceptance criterion a test actually proves. An incident
+review asks what the original intent was, and whether the implementation was
+true to it. In a velocity-first setup the trail goes cold fast: the agent did
+it, someone approved the PR, and the *why* lives in a chat transcript that has
+been compacted twice.
+
+Trail takes the opposite bet — **discipline first, velocity second** — on the
+premise that for software you eventually have to defend, the audit trail is
+not an afterthought. It is the primitive.
+
+What holds it up:
+
+- **Description-once.** A Story body is written at creation and never edited.
+  Later annotation is comment-only, so original intent stays readable.
+- **Stable IDs, end to end.** Success criteria (`SC-N`), acceptance scenarios
+  (`AC-N`), edge cases (`EC-N`) and non-functional requirements (`NFR-N`) are
+  append-only and travel into test code as comments and into commit subjects
+  as prefixes. `grep AC-1.1` walks from intent to the line that proves it.
+- **Hard guardrails.** A *control manifest* holds the non-negotiables, each
+  with a stable `CM-N` ID. A Story that violates one is rejected at framing
+  time, not at code review.
+- **Identity in the bus.** Every comment and state change is attributed by
+  role-account. Scan a column and see who designed, reviewed, implemented and
+  tested any change.
+- **The process shrinks when the work is small.** Every Story gets a *risk
+  lane*, and the lane shortens the path, not just the prose. Each trimmed
+  stage leaves a `SKIP-N` receipt naming its reason — and no lane buys past a
+  gate.
+
+Where a rule can be checked mechanically, a **hook** holds it rather than a
+prompt paragraph asking a persona to remember. One guard refuses a commit
+whose subject drops the work-item ID; another refuses a Plane write claiming a
+persona other than the one you started. How hard each holds is set in the
+consumer's own `config.yaml`, and both fail open on uncertain cases — a false
+deny costs more than a missed check.
+
+## Is this for you?
+
+| Reach for Trail when | Look elsewhere when |
+|---|---|
+| The code gets audited, certified, or defended later — regulated work, security-critical systems, anything with an external reviewer. | You are prototyping and the code is disposable. |
+| More than one stakeholder needs to see *why* a change exists, without reading a chat log. | One person owns everything and `git log` is already enough context. |
+| You want AI-written code you can still account for in six months. | You do not want to run a ticket system at all. |
+| You would rather spend a turn framing a Story than a week reconstructing intent. | Throughput is the only thing being optimised. |
+
+## What it leaves behind
+
+Every persona turn deposits one artefact, in a place that outlives the
+conversation — and the IDs carry forward past the ticket into the repository:
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"
+            srcset=".github/assets/trail-spine-dark.png">
+    <source media="(prefers-color-scheme: light)"
+            srcset=".github/assets/trail-spine-light.png">
+    <img alt="The spine: USER types every command; /ba, /re, /sa, /sr, /bd, /ud and /tm each deposit one artefact — Story body (SC-1), AC comment (AC-1.1), sub-work-items, security findings (CM-7), code and commit, tests and review steps — and the work-item ID opens every commit subject."
+         src=".github/assets/trail-spine-light.png">
+  </picture>
+</p>
+
+That is not a diagram of an intention. It is what the board looks like
+afterwards — sub-work-items split by module, each assigned to the role account
+that owns it, every state change signed:
+
+<p align="center">
+  <img alt="A Plane Story with four sub-work-items, each assigned to a different persona account, created by business-analyst"
+       src=".github/assets/trail-plane-story.png" width="880">
+</p>
+
+The chain reads in both directions: intent → code, or code → why. A `grep` for
+`AC-1.1` finds the test; the test's work-item ID finds the commit; the commit's
+ticket carries the criterion that justified it.
 
 ## The team
 
 | | Agent | Trait | Role |
 |---|---|---|---|
-| <img src="avatars/general-manager.png" width="80"/>       | **General Manager**       | Form vor Tempo            | Founder operations — Behörden, Notar, Recht, Steuern, Staffing, Förderung, Compliance. Eigenes `HQ`-Plane-Projekt. |
-| <img src="avatars/business-analyst.png" width="80"/>      | **Business Analyst**      | Curious about the unsaid  | Turns feature ideas into stories; owns the backlog and priorities.      |
-| <img src="avatars/requirements-engineer.png" width="80"/> | **Requirements Engineer** | Pedantic about wording    | Adds testable acceptance criteria (Gherkin) and edge cases as a comment on the Story. |
-| <img src="avatars/software-architect.png" width="80"/>    | **Software Architect**    | Long-horizon              | Designs the solution; documents trade-offs and pitfalls.                |
-| <img src="avatars/security-reviewer.png" width="80"/>     | **Security Reviewer**     | Adversarial by default    | Strict, non-negotiable gate; maintains project security state.          |
-| <img src="avatars/backend-developer.png" width="80"/>     | **Backend Developer**     | Sceptical of the happy path | Implements server-side changes.                                       |
-| <img src="avatars/ui-developer.png" width="80"/>          | **UI Developer**          | State-empathic            | Implements frontend changes.                                            |
-| <img src="avatars/test-manager.png" width="80"/>          | **Test Manager**          | Fastidious about coverage | Owns test strategy and verification.                                    |
-| <img src="avatars/technical-writer.png" width="80"/>      | **Technical Writer**      | Reads own draft as a stranger | Keeps docs, READMEs, and changelogs honest.                         |
-| <img src="avatars/release-manager.png" width="80"/>       | **Release Manager**       | Rollback-first            | Drives versioning, tagging, and release.                                |
-| <img src="avatars/marketing-manager.png" width="80"/>     | **Marketing Manager**     | Audience's language first | Owns the website (`.org` OSS narrative + `.com` enterprise funnel), brand voice, and SEO. Eigenes `MKT`-Plane-Projekt; hands site code to UI Developer. |
+| <img src="avatars/general-manager.png" width="70"/>       | **General Manager**       | Process before pace | Founder operations — authorities, notary, legal, tax, staffing, funding, compliance. Runs on its own `HQ` project. |
+| <img src="avatars/business-analyst.png" width="70"/>      | **Business Analyst**      | Curious about the unsaid | Turns ideas into Stories; owns backlog, priorities, and the roadmap. |
+| <img src="avatars/requirements-engineer.png" width="70"/> | **Requirements Engineer** | Pedantic about wording | Adds testable Gherkin criteria and edge cases as a comment on the Story. |
+| <img src="avatars/software-architect.png" width="70"/>    | **Software Architect**    | Long-horizon | Designs the solution and splits it into sub-work-items, one per module. |
+| <img src="avatars/security-reviewer.png" width="70"/>     | **Security Reviewer**     | Adversarial by default | Strict, non-negotiable gate — over the design, and again over the landed diff. |
+| <img src="avatars/backend-developer.png" width="70"/>     | **Backend Developer**     | Sceptical of the happy path | Implements server-side changes. |
+| <img src="avatars/ui-developer.png" width="70"/>          | **UI Developer**          | State-empathic | Implements frontend changes; also runs the pre-ticket design lane. |
+| <img src="avatars/test-manager.png" width="70"/>          | **Test Manager**          | Fastidious about coverage | Owns test strategy, and drives the review steps against the running app. |
+| <img src="avatars/technical-writer.png" width="70"/>      | **Technical Writer**      | Reads own draft as a stranger | Keeps docs, READMEs and changelogs honest. |
+| <img src="avatars/release-manager.png" width="70"/>       | **Release Manager**       | Rollback-first | Drives versioning, tagging and release. |
+| <img src="avatars/marketing-manager.png" width="70"/>     | **Marketing Manager**     | Audience's language first | Owns the website, brand voice and SEO. Runs on its own `MKT` project. |
 
-More on what each agent reads, writes, and does:
-[`doc/PERSONAS.md`](doc/PERSONAS.md). The handover sequence over a
-Story's lifetime: [`doc/WORKFLOW.md`](doc/WORKFLOW.md).
-
-## Spec-driven, without the document-pile
-
-Each persona's hand-off produces the artefact a traditional spec
-document would have held — captured as a Plane work-item or comment,
-attributed to its author, traceable from why to test, regenerated as
-the code evolves. PRD- and SDD-equivalent by construction; BRD-ready
-when strategic context is needed; TSD by design, embedded in code and
-PR review.
-
-| Spec doc | Status | What plays its role here |
-|---|---|---|
-| **PRD** — *what & why* | ✅ covered | BA Story body (problem / target users / success criteria / scope) + RE acceptance-criteria comment (Gherkin scenarios + edge cases + non-functional requirements). |
-| **SDD** — *how* | ✅ covered | SA sub-work-item bodies, one per module: approach, components (new + modified), data models, API endpoints, trade-offs, security hand-off notes. |
-| **BRD** — *strategic why* | ◻ ready | The BIZ project plus the BA's strategy-sanity-check provide the strategic-context lane; no fixed schema enforced — invoked when stakeholders need the why-chain made explicit. |
-| **TSD** — *implementation detail* | ◻ by design, not by document | Implementation specs live in the code itself, in PR descriptions, and in the implementor's DoD comment on the sub-work-item — kept where they cannot drift from reality. |
-
-Why no parallel TSD document: a separate implementation spec
-inevitably drifts from the code. The persona pipeline keeps detail
-at the level where it can be enforced — sub-work-item body for
-design intent, code + PR description for the as-built shape.
+Typing `/<persona>` puts the main loop into that role until you say `done` or
+start a different one. What each reads, writes and when to invoke it:
+[`doc/PERSONAS.md`](doc/PERSONAS.md). The handover sequence over a Story's
+lifetime: [`doc/WORKFLOW.md`](doc/WORKFLOW.md).
 
 ## Install
 
-Open this repo in Claude Code and let the **`install-helper`** agent
-walk you through it:
+Open this repo in Claude Code and let the **`install-helper`** agent drive:
 
 ```bash
 cd /path/to/trail-aiac
 claude
-```
-
-Then in the Claude Code session:
-
-```
 > /trail-install-helper /path/to/my-project
 ```
 
-The helper figures out which install scenario applies (greenfield with
-Ansible, existing Plane without agents, or existing Plane with agents
-already in place), sets up the prerequisites it can (`uv`, `ansible`,
-vault password file), asks the handful of inputs it can't, runs
-`ansible-playbook` with your confirmation where relevant, ingests the
-generated tokens + UI passwords into the consumer's
-`.claude/config.yaml` + `credentials.yaml`, runs `bin/install.py`, and
-prints a usage card showing where your secrets live and how to fire
-the first agent.
+It works out which of the three scenarios applies (greenfield with Ansible,
+existing Plane without agents, existing Plane with agents), installs what
+prerequisites it can, asks for the few inputs it cannot derive, provisions
+Plane with your confirmation where relevant, folds the resulting tokens into
+the consumer's `.claude/config.yaml` + `credentials.yaml`, and prints a usage
+card. Manual reference: [`doc/INSTALLATION.md`](doc/INSTALLATION.md).
 
-Manual reference if you'd rather drive by hand:
-[`doc/INSTALLATION.md`](doc/INSTALLATION.md).
-
-## Usage
-
-Each persona is a slash command (`/gm`, `/ba`, `/re`, `/sa`, `/sr`,
-`/bd`, `/ud`, `/tm`, `/tw`, `/rm`, `/mm`).
-Typing `/<persona>` puts the main loop into that role until you say `done`
-or start a different `/<persona>`. You trigger every turn — agents do not
-auto-pick up tickets.
-
-Three more commands sit outside the eleven personas — none has a Plane
-identity of its own, each is still a single human-initiated turn:
-
-- **`/mock`** — the *design lane*, and the only one that runs **before
-  a ticket exists**. The UI Developer builds the screens as static HTML
-  in your project's own CSS, serves them on a free port, and you walk
-  the click-through and argue about it while changing it is still free.
-  What comes out is `design/<slug>/` in your repo: the mock files plus
-  a `DESIGN.md` carrying the screen × state matrix and a numbered set
-  of `D-N` decisions. `/ba` then writes the Story against that record
-  instead of against a guess, RE turns the state matrix into
-  acceptance criteria, and at implementation time the UI Developer
-  diffs the built page against the mock and has to name every
-  deviation. It touches Plane not at all.
-- **`/quick`** — the off-Plane *quick lane*. One main-loop turn, no
-  Story, no persona identity of its own. Implements a bounded-risk
-  change and commits it; the commit is the artefact. Name a work-item
-  and it also closes that loop — the ticket is handed back `In Review`,
-  assigned to you, with one comment — borrowing the identity of the
-  persona whose lane the change landed in. Name none and it touches
-  Plane not at all. Gated on six eligibility checks (no security surface, no new
-  external surface, no migration, no risky new dependency, bounded
-  **risk**, reversible) — anything that fails routes to `/ba` instead.
-  Bounded risk is not bounded size: a mechanical sweep across twenty
-  files, whose sites one command can enumerate *and* re-verify, is in
-  lane; a two-file change to an auth path is not.
-- **`/autopilot`** — the *unattended lane*. One human-initiated turn
-  that drives an already-framed Story — or every Story in a work-item
-  tree above it — through the spine (RE → SA → SR → BD/UD → TM →
-  TM review run → SR-diff → TW → commit → RM → hand back) with no human
-  in the loop **on the way forward**, each persona
-  running as a subagent under its own Plane identity. Going *back* is
-  different: before any repair round — a red suite, a review-run
-  defect, an SR-diff finding — and before switching to the next Story
-  of a tree, it pauses with a decision box (`repair` / `follow-up` /
-  `ride the hand-back` / `stop here`) and resumes in the same thread,
-  so a finding costs you a question instead of three cold subagents.
-  Hard gates never become a question: an SR blocker, a violated `CM-N`
-  or an app that won't boot still STOP. The Test Manager
-  doesn't just write the review steps, it **drives them** against the
-  running app and routes each defect back to the persona that owns the
-  slice. **It never merges and never closes:** one feature branch per
-  Story, pushed and left standing, and each Story handed back
-  `In Review` + assigned to you with those review steps and the result
-  of the run. You merge, you close, and any
-  rework goes back into the same ticket on the same branch. Risk-capped
-  (`autopilot.max_risk_lane`) and built to stop and hand back — branch
-  intact — the moment a change leaves its lane.
-
-### First run — seed the context
+Then, once, in the consumer project:
 
 ```bash
-cd /path/to/your-project
-claude
 > /kickoff
 ```
 
-`/kickoff` reads your README, package manifests, and CI configs,
-then drafts the twelve `.claude/context/*.md` files every persona
-reads (`product.md`, `stack.md`, `coding.md`, `testing.md`, …). It
-asks pointed questions only when the project is silent on a topic.
-Plan ~20 minutes; re-running preserves anything already filled in.
+`/kickoff` reads your README, package manifests and CI configs, then drafts the
+`.claude/context/*.md` files every persona reads. Plan ~20 minutes; re-running
+preserves whatever is already filled in.
 
-### A feature, end-to-end
+## Beyond the default lane
 
-A feature walks through the team as one Plane Story plus 1–4
-sub-work-items (one per `backend / frontend / testing /
-documentation`), each handed off by reassignment in Plane:
+Three commands sit outside the eleven personas. None has a Plane identity of
+its own; each is still one turn a human started. All three are specified in
+full in [`doc/WORKFLOW.md`](doc/WORKFLOW.md).
 
-```
-> /ba "Users want a CSV export of their issue list"
-… BA scopes it into Plane Story DEV-42, writes the body, posts
-  open questions as comments.
+**`/mock`** — the design lane, and the only one that runs *before a ticket
+exists*. The UI Developer builds the screens as static HTML in your project's
+own CSS and serves them, so you argue about the design while changing it is
+still free. Out comes `design/<slug>/` in your repo: the mock plus a
+`DESIGN.md` with the screen × state matrix and numbered `D-N` decisions, which
+`/ba` then writes the Story against. It touches Plane not at all.
 
-> /re refine DEV-42
-… RE adds Gherkin acceptance criteria as a comment on DEV-42.
+**`/quick`** — the off-Plane quick lane. One turn, no Story, no persona
+identity; the commit is the artefact. Gated on six eligibility checks — no
+security surface, no new external surface, no migration, no risky dependency,
+bounded risk, reversible — and anything that fails routes to `/ba` instead.
+Bounded risk is not bounded size: a mechanical sweep across twenty files whose
+sites one command can enumerate *and* re-verify is in lane; a two-file change
+to an auth path is not.
 
-> /sa decompose DEV-42
-… SA creates DEV-43 (backend), DEV-44 (frontend), DEV-45 (testing),
-  DEV-46 (documentation), each carrying its architecture slice in
-  the body.
+**`/autopilot`** — the unattended lane. One human-initiated turn drives an
+already-framed Story through the whole spine, each persona running as a
+subagent under its own Plane identity. Going *forward* needs no human; going
+*back* does — before any repair round it pauses and asks. Hard gates never
+become a question: an SR blocker, a violated `CM-N`, or an app that will not
+boot still stop the run. **It never merges and never closes:** one feature
+branch per Story, pushed and left standing, handed back `In Review` and
+assigned to you.
 
-> /sr review DEV-42
-… SR posts findings as comments on the relevant sub-work-items.
+## Spec-driven, without the document-pile
 
-> /bd implement DEV-43
-> /ud implement DEV-44
-… Implementors edit code, post Implementation notes, move state
-  to In Review.
+Each hand-off produces the artefact a traditional spec document would have
+held — attributed to its author, traceable from why to test, regenerated as
+the code evolves.
 
-> /tm test DEV-45
-> /tw document DEV-46
-> /rm release
-```
-
-Each command moves its work-item along the
-`Todo → In Progress → In Review` spine and posts a comment under
-that persona's own API token, so every change is attributed in Plane.
-
-That is the **maximum** path. BA assigns every Story a *risk lane*
-(policy lives in the project's own `control-manifest.md`): `standard`
-shortens the prose, and `light` shortens the path itself — RE
-passthroughs, SA is skipped, no sub-work-items are created and the
-Story *is* the work-item, so a one-module change with nothing left to
-design runs `/ba → /re → /bd → /tm → /rm`. Every trimmed stage leaves
-a `SKIP-N` receipt naming the reason and the next command. No lane
-buys past a gate: SR still reviews a security surface, TM still runs
-where behaviour changed, and the hand-back to you always happens.
-
-### Other practical patterns
-
-```
-> /gm "Brauche ich eine D&O-Versicherung schon vor dem HRB-Eintrag?"
-```
-Operative GmbH-Begleitung — General Manager
-arbeitet auf einem separaten `HQ`-Plane-Projekt für Behörden, Notar,
-Recht, Steuern, Staffing, Förderungen, Compliance. Berührt das
-Engineering-Plane nicht.
-
-```
-> /ba pull from roadmap
-```
-Pick the next item off `roadmap.md` instead of pasting a brief.
-
-```
-> /tm fix the failing test in DEV-45
-```
-Rework branch — same persona, same sub-work-item, but explicitly
-pointed at a known failure rather than a fresh pickup.
-
-```
-> /quick bump axios to 1.7.9
-> /quick DEV-51: strip the debug banner from the export footer
-```
-Small, safe, reversible — off-Plane in one turn, no Story needed. Give
-it a work-item and it hands that ticket back `In Review` when it's
-done; give it none and it never opens Plane.
-
-```
-> /autopilot DEV-42
-```
-DEV-42 is already framed (state `To Do`, assignee
-requirements-engineer) — drive it unattended through the whole spine
-and hand it back `In Review` on its own branch with its review
-steps, or hand back earlier the moment it leaves the risk lane. You
-merge and close either way.
-
-### Switching and exiting
-
-`/<persona>` always replaces the current role — no need to close
-the previous one first. Type `done` (or `exit` / `we're finished`)
-to drop back to plain Claude Code; do this before context-free
-work so the persona's MCP-tool discipline does not constrain you.
+| Spec doc | Status | What plays its role here |
+|---|---|---|
+| **PRD** — *what & why* | ✅ covered | BA Story body + RE acceptance-criteria comment. |
+| **SDD** — *how* | ✅ covered | SA sub-work-item bodies: approach, components, data models, endpoints, trade-offs. |
+| **BRD** — *strategic why* | ◻ ready | BA's strategy sanity-check plus the strategic context files; no fixed schema enforced. |
+| **TSD** — *implementation detail* | ◻ by design | Lives in the code, the PR description, and the implementor's DoD comment — where it cannot drift. |
 
 ## Documentation
 
 | Doc | What's inside |
 |---|---|
-| [`doc/INSTALLATION.md`](doc/INSTALLATION.md) | Manual install reference for all three scenarios — what the install-helper does under the hood. |
-| [`doc/PROVISIONING.md`](doc/PROVISIONING.md) | Ansible playbook details: host pre-conditions, TLS strategies, idempotency, secret rotation, tear-down. |
-| [`doc/PERSONAS.md`](doc/PERSONAS.md) | The eleven agents — what each one reads, writes, when to invoke. |
-| [`doc/WORKFLOW.md`](doc/WORKFLOW.md) | Story lifecycle, state spine, handover protocol over Plane tickets. |
-| [`doc/MCP.md`](doc/MCP.md) | Per-persona MCP scoping; multi-tenant `plane` server with tool-name prefix routing. |
-| [`doc/PLANE_API.md`](doc/PLANE_API.md) | Background on Plane's public + internal APIs and what each surface offers. |
+| [`doc/INSTALLATION.md`](doc/INSTALLATION.md) | Manual install reference for all three scenarios. |
+| [`doc/PROVISIONING.md`](doc/PROVISIONING.md) | Ansible playbook: host pre-conditions, TLS, idempotency, secret rotation, tear-down. |
+| [`doc/PERSONAS.md`](doc/PERSONAS.md) | The eleven agents — what each reads, writes, when to invoke. |
+| [`doc/WORKFLOW.md`](doc/WORKFLOW.md) | Story lifecycle, state spine, handover protocol, risk lanes, and the three lanes above. |
+| [`doc/MCP.md`](doc/MCP.md) | The multi-tenant `plane` MCP server, `persona`-argument routing, and the hooks that check it. |
+| [`doc/PLANE_API.md`](doc/PLANE_API.md) | Plane's public and internal API surfaces. |
 | [`doc/BACKUP.md`](doc/BACKUP.md) | Ad-hoc Plane backup playbook (Postgres + MinIO). |
-| [`doc/COMPARISON.md`](doc/COMPARISON.md) | How this framework compares to BMAD-METHOD — collaboration bus, identity, ID convention, what we did and didn't borrow. |
+| [`doc/COMPARISON.md`](doc/COMPARISON.md) | How Trail compares to BMAD-METHOD. |
 
 ## Compared to BMAD-METHOD
 
-[BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) is the
-closest neighbour in the multi-agent-AI-development space —
-philosophically similar (specialist personas, human in the loop,
-Anthropic-native primitives), but with a different load-bearing bet.
-Short version:
+[BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) is the closest
+neighbour — specialist personas, human in the loop, Anthropic-native
+primitives — but it bets on git and the filesystem as the collaboration bus,
+with the human as the single author. Trail bets on ticket-system work-items
+with a separate account per persona, description-once bodies, and stable
+per-criterion IDs.
 
-| Axis | BMAD-METHOD | Trail |
-|---|---|---|
-| Collaboration bus | Git + filesystem | Plane work-items + comments |
-| Identity per persona | Single author (the human) | Per-persona Plane account + API token |
-| Artefact rule | Versioned, revisable | Description-once (body frozen on creation; comments after) |
-| Per-AC stable IDs | Not standard | `SC-N` / `AC-N` / `EC-N` / `NFR-N` / `CM-N` |
-| State machine | Implicit in workflow files | Explicit Plane states with per-work-item attribution |
-| Setup | `npx bmad-method install` | `bin/install.py` + optional Ansible (Plane provisioning) |
-| Maturity | Large active community, V6, ~21 agents | Small, opinionated, 11 agents |
-
-Pick BMAD when you want a fast-to-set-up multi-agent workflow inside
-your IDE without external infrastructure. Pick this one when
-multi-stakeholder visibility, per-persona audit attribution, and
-strict description-once / stable-ID discipline matter for your
-project. Full comparison and migration paths:
-[`doc/COMPARISON.md`](doc/COMPARISON.md).
-
+Pick BMAD for a fast, infrastructure-free multi-agent workflow inside your
+IDE. Pick Trail when multi-stakeholder visibility and per-persona audit
+attribution are what the project is graded on. Full comparison and migration
+paths: [`doc/COMPARISON.md`](doc/COMPARISON.md).
 
 ## Ticket system
 
-Version 1 targets [Plane](https://plane.so/) (self-hosted or cloud),
-built on Plane's official MCP server with a small supplementary MCP
-filling in the work-item-comment gap. JIRA/Confluence are not
-supported; deliberately ruled out due to Atlassian's AI terms.
+Plane, self-hosted or cloud. One multi-tenant MCP server ships in this repo
+(Python + FastMCP): it launches once per session, holds every persona's API
+token, and registers a **single** tool set — identity travels in a `persona`
+argument rather than in the tool name, so a session pays for 26 tool schemas
+instead of one full set per persona. JIRA and Confluence are deliberately not
+supported, ruled out over Atlassian's AI terms.
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). Issues, PRs, and design
-feedback all welcome — this is an early public release.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Issues, PRs and design feedback all
+welcome — this is an early public release.
 
 ## License
 
-[MIT](LICENSE) — © 2026 Masroor Ahmad and Trail
-contributors.
+[MIT](LICENSE) — © 2026 Masroor Ahmad and Trail contributors.
