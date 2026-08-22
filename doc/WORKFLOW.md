@@ -767,8 +767,9 @@ section. The Release Manager performs the hand-back itself (state,
 assignee, branch, merge order) and points at TM's comment; its own
 reading lane deliberately excludes `stack.md`, `testing.md` and
 `ui.md`, so it is the wrong persona to source setup commands or a
-coverage boundary from. When lean-lane skipped TM, RM writes a short
-fallback set and opens it by saying no independent test gate ran.
+coverage boundary from. When TM was skipped — by lean-lane judgement
+or by USER's `--no-tm` — RM writes a short fallback set and opens it by
+saying no independent test gate ran.
 
 **And TM drives them, not only writes them.** `/tm run review steps for
 <DEV-N>` puts the Test Manager into its second mode: it reads the steps
@@ -824,7 +825,7 @@ How it stays safe and auditable:
 - **Orchestrator owns control flow + git, nothing else.** `/autopilot`
   is not a persona — no Plane identity, no token, no MCP calls. It
   spawns each spine persona as a **subagent under that persona's own
-  `plane__<persona>__*` identity**, so Plane attribution stays exactly
+  own `persona` on every Plane call**, so Plane attribution stays exactly
   as in the interactive flow. The orchestrator only reads each
   subagent's `AUTOPILOT-VERDICT` and decides PROCEED / STOP / REPAIR,
   and it owns all git — the feature branch, each implementor's commit
@@ -896,6 +897,27 @@ How it stays safe and auditable:
   assumptions — and surfaced in full in the terminal summary, so nothing
   is trimmed silently. Set `autopilot.lean_lane: false` to force the
   full spine on every run (compliance-heavy projects).
+- **`--no-tm` — waive the Test Manager for one run.** `/autopilot DEV-N
+  --no-tm` drops spine steps 5 and 6 (the independent suite gate *and*
+  the review run) for every Story in the run, and drops the
+  runtime-surface floor with them: that floor exists to bind the
+  orchestrator's judgement, not USER's instruction. It is the per-run
+  counterpart to `autopilot.review_run: false`, which turns the review
+  run off for the project permanently — reach for the flag when the
+  answer is "not this time", for the config when it is "not here". The
+  run reports it once, and the hand-back rests on the implementor's own
+  local suite run with RM's fallback review steps saying so — and that
+  run covers no new behaviour, since authoring new coverage is TM's
+  lane and not the implementor's. SR's gate and RM's hand-back are
+  unaffected.
+- **`--no-review-run` — the narrower waiver.** `/autopilot DEV-N
+  --no-review-run` keeps TM's step 5 whole (independent suite, new
+  tests, the *Review steps* comment) and drops only step 6: nobody
+  drives the steps, so they ride the hand-back un-driven and USER
+  drives them. It is the per-run twin of `autopilot.review_run:
+  false`, and `--no-tm` already implies it. Note that step 6 is not
+  only the browser — it also drives a Story's curl/CLI steps — so the
+  flag hands *all* of them back, not just the clicking.
 - **Git is the orchestrator's.** When both BD and UD run, they do so
   **one at a time, directly in the feature tree** — never concurrently,
   never in a worktree — and the orchestrator commits each one's work

@@ -1,6 +1,6 @@
 ---
-description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Before the hand-back the Test Manager **drives its own review steps** against the running app, triaging what it finds back to the owning persona as a rework round — or, when the fix is too large for the slice, into a follow-up work-item. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with those step-by-step review steps and the result of the run; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/review-run/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. The forward path runs hands-off, but **re-entry does not**: with `autopilot.approval` on (the default) the run pauses with a decision box before any repair round and before each Story switch, and resumes in the same thread — so a finding costs a question rather than three cold subagents. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
-argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each>"
+description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Before the hand-back the Test Manager **drives its own review steps** against the running app, triaging what it finds back to the owning persona as a rework round — or, when the fix is too large for the slice, into a follow-up work-item. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with those step-by-step review steps and the result of the run; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/review-run/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. USER can waive stages for one run from the invocation, because those floors bind the orchestrator's judgement, not USER's instruction: `--no-tm` drops the Test Manager entirely (suite gate and review run) and the hand-back then says plainly that no independent test gate ran, while `--no-review-run` keeps TM's suite gate and its authored review steps but leaves them un-driven for USER. The forward path runs hands-off, but **re-entry does not**: with `autopilot.approval` on (the default) the run pauses with a decision box before any repair round and before each Story switch, and resumes in the same thread — so a finding costs a question rather than three cold subagents. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each> [--no-tm] [--no-review-run]"
 ---
 
 You are running `/autopilot` directly in the **main loop** of this
@@ -31,8 +31,8 @@ ticket: every Story it drove ends `In Review`, assigned to USER, with
 its review steps on it, and its branch waiting. USER merges and USER
 closes. No persona under autopilot sets anything to `Done`.
 
-**All Plane I/O happens inside the persona subagents**, each under its
-own `plane__<persona>__*` identity. You never read or write Plane
+**All Plane I/O happens inside the persona subagents**, each passing
+its own `persona` on every Plane call. You never read or write Plane
 directly — you read each subagent's returned `AUTOPILOT-VERDICT` block
 and decide. That is what keeps Plane attribution clean without giving
 the orchestrator a token.
@@ -62,7 +62,27 @@ sub-work-item it implements, the wrap-up commit with the Story.
    drive in order. *Triage* below resolves which. One ID is enough for
    a whole tree; if empty or ambiguous, ask USER for the single
    work-item ID and WAIT — this is the *one* question autopilot is
-   allowed.
+   allowed. `$ARGUMENTS` may also carry **`--no-tm`** (before or after
+   the ID). It waives the Test Manager for the *whole run* — spine
+   steps 5 and 6, on every Story — down the same path a lean-lane TM
+   skip takes, and it waives the runtime-surface floor with it: that
+   floor binds *your* judgement, not USER's instruction. Log it once as
+   `NO-TM: waived by USER`, not as a per-Story `SKIP-N`. Nothing else
+   moves — SR still runs, and RM still hands back with its fallback
+   review steps.
+
+   `$ARGUMENTS` may instead carry **`--no-review-run`**, the narrower
+   waiver: TM's step 5 runs in full — independent suite, new tests, the
+   *Review steps* comment — and only step 6 is dropped, run-wide. The
+   steps are written and ride the hand-back **un-driven**; USER drives
+   them. Log it once as `NO-REVIEW-RUN: waived by USER`. It is the
+   per-run twin of `autopilot.review_run: false`. `--no-tm` already
+   implies it, so both together are redundant, not a conflict — say so
+   once and carry on.
+
+   Strip any flag before you use the argument as an ID:
+   everywhere below that reads `$ARGUMENTS` as a work-item means the ID
+   alone. An unrecognised flag is not a licence to guess — ask USER.
 3. **Standards load.** Read `.claude/context/control-manifest.md` (the
    `CM-N` guardrails — you need the *Security non-negotiables*,
    *Compliance / legal*, and *Architectural invariants* sections to
@@ -111,7 +131,7 @@ literal token `AUTOPILOT-MODE` is what flips the persona's gated
 >    Read `.claude/agent-memory/<persona>/MEMORY.md` for your prior
 >    notes. Obey its `## Autonomous mode (only under /autopilot)`
 >    section — it overrides the interactive Operating mode.
-> 2. Use ONLY your `plane__<persona_snake>__*` MCP tools. Every Plane
+> 2. Pass `persona="<persona>"` on every Plane MCP call. Every Plane
 >    write must be attributed to your own persona identity.
 > 3. Self-finalize. There is no USER to answer you and no end-of-turn
 >    menu. Run your slice of <DEV-N> to completion: do your Plane
@@ -202,7 +222,7 @@ The two levels the triage must separate:
 
 Spawn it via the `Agent` tool (`subagent_type: general-purpose`) with a
 prompt that opens with the Autopilot contract block and adopts the
-`requirements-engineer` persona (its `plane__requirements_engineer__*`
+`requirements-engineer` persona (its `plane__*`
 tools have the read access you need), then this task — which **overrides contract points 3 and 7**: it
 self-finalizes by *reporting only* (transitioning nothing) and ends with
 the `TRIAGE-VERDICT` block below instead of the usual `AUTOPILOT-VERDICT`:
@@ -456,12 +476,15 @@ anyway and log why. A lane is BA's estimate, never a waiver.
      skip forfeits only the *independent* re-run and new-test authoring —
      acceptable only when there is nothing behavioural to test. If you
      are unsure whether the change has a runtime surface, you are not sure
-     enough to skip: **run TM.** A skipped TM means no independent green
-     gate ran; name it as a caveat in the summary.
+     enough to skip: **run TM.** The one thing that overrides this floor
+     is USER's own `--no-tm` — a waiver, not a judgement call. Either
+     way a skipped TM means no independent green gate ran; name it as a
+     caveat in the summary.
    - **Review-run floor (step 6).** The review run is TM's *second*
      spawn, and it goes wherever TM went: skipping TM skips it (there
      are no steps to drive), and it is off entirely when
-     `autopilot.review_run` is `false`. Beyond that you may skip it —
+     `autopilot.review_run` is `false` or USER passed `--no-review-run`
+     — that one is a waiver, not a judgement call. Beyond that you may skip it —
      `SKIP-N` — only when the Story's steps have **no executable
      surface at all**: nothing to click, nothing to curl, nothing to
      invoke. A Story with a UI surface is exactly the case this stage
@@ -594,7 +617,8 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    at all — docs, comments, or non-behavioural config, typically a Story
    with no `testing` sub-work-item (log a `SKIP-N`); the TM
    runtime-surface floor above governs when a skip is *not* allowed —
-   when in doubt, run it. On a skip there is no independent green-suite
+   when in doubt, run it. Under `--no-tm` the stage is waived for the
+   run outright: same skip path, no floor to weigh. On a skip there is no independent green-suite
    gate, so the hand-back rests on the implementor's own local suite run
    alone **and no review steps get authored here** — RM writes the
    fallback set at step 11, and step 6 has nothing to drive. Flag that
@@ -672,8 +696,8 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    project's harness — it is a test file and it belongs in the suite.
 
    **Lean-lane:** skip per the *Review-run floor* above — log a
-   `SKIP-N`, and when `autopilot.review_run` is `false` say so once in
-   the summary instead.
+   `SKIP-N`, and when `autopilot.review_run` is `false` or USER passed
+   `--no-review-run` say so once in the summary instead.
 
 7. **Security Reviewer — diff pass** — spawn `security-reviewer` a
    second time, now with the parent Story plus the actual change: the
@@ -978,16 +1002,25 @@ covering:
   was available), how many steps ran, the `P / F / B / S` counts, how
   many rework rounds it drove, every `Follow-up: …` work-item it filed
   with its ID, and what it could not verify. A skipped or un-driven
-  review run says so in one line with the reason, because "no findings"
-  and "nobody looked" are different results and the summary is where
-  USER can still tell them apart.
+  review run says so in one line with the reason — your `SKIP-N`, the
+  project's `review_run: false`, USER's `--no-review-run`, or no driver
+  available — because "no findings" and "nobody looked" are different
+  results and the summary is where USER can still tell them apart.
+  Under `--no-review-run`, point at TM's *Review steps* comment as
+  work that is now USER's.
 - **Every `SKIP-N` lean-lane decision** — each stage you skipped
   (RE/SA/SR/TM/the review run/TW or RM's release ceremony) or
   implementor you merged/swapped (BD↔UD), with its one-line reason.
   If you skipped RE,
-  restate the loose end (the Story left in `To Do`). If you skipped TM,
-  restate the quality caveat (no independent green-suite gate ran; the
-  hand-back rests on the implementor's own local suite run). If
+  restate the loose end (the Story left in `To Do`). If TM was
+  skipped — say which, your lean-lane judgement or USER's `--no-tm` —
+  restate the quality caveat (no independent green-suite gate ran and
+  no review steps were authored or driven; the hand-back rests on the
+  implementor's own local suite run, which covers no new behaviour —
+  authoring new coverage is TM's lane, not the implementor's). Under
+  `--no-tm`, name any `testing` sub-work-item left in `To Do` as a
+  loose end, exactly as for a skipped RE: it holds the implementors'
+  *Notes for TM* and nobody picked it up. If
   `lean_lane` was `false`, say so and note nothing was skipped.
 - Git (per driven Story): feature-branch name, what it is based on,
   commit hash(es), push result. **State plainly that nothing was merged

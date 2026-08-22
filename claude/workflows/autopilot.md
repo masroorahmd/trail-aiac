@@ -36,7 +36,7 @@ supervised-by-design run.
   fix is too large for that slice. USER's review starts from a run that
   already happened, not from a checklist nobody executed.
 - Every spine persona runs as a **subagent under its own
-  `plane__<persona>__*` identity**, so Plane attribution is identical
+  own `persona` on every Plane call**, so Plane attribution is identical
   to the interactive flow. The orchestrator never reads or writes Plane
   — it reads each subagent's `AUTOPILOT-VERDICT` block and decides.
 
@@ -85,6 +85,9 @@ the persona file, the ticket, and the upstream handover.
      implementor with TM's failure detail, then TM again, up to
      `max_repair_iterations`; still red after that → STOP.
    - un-runnable / non-fixable → STOP.
+   Skipped, with step 6, on `/autopilot DEV-N --no-tm` — USER's per-run
+   waiver of the whole stage, and of the runtime-surface floor that
+   would otherwise hold it.
 6. **test-manager (review run)** — spawned a **second time** with the
    token `REVIEW-RUN`, TM now *drives* the steps it just wrote: a
    browser for UI steps, plain commands for curl/CLI ones, one step at
@@ -109,7 +112,9 @@ the persona file, the ticket, and the upstream handover.
    TM STOPs. When no browser driver exists TM reports the steps as
    un-driven and returns PROCEED; a missing browser never stops a run,
    and an invented click-through is worse than an admitted gap. Skipped
-   with TM, off entirely under `autopilot.review_run: false`.
+   with TM, off entirely under `autopilot.review_run: false` or USER's
+   per-run `--no-review-run` — which keeps step 5 whole and only leaves
+   the steps un-driven for USER.
    Shares the Story's one `max_repair_iterations` budget with steps 5
    and 7; when it runs out, remaining findings become follow-ups rather
    than a stranded Story.
@@ -142,9 +147,9 @@ the persona file, the ticket, and the upstream handover.
    when the review run drove them, at TM's *Review run* comment with
    its one-line result — plus a **Known defects and follow-ups**
    section for anything that rode the hand-back unfixed.
-   RM does **not** author the steps; if lean-lane skipped TM there are
-   none, and RM writes a short fallback saying no independent test gate
-   ran. Sets **nothing** to `Done`. Honours its own tag-push human gate
+   RM does **not** author the steps; if lean-lane or `--no-tm` skipped
+   TM there are none, and RM writes a short fallback saying no
+   independent test gate ran. Sets **nothing** to `Done`. Honours its own tag-push human gate
    — STOP rather than push a tag.
 11. **container hand-back** — after the last Story, the containers from
     triage are handed back the same way, innermost first, each with a
