@@ -257,14 +257,16 @@ hooks:
 #                     SR's diff pass and a red CI run. Still a cap on
 #                     rounds USER *approves* when the gates below are on.
 #   ci_watch        — after pushing a Story's branch, wait for the run
-#                     the push started on the remote (GitHub via `gh`)
-#                     and let its verdict, not the push, end the git
-#                     step. A red run is a repair round like TM's red
+#                     the push started on the remote and let its
+#                     verdict, not the push, end the git step. Whatever
+#                     forge `origin` points at: the run is read through
+#                     that forge's CLI (`gh` / `glab` / `tea`) or, with
+#                     none installed, its commit-status API. A red run is a repair round like TM's red
 #                     suite; a green one rides the hand-back as evidence.
 #                     Nobody is watching the branch unattended, which is
-#                     why the lane watches it. Missing `gh`, an
-#                     unauthenticated `gh`, a non-GitHub remote or no run
-#                     at all is recorded and never fatal. Default true.
+#                     why the lane watches it. No driver, no credential
+#                     or no CI at all is recorded and never fatal.
+#                     Default true.
 #   ci_timeout_minutes
 #                   — wall-clock ceiling on that wait. At the ceiling the
 #                     run is reported as unfinished and the hand-back

@@ -58,7 +58,7 @@ sub-work-item it implements, the wrap-up commit with the Story.
    for this project outright, and you note that in the summary rather
    than logging a `SKIP-N` for it every run), and `autopilot.ci_watch`
    (default `true`) with `autopilot.ci_timeout_minutes` (default 20) —
-   the remote-CI gate in spine step 9.
+   the remote-CI gate in spine step 9 (any forge, see there).
 2. **Argument check.** `$ARGUMENTS` must name exactly one work-item ID
    (e.g. `DEV-42`) — a Story to drive, or any container above one
    (Epic, sub-Epic, nested to any depth) whose Stories autopilot will
@@ -800,31 +800,46 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      hand-back names a local branch just as well as a pushed one. Say
      in the review steps that the branch is local-only, so USER
      doesn't look for it on the remote.
-   - **Watch the CI run the push started**, when the push landed and
+   - **Watch the CI the push started**, when the push landed and
      `autopilot.ci_watch` is not `false`. USER is not at the keyboard
      to notice a red branch, so what ends this step is the *remote's*
-     verdict, not the push. Ask the remote, not the repo's workflow
-     files: with a GitHub origin and a clean `gh auth status`,
-     `gh run list --branch <branch> --limit 1` names the run. Wait by
-     **polling** it (`gh run view <id> --json status,conclusion`) up to
-     `autopilot.ci_timeout_minutes` (default 20) of wall clock — not
-     with one blocking `gh run watch`, which can outlive the tool
-     timeout that is supposed to bound it. Four outcomes:
+     verdict on the pushed commit, not the push. **No forge is
+     assumed**: read `origin`'s host, take the first rung below that
+     works there, and never let a missing rung stop the run.
+     1. **The forge's own CLI**, installed and authenticated for that
+        host — `gh` (GitHub), `glab` (GitLab), `tea` (Forgejo/Gitea).
+        Ask it for the newest run/pipeline on this branch, poll that
+        one until it settles, and read the failing job's log from it
+        when it goes red.
+     2. **The forge's commit-status API** for the pushed SHA, when a
+        token for this remote is already in the environment. GitHub,
+        GitLab and Forgejo/Gitea all answer a combined state for a
+        commit; that is the rung needing no forge-specific client, only
+        `curl` — and a red state there still names the failing check,
+        which is enough to route the finding even without its log.
+     3. **Nothing** — no CLI, no credential, or no CI on this
+        repository at all.
+     **Poll, never block.** On any rung, ask repeatedly with a short
+     sleep rather than using a `watch` / `trace` subcommand that
+     streams until the run ends: one blocking call can outlive the tool
+     timeout that is supposed to bound it. Give the run up to
+     `autopilot.ci_timeout_minutes` (default 20) of wall clock. Four
+     outcomes:
      - **green** — record the run's URL and go to step 10.
      - **red** — treat it exactly as TM's red suite at step 5: the
-       failing job's log tail (`gh run view <id> --log-failed`) is the
-       verdict, the implementor owning that slice fixes it, and the
-       round ends with a fresh commit, a fresh push and one more watch.
-       It passes *Approval gates* like any repair round and spends from
-       the same `max_repair_iterations` budget. Out of budget, or USER
-       chose to ride the hand-back: continue as
+       failing job (its log tail where the rung gives you one, its name
+       otherwise) is the verdict, the implementor owning that slice
+       fixes it, and the round ends with a fresh commit, a fresh push
+       and one more watch. It passes *Approval gates* like any repair
+       round and spends from the same `max_repair_iterations` budget.
+       Out of budget, or USER chose to ride the hand-back: continue as
        `COMPLETED-WITH-FINDINGS` with the failing job named.
      - **still running** when the ceiling is reached — record the run
        URL and that it was unfinished at hand-back. Do not extend.
-     - **not watched** — nothing triggered within ~60 s of the push, no
-       `gh`, `gh` unauthenticated, or a non-GitHub remote. Record which
-       one in a single line and move on. A missing driver is never a
-       STOP; an unwatched branch is what this lane did before.
+     - **not watched** — rung 3, or nothing triggered within ~60 s of
+       the push. Record which of the two in a single line and move on.
+       A missing driver is never a STOP; an unwatched branch is what
+       this lane did before.
 
 10. **Release Manager — release ceremony** — spawn with persona
    `release-manager` + the commit/branch. RM performs the project's

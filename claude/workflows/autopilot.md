@@ -138,11 +138,12 @@ the persona file, the ticket, and the upstream handover.
    screenshots deliberately not), commit with a
    `Trail-Lane: autopilot (<DEV-N>)` trailer, push the **feature
    branch** (never default, never `--force`; push failure is recorded,
-   not fatal), then **watch the CI run the push started** (GitHub via
-   `gh`, bounded by `autopilot.ci_timeout_minutes`). Green is recorded
+   not fatal), then **watch the CI the push started** — through
+   whatever forge `origin` points at (its CLI, else its commit-status
+   API), bounded by `autopilot.ci_timeout_minutes`. Green is recorded
    with its URL; red is a repair round out of the same budget as TM's
-   red suite; no run, no `gh` or a non-GitHub remote is recorded and
-   never fatal.
+   red suite; no driver and no CI at all are recorded and never
+   fatal.
 10. **release-manager** — performs the project's release ceremony
    (lean-lane-trimmable) and then the **hand-back, which never skips**:
    the Story goes `In Review` + assignee USER, with an *Autopilot

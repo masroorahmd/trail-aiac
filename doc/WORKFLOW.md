@@ -925,9 +925,11 @@ How it stays safe and auditable:
   `Trail-Lane: autopilot (<DEV-N>)` trailer — the mirror of
   `Trail-Lane: quick`, so `git log --grep='Trail-Lane: autopilot'`
   lists every unattended change. It pushes each Story's branch, waits
-  for the CI run that push starts (GitHub via `gh`, capped by
-  `autopilot.ci_timeout_minutes`; a red run is a repair round, a
-  missing run or missing `gh` is only recorded), and **stops there** —
+  for the CI that push starts — read through whatever forge `origin`
+  points at (`gh` / `glab` / `tea`, else the commit-status API every
+  one of them exposes), capped by `autopilot.ci_timeout_minutes`; a red
+  run is a repair round, a missing driver or absent CI is only
+  recorded — and **stops there** —
   no merge, no branch deletion, on any outcome, and never `--force`.
   If the push can't land (no remote, branch protection), the local
   branch is the durable artefact and the hand-back names it as
