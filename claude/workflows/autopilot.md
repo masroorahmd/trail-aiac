@@ -24,7 +24,8 @@ supervised-by-design run.
   `/quick`. It is the **orchestrator**.
 - It owns exactly three things: **control flow** (which persona runs
   next; PROCEED / STOP / REPAIR), **git** (feature branch, commit,
-  push — never merge, never delete), and **the terminal summary** to
+  push, watch the CI run — never merge, never delete), and **the
+  terminal summary** to
   USER.
 - **It does not finish the work — it hands it back.** Every Story ends
   `In Review`, assigned to USER, with a **review steps** comment,
@@ -137,7 +138,11 @@ the persona file, the ticket, and the upstream handover.
    screenshots deliberately not), commit with a
    `Trail-Lane: autopilot (<DEV-N>)` trailer, push the **feature
    branch** (never default, never `--force`; push failure is recorded,
-   not fatal).
+   not fatal), then **watch the CI run the push started** (GitHub via
+   `gh`, bounded by `autopilot.ci_timeout_minutes`). Green is recorded
+   with its URL; red is a repair round out of the same budget as TM's
+   red suite; no run, no `gh` or a non-GitHub remote is recorded and
+   never fatal.
 10. **release-manager** — performs the project's release ceremony
    (lean-lane-trimmable) and then the **hand-back, which never skips**:
    the Story goes `In Review` + assignee USER, with an *Autopilot

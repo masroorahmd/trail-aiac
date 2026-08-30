@@ -924,11 +924,14 @@ How it stays safe and auditable:
   before spawning the next. Every autopilot commit carries a
   `Trail-Lane: autopilot (<DEV-N>)` trailer — the mirror of
   `Trail-Lane: quick`, so `git log --grep='Trail-Lane: autopilot'`
-  lists every unattended change. It pushes each Story's branch and
-  **stops there** — no merge, no branch deletion, on any outcome, and
-  never `--force`. If the push can't land (no remote, branch
-  protection), the local branch is the durable artefact and the
-  hand-back names it as local-only. Every branch waits for USER.
+  lists every unattended change. It pushes each Story's branch, waits
+  for the CI run that push starts (GitHub via `gh`, capped by
+  `autopilot.ci_timeout_minutes`; a red run is a repair round, a
+  missing run or missing `gh` is only recorded), and **stops there** —
+  no merge, no branch deletion, on any outcome, and never `--force`.
+  If the push can't land (no remote, branch protection), the local
+  branch is the durable artefact and the hand-back names it as
+  local-only. Every branch waits for USER.
 - **Rework lands in the ticket that was handed back.** When the review
   finds a defect, the fix belongs *inside* the
   work-item that is already `In Review` — USER resumes the responsible

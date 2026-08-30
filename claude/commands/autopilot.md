@@ -1,5 +1,5 @@
 ---
-description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed and left standing for USER. Before the hand-back the Test Manager **drives its own review steps** against the running app, triaging what it finds back to the owning persona as a rework round — or, when the fix is too large for the slice, into a follow-up work-item. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with those step-by-step review steps and the result of the run; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/review-run/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. USER can waive stages for one run from the invocation, because those floors bind the orchestrator's judgement, not USER's instruction: `--no-tm` drops the Test Manager entirely (suite gate and review run) and the hand-back then says plainly that no independent test gate ran, while `--no-review-run` keeps TM's suite gate and its authored review steps but leaves them un-driven for USER. The forward path runs hands-off, but **re-entry does not**: with `autopilot.approval` on (the default) the run pauses with a decision box before any repair round and before each Story switch, and resumes in the same thread — so a finding costs a question rather than three cold subagents. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
+description: Unattended lane — drive an already-framed Story, or any work-item tree above one (Epic → Story → module children, nested arbitrarily deep), end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TM review run → SR-diff → TW → commit → RM → hand back) with no human in the loop. Personas run as subagents under their own Plane identity, make + log reasonable assumptions instead of asking, and the implementors run one at a time directly in the feature tree (never concurrently, never in a worktree). The orchestrator owns git and creates **one feature branch per Story** — the Story's module children all share it — but never merges and never deletes: every branch is pushed, watched through its remote CI run, and left standing for USER. Before the hand-back the Test Manager **drives its own review steps** against the running app, triaging what it finds back to the owning persona as a rework round — or, when the fix is too large for the slice, into a follow-up work-item. Each Story, and then every container above it, is handed back `In Review` + assigned to USER with those step-by-step review steps and the result of the run; USER merges and closes. In lean-lane mode (default) the orchestrator trims ceremony — skipping RE/SA/SR/TM/review-run/TW when they add no value and collapsing or swapping the BD/UD implementors, logging each choice as a SKIP-N — with hard floors: RE always runs when the Story is not already testable AC or might expose a risk-lane question, SA always runs when the change spans more than one slice, TM always runs when the change has any runtime surface, SR always runs when the change touches a security non-negotiable, and the RM hand-back never skips. USER can waive stages for one run from the invocation, because those floors bind the orchestrator's judgement, not USER's instruction: `--no-tm` drops the Test Manager entirely (suite gate and review run) and the hand-back then says plainly that no independent test gate ran, while `--no-review-run` keeps TM's suite gate and its authored review steps but leaves them un-driven for USER. The forward path runs hands-off, but **re-entry does not**: with `autopilot.approval` on (the default) the run pauses with a decision box before any repair round and before each Story switch, and resumes in the same thread — so a finding costs a question rather than three cold subagents. Stops and hands back (branch intact) the moment the change leaves the autopilot risk lane.
 argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each> [--no-tm] [--no-review-run]"
 ---
 
@@ -20,7 +20,8 @@ poll, no ticket-trigger.
 
 You are the **orchestrator**. You own three things and nothing else:
 1. **Control flow** — which persona runs next, and whether to PROCEED or STOP.
-2. **Git** — branch, commit, push (personas never touch git; you do).
+2. **Git** — branch, commit, push, and watching the CI run the push
+   starts (personas never touch git; you do).
    **You never merge and you never delete a branch**, on any outcome.
    One feature branch per Story, pushed and left standing. Merging into
    the default branch is USER's, always.
@@ -52,10 +53,12 @@ sub-work-item it implements, the wrap-up commit with the Story.
    `autopilot.max_risk_lane` (default `standard`),
    `autopilot.lean_lane` (default `true` — governs the *Lean-lane
    discretion* section below; when `false`, run the full spine every
-   time and skip nothing), and `autopilot.review_run` (default `true` —
+   time and skip nothing), `autopilot.review_run` (default `true` —
    the master switch for spine step 6; `false` turns the review run off
    for this project outright, and you note that in the summary rather
-   than logging a `SKIP-N` for it every run).
+   than logging a `SKIP-N` for it every run), and `autopilot.ci_watch`
+   (default `true`) with `autopilot.ci_timeout_minutes` (default 20) —
+   the remote-CI gate in spine step 9.
 2. **Argument check.** `$ARGUMENTS` must name exactly one work-item ID
    (e.g. `DEV-42`) — a Story to drive, or any container above one
    (Epic, sub-Epic, nested to any depth) whose Stories autopilot will
@@ -335,7 +338,8 @@ Two things in this lane are not a continuation of the run but the
 
 - **A repair round** — re-entering a stage that already finished,
   because TM found a red suite (step 5), the review run found a defect
-  (step 6), or SR's diff pass found something fixable (step 7). One
+  (step 6), SR's diff pass found something fixable (step 7), or the
+  pushed branch came back red from CI (step 9). One
   round is an implementor subagent *plus* a TM re-run *plus*, at step
   7, an SR re-run — and each of those subagents starts cold and reads
   the ticket again.
@@ -796,6 +800,31 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      hand-back names a local branch just as well as a pushed one. Say
      in the review steps that the branch is local-only, so USER
      doesn't look for it on the remote.
+   - **Watch the CI run the push started**, when the push landed and
+     `autopilot.ci_watch` is not `false`. USER is not at the keyboard
+     to notice a red branch, so what ends this step is the *remote's*
+     verdict, not the push. Ask the remote, not the repo's workflow
+     files: with a GitHub origin and a clean `gh auth status`,
+     `gh run list --branch <branch> --limit 1` names the run. Wait by
+     **polling** it (`gh run view <id> --json status,conclusion`) up to
+     `autopilot.ci_timeout_minutes` (default 20) of wall clock — not
+     with one blocking `gh run watch`, which can outlive the tool
+     timeout that is supposed to bound it. Four outcomes:
+     - **green** — record the run's URL and go to step 10.
+     - **red** — treat it exactly as TM's red suite at step 5: the
+       failing job's log tail (`gh run view <id> --log-failed`) is the
+       verdict, the implementor owning that slice fixes it, and the
+       round ends with a fresh commit, a fresh push and one more watch.
+       It passes *Approval gates* like any repair round and spends from
+       the same `max_repair_iterations` budget. Out of budget, or USER
+       chose to ride the hand-back: continue as
+       `COMPLETED-WITH-FINDINGS` with the failing job named.
+     - **still running** when the ceiling is reached — record the run
+       URL and that it was unfinished at hand-back. Do not extend.
+     - **not watched** — nothing triggered within ~60 s of the push, no
+       `gh`, `gh` unauthenticated, or a non-GitHub remote. Record which
+       one in a single line and move on. A missing driver is never a
+       STOP; an unwatched branch is what this lane did before.
 
 10. **Release Manager — release ceremony** — spawn with persona
    `release-manager` + the commit/branch. RM performs the project's
@@ -834,8 +863,10 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    > **Autopilot hand-back**, in English, adding only what is yours:
    >
    > - **Branch** — `autopilot/<DEV-N>-<slug>`, what it is based on (the
-   >   default branch, or the sibling Story's branch it builds on), and
-   >   whether it is pushed or local-only.
+   >   default branch, or the sibling Story's branch it builds on),
+   >   whether it is pushed or local-only, and the CI verdict for the
+   >   pushed branch — green, red with the failing job, unfinished, or
+   >   not watched and why.
    > - **Merge order** — when several Story branches are in play, the
    >   order they must land in; otherwise "independent".
    > - **Review steps** — a pointer to TM's comment ("see *Review
@@ -1047,8 +1078,11 @@ covering:
   *Notes for TM* and nobody picked it up. If
   `lean_lane` was `false`, say so and note nothing was skipped.
 - Git (per driven Story): feature-branch name, what it is based on,
-  commit hash(es), push result. **State plainly that nothing was merged
-  and no branch was deleted** — every branch is waiting for USER.
+  commit hash(es), push result, and the CI verdict with the run's URL
+  (green / red with the failing job / still running at hand-back / not
+  watched, and which of those reasons). **State plainly that nothing
+  was merged and no branch was deleted** — every branch is waiting for
+  USER.
 - **The merge order** across branches when more than one Story ran, and
   which branches are independent of each other.
 - **The hand-back roster** — for every Story and container: its ID, that
