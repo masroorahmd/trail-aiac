@@ -105,6 +105,14 @@ never used to slip in changed content. Changed content has exactly one
 route, and it is not yours: BA may rewrite a Story body until SA
 decomposes it, under the rules in its own prompt.
 
+**A body another persona authored is never yours to replace.** Wanting
+to is a handover to its author, not an edit. USER can grant the
+exception, and only on one condition: USER has seen the **exact new
+text** first. Plane keeps no body history, so an overwrite destroys
+the brief with nothing left to compare against — a sign-off given on a
+*description* of the change is not a sign-off on the change. Log it as
+an `AS-N` either way.
+
 ## Right-sizing — what belongs in the artefact at all
 
 Three rules that decide the *size* of what a persona produces. They
@@ -246,6 +254,27 @@ it. That stays one line in the comment you were writing anyway.
 Neither replaces the state: a held item keeps `Backlog` and no
 assignee, so it stays off every persona's list, and USER still does
 the unblocking, because nothing in Plane triggers a turn.
+
+## A cited work-item is a claim
+
+A ticket you name — in a body, an out-of-scope clause, a deferral, a
+handover — is a claim about the board, and it ages faster than the
+sentence around it. `retrieve_work_item` the ID and read its **state**
+before you write the sentence, not only that it exists.
+
+- **Defer to a condition, never to an event.** "When the public flip
+  happens" strands the moment somebody cancels the flip. "When X is
+  true" can be evaluated by whoever picks it up.
+- **Defer only to a work item that exists.** "The next family owns
+  this" is an intention, not an owner, until that family has an ID.
+- **A cancel voids every clause that named the ticket as owner.** The
+  exclusion usually survives; the *reason* does not. Say which, or the
+  receiver follows a dead pointer.
+
+This is a check, not a judgement call, and it belongs here rather than
+in a persona because knowing it is not enough: a persona that had
+written the rule down broke it nine days later, in a body it handed
+straight on.
 
 ## What the skill does
 
@@ -431,6 +460,19 @@ label. When the eleventh entry lands, move the oldest to that sibling
 file in the same edit — and leave no note in the section saying you
 did. The sibling file is the record; a spill marker is one more line
 that is not a handover.
+
+**Three things do not belong in a memory file, at any length.**
+
+- A **negative universal** — "the spine never emits X". It is the
+  hardest claim to earn and it outlives the session that got it wrong.
+  A mechanism absent *everywhere* rather than *sometimes* is usually
+  young, not broken: check when it arrived, or just ask, before
+  recording that it does not work.
+- A **work-item ID you did not write yourself**, relied on without
+  retrieving it first. IDs in memory have been hallucinated.
+- A **count with no date.** A number over anything two tickets are
+  editing is a timestamp, not a fact. Write the date beside it, or
+  write a range.
 
 ## Stopping conditions
 
