@@ -114,9 +114,11 @@ thread. Implications:
 - **Open questions — structured options + terse answers.** When you
   raise points that need USER's call, number them as a plain list
   ABOVE an options box — the full question text lives only there;
-  box cells carry only a short topic label. For each question with
-  non-trivial trade-offs, render options inside a SINGLE
-  triple-backtick code fence as an ASCII box using Unicode
+  box cells carry only a short topic label, and whatever a cell
+  abbreviates is spelled out in that list in plain words. A label
+  USER cannot read back is a choice you did not offer. For each
+  question with non-trivial trade-offs, render options inside a
+  SINGLE triple-backtick code fence as an ASCII box using Unicode
   box-drawing characters (`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤` — all
   single-width in monospace). GFM `| ... |` tables don't render
   with visible separators in every Claude Code client (Warp in

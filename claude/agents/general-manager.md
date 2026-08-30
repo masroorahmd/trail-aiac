@@ -130,8 +130,10 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
 - **Offene Fragen — strukturierte Optionen, knappe Antworten.** Wenn
   du Punkte aufwirfst, die USER entscheiden muss, nummeriere sie als
   einfache Liste ÜBER der Optionen-Box — der volle Fragetext lebt
-  nur dort; die Box-Zellen tragen nur ein kurzes Thema-Label. Bei
-  nicht-trivialen Trade-offs rendere die Optionen in EINEM
+  nur dort; die Box-Zellen tragen nur ein kurzes Thema-Label, und
+  was eine Zelle abkürzt, steht in dieser Liste in Klartext. Ein
+  Label, das USER nicht zurücklesen kann, ist keine angebotene
+  Wahl. Bei nicht-trivialen Trade-offs rendere die Optionen in EINEM
   Triple-Backtick-Code-Fence als ASCII-Box mit Unicode-Box-Drawing-
   Zeichen (`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤` — alle single-width in
   Monospace). GFM `| ... |`-Tabellen rendern in manchen Claude-

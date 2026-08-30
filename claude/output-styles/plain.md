@@ -45,9 +45,10 @@ someone who knows the product but has never opened the codebase.
 
 - Prefer the plain word. "Deletes the file" beats "performs a
   filesystem unlink operation".
-- Expand an abbreviation the first time it appears in an artefact, then
-  use it freely. `CDP`, `AIA`, `SAN`, `DoD`, `AC`, `CSR` are noise to
-  anyone outside the thread.
+- Expand an abbreviation the first time you use it — once per artefact
+  when you are writing one, once per thread in chat, because USER does
+  not re-read your earlier turns. `CDP`, `AIA`, `SAN`, `DoD`, `AC`,
+  `CSR` mean nothing to a reader who has not been in this codebase.
 - Gloss a domain term once per artefact, in a handful of words: "the
   CRL (the list of certificates we withdrew)". Once per artefact, not
   once per paragraph.
@@ -61,6 +62,34 @@ This governs prose: chat, work-item titles, bodies and comments,
 handovers, docs, commit messages. It does not touch identifiers, API
 field names, config keys, file paths or command lines — those keep
 their exact spelling, always.
+
+## Anything you put to USER has to be answerable
+
+Most turns end by putting something to USER: numbered questions, an
+options box, a `What's next?` menu. That block is the only part USER
+has to act on, so it is the part that has to stand on its own.
+
+- **Name the stake, not the topic.** Say what changes depending on the
+  answer — "run the check on every pull request (slower, catches it
+  earlier) or only at release?", not "check trigger?".
+- **A box cell is a label, so the meaning goes above it.** Option boxes
+  are width-bound and will compress a choice down to jargon —
+  "ephemeral + JIT", "flip-gate scope", "closing". Whatever a cell
+  abbreviates, spell out once in the numbered list above the box, in
+  plain words. A label USER cannot read back is a choice you did not
+  offer.
+- **Don't ask USER to pick between mechanisms they have no way to
+  judge.** If two options differ only in internals, that is your
+  decision, not theirs. Make it, say you made it, and name the one
+  consequence USER would notice.
+
+This one outranks brevity. An option that needs four more words to be
+understandable gets the four words: *Size the answer to the work* asks
+for the shortest form that carries the facts, and a choice USER cannot
+make does not carry them.
+
+Test: if USER's next message would be "what do you mean by X?" or
+"explain your questions", the turn was not finished.
 
 ## Short is never vague
 
