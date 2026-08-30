@@ -505,14 +505,19 @@ class PlaneClient:
         )
 
     async def retrieve_work_item(
-        self, project_id: str, work_item_ref: str
+        self, project_id: str, work_item_ref: str, *, expand: str | None = None
     ) -> dict[str, Any]:
         """Retrieve a single work item (full body + relations).
         ``work_item_ref`` accepts UUID or human identifier (e.g. ``INT-1``).
+        ``expand`` is Plane's comma-separated expansion list — without it
+        ``state``, ``labels`` and ``assignees`` come back as bare ids or
+        null rather than as objects.
         """
         wid = await self.resolve_work_item(work_item_ref)
         return await self._pat_request(
-            "GET", f"projects/{project_id}/work-items/{wid}/"
+            "GET",
+            f"projects/{project_id}/work-items/{wid}/",
+            params={"expand": expand} if expand else None,
         )
 
     async def create_work_item(
@@ -815,11 +820,19 @@ class PlaneClient:
         ``blocking``, ``duplicate``, ``relates_to``, ...); an invalid
         value is rejected by Plane with the list of valid choices.
         All refs accept UUID or identifier.
+
+        Plane does not REPLACE an existing relation, and does not report
+        that it declined to: a pair that already carries one absorbs the
+        call silently. So the relations held now are read first, and any
+        pair left untouched comes back under ``already_related`` —
+        without it the caller has no way to learn, because the response
+        describes what was asked for.
         """
         wid = await self.resolve_work_item(work_item_ref)
         related = [
             await self.resolve_work_item(r) for r in related_work_item_refs
         ]
+        held = await self._relations_by_work_item(project_id, wid)
         await self._pat_request(
             "POST",
             f"projects/{project_id}/work-items/{wid}/relations/",
@@ -827,11 +840,46 @@ class PlaneClient:
         )
         # Plane's POST response shape varies across versions; return a
         # summary we construct ourselves so callers get a stable shape.
-        return {
+        summary: dict[str, Any] = {
             "work_item": wid,
             "relation_type": relation_type,
             "related": related,
         }
+        if held is None:
+            summary["already_related"] = None
+        elif any(r in held for r in related):
+            summary["already_related"] = {
+                r: held[r] for r in related if r in held
+            }
+        return summary
+
+    async def _relations_by_work_item(
+        self, project_id: str, work_item_uuid: str
+    ) -> dict[str, str] | None:
+        """Map related work-item UUID -> the relation type already held.
+
+        ``None`` means the read itself failed, which the caller reports
+        as "not checked" rather than as "nothing held": a read failure
+        must never be able to present as an all-clear.
+        """
+        try:
+            grouped = await self._pat_request(
+                "GET",
+                f"projects/{project_id}/work-items/{work_item_uuid}/relations/",
+            )
+        except Exception:  # noqa: BLE001 - advisory read, never blocks the write
+            return None
+        if not isinstance(grouped, dict):
+            return None
+        held: dict[str, str] = {}
+        for kind, items in grouped.items():
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                rid = item.get("id") if isinstance(item, dict) else item
+                if isinstance(rid, str):
+                    held[rid] = kind
+        return held
 
     # ----- modules (membership) -----
     #

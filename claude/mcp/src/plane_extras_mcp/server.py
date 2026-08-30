@@ -231,6 +231,45 @@ def _note_repair(result: dict[str, Any], repaired: bool) -> dict[str, Any]:
     return result
 
 
+def _note_relations(
+    result: dict[str, Any],
+    refs: list[str],
+    asked: str,
+) -> dict[str, Any]:
+    """Say which pairs the write left alone, in the caller's own ids.
+
+    Plane answers a duplicate `add_relation` with success, so a persona
+    that reports from the response reports a dependency the board does
+    not carry. The client hands us the pairs it found already related
+    (UUIDs, in the order the refs were passed); this names them back as
+    `DEV-42` rather than as a UUID nobody typed.
+    """
+    if not isinstance(result, dict) or "already_related" not in result:
+        return result
+    held = result.pop("already_related")
+    if held is None:
+        result["trail_relation_note"] = (
+            "The pre-write relation read failed, so it is unknown whether "
+            "any of these pairs was already related. Plane does not replace "
+            "an existing relation and reports success either way — confirm "
+            "with list_relations before you report this dependency."
+        )
+        return result
+    by_uuid = dict(zip(result.get("related") or [], refs))
+    stale = [
+        f"{by_uuid.get(uuid, uuid)} was already {kind} and stayed {kind}"
+        for uuid, kind in held.items()
+    ]
+    result["trail_relation_note"] = (
+        "Plane does not replace an existing relation: "
+        + "; ".join(stale)
+        + f". Nothing was stored as {asked} for those. The response above "
+        "reports what was asked for, not what is on the board — a human "
+        "must change it in the Plane UI."
+    )
+    return result
+
+
 _PERSONA_NOTE = (
     "\n\n``persona`` is the username of the persona making the call — the "
     "one whose `/<persona>` command is running (e.g. "
@@ -352,13 +391,22 @@ def _register_tools(creds_by_persona: dict[str, dict[str, str]]) -> None:
     @_tool
     async def retrieve_work_item(
         persona: str,
-        project_id: str, work_item_id: str
+        project_id: str, work_item_id: str, expand: str | None = None
     ) -> dict[str, Any]:
         """Retrieve a work item. ``work_item_id`` accepts UUID or
         human-readable identifier (e.g. ``INT-1``).
+
+        ``expand`` is a comma-separated list — pass
+        ``"state,labels,assignees"`` to get those as objects instead of
+        bare ids or null. That is the call to make when you need to
+        CONFIRM a write: a create or update response can serialise
+        ``assignees`` as ``[]`` on an assignment that landed, and an
+        unassigned ticket is on nobody's list.
         """
         async with _client(persona) as c:
-            return await c.retrieve_work_item(project_id, work_item_id)
+            return await c.retrieve_work_item(
+                project_id, work_item_id, expand=expand
+            )
 
     @_tool
     async def create_work_item(
@@ -704,17 +752,24 @@ def _register_tools(creds_by_persona: dict[str, dict[str, str]]) -> None:
         """Relate a work item to one or more others — e.g.
         ``relation_type="blocked_by"`` to record a dependency that
         previously required a manual Plane-UI step. All ids accept UUID
-        or identifier. Note: Plane's public API has no relation
-        *removal* endpoint — undoing a relation stays a manual UI step,
-        so add relations deliberately.
+        or identifier.
+
+        Two things Plane will not do for you. It has no relation
+        *removal* endpoint, so undoing one stays a manual UI step. And
+        it does not REPLACE an existing relation: a pair that already
+        carries one absorbs this call silently, with no error and a
+        response that still names the type you asked for. That case
+        comes back as ``trail_relation_note`` — report what the note
+        says, never the type in the response.
         """
         async with _client(persona) as c:
-            return await c.add_relation(
+            result = await c.add_relation(
                 project_id,
                 work_item_id,
                 relation_type=relation_type,
                 related_work_item_refs=related_work_item_ids,
             )
+        return _note_relations(result, related_work_item_ids, relation_type)
 
 
 def register_personas_from_env() -> dict[str, dict[str, str]]:

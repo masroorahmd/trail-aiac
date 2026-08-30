@@ -668,6 +668,123 @@ async def test_add_relation_posts_relation_contract(
     assert "blocked_by" in str(result)
 
 
+async def test_add_relation_reports_a_pair_plane_left_alone(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plane absorbs a relation on an already-related pair silently and
+    answers success, so the tool must say what the board actually holds.
+    """
+    other_uuid = "abcdabcd-9999-8888-7777-abcdabcdabcd"
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        response = MagicMock(spec=httpx.Response)
+        if method == "GET" and "/relations/" in str(url):
+            payload: Any = {"relates_to": [{"id": other_uuid}], "blocked_by": []}
+        else:
+            payload = {}
+        response.status_code = 200
+        response.content = b"{}"
+        response.json = lambda: payload
+        response.text = "{}"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    result = await call_tool(
+        "business_analyst__add_relation",
+        {
+            "project_id": PROJECT_UUID,
+            "work_item_id": WORK_ITEM_UUID,
+            "relation_type": "blocked_by",
+            "related_work_item_ids": [other_uuid],
+        },
+    )
+    flat = str(result)
+    assert "trail_relation_note" in flat
+    assert "already relates_to and stayed relates_to" in flat
+    # The un-honoured request must not survive as a bare success field.
+    assert "already_related" not in flat
+
+
+async def test_add_relation_reports_an_unchecked_pair_as_unknown(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed pre-write read must not present as "nothing held"."""
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        response = MagicMock(spec=httpx.Response)
+        if method == "GET" and "/relations/" in str(url):
+            response.status_code = 403  # not retryable -> raises at once
+            response.content = b"nope"
+            response.json = lambda: {}
+            response.text = "nope"
+            return response
+        response.status_code = 201
+        response.content = b"{}"
+        response.json = lambda: {}
+        response.text = "{}"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    result = await call_tool(
+        "business_analyst__add_relation",
+        {
+            "project_id": PROJECT_UUID,
+            "work_item_id": WORK_ITEM_UUID,
+            "relation_type": "blocked_by",
+            "related_work_item_ids": ["abcdabcd-9999-8888-7777-abcdabcdabcd"],
+        },
+    )
+    flat = str(result)
+    assert "trail_relation_note" in flat
+    assert "unknown" in flat
+    assert "list_relations" in flat
+
+
+async def test_retrieve_work_item_forwards_expand(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Confirming an assignment needs `expand`; without it the field can
+    come back empty on a write that landed.
+    """
+    captured: list[dict[str, Any]] = []
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        captured.append({"url": str(url), "params": kwargs.get("params")})
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 200
+        response.content = b"{}"
+        response.json = lambda: {"id": WORK_ITEM_UUID}
+        response.text = "{}"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    await call_tool(
+        "business_analyst__retrieve_work_item",
+        {
+            "project_id": PROJECT_UUID,
+            "work_item_id": WORK_ITEM_UUID,
+            "expand": "state,labels,assignees",
+        },
+    )
+    assert captured[-1]["params"] == {"expand": "state,labels,assignees"}
+
+    captured.clear()
+    await call_tool(
+        "business_analyst__retrieve_work_item",
+        {"project_id": PROJECT_UUID, "work_item_id": WORK_ITEM_UUID},
+    )
+    assert captured[-1]["params"] is None
+
+
 def test_register_personas_empty_when_no_workspace(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -228,10 +228,17 @@ add both directions. Ids take a UUID or an identifier (`DEV-42`).
 `relates_to` and the date types. This framework sanctions one of them,
 because it is the only one that changes what somebody does next.
 
-**A relation cannot be taken back.** Plane's public API has no removal
-endpoint — undoing one is a manual step by a human in the UI, and a
-duplicate add is just as permanent. So `list_relations` first, and add
-only the dependency you would defend in your handover comment.
+**A relation cannot be taken back, and it cannot be overwritten.**
+Plane's public API has no removal endpoint — undoing one is a manual
+step by a human in the UI. And a pair that already carries *any*
+relation absorbs the next `add_relation` as a **silent no-op**: no
+error, and a response that still names the type you asked for while
+the stored one is unchanged. The MCP server reads the current
+relations before the write and reports any pair it found already
+related as `trail_relation_note` — when that note is there, report
+what it says and never the type in the response. It cannot repair
+anything; only a human in the Plane UI can. So add only the dependency
+you would defend in your handover comment.
 
 **The relation is the fact; the comment is the reason.** It can say
 *this waits for DEV-42* and nothing more — not why, not what clears
@@ -275,6 +282,14 @@ with an independent `retrieve_work_item` call and report *that*
 reading. Never re-issue the PATCH on the strength of a stale echo; you
 will not learn anything new and you may fight a transition that
 already succeeded.
+
+The same holds for `assignees`, and worse: a create, update or
+retrieve response can serialise it as `[]` on an assignment that
+landed. Where the assignment *is* the handover — which is every
+handover — confirm it with
+`retrieve_work_item(expand="state,labels,assignees")` and report that
+reading. An unassigned ticket sits on nobody's list, and the echo that
+produced it looked fine.
 
 **An outage is not a bad request.** If a Plane tool answers *"Plane is
 unreachable or restarting"*, the MCP has already retried it with
