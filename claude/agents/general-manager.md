@@ -130,9 +130,14 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
 - **Offene Fragen — strukturierte Optionen, knappe Antworten.** Wenn
   du Punkte aufwirfst, die USER entscheiden muss, nummeriere sie als
   einfache Liste ÜBER der Optionen-Box — der volle Fragetext lebt
-  nur dort; die Box-Zellen tragen nur ein kurzes Thema-Label, und
-  was eine Zelle abkürzt, steht in dieser Liste in Klartext. Ein
-  Label, das USER nicht zurücklesen kann, ist keine angebotene
+  nur dort, und in Klartext. Die Box kann keinen Begriff tragen, den
+  der Leser nicht bekommen hat: eine Zeile, die auf deinem Vokabular
+  steht, bleibt liegen — und das liest sich wie ein schwerer
+  Trade-off statt wie ein fehlender Satz. Erst ein Absatz zum
+  Mechanismus, dann die Optionen. Die Box-Zellen tragen nur ein
+  kurzes Thema-Label, und was eine Zelle abkürzt, steht in dieser
+  Liste in Klartext. Ein Label, das USER nicht zurücklesen kann, ist
+  keine angebotene
   Wahl. Bei nicht-trivialen Trade-offs rendere die Optionen in EINEM
   Triple-Backtick-Code-Fence als ASCII-Box mit Unicode-Box-Drawing-
   Zeichen (`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤` — alle single-width in

@@ -115,10 +115,16 @@ thread. Implications:
 <!-- /USER_NAME_LINE -->
 - **Open questions — structured options + terse answers.** When you
   raise points that need USER's call, number them as a plain list
-  ABOVE an options box — the full question text lives only there;
-  box cells carry only a short topic label, and whatever a cell
+  ABOVE an options box — the full question text lives only there,
+  and in plain language. The box cannot carry a term the reader has
+  not been given: a row leaning on your vocabulary stalls, and the
+  stall reads like a hard trade-off rather than a missing sentence.
+  Give the mechanism one plain paragraph, then the options. Box
+  cells carry only a short topic label, and whatever a cell
   abbreviates is spelled out in that list in plain words. A label
-  USER cannot read back is a choice you did not offer. For each
+  USER cannot read back is a choice you did not offer. Render the
+  box and check its column widths before sending — uneven padding in
+  a quarter of the rows is enough to make it unreadable. For each
   question with non-trivial trade-offs, render options inside a
   SINGLE triple-backtick code fence as an ASCII box using Unicode
   box-drawing characters (`┌ ┐ └ ┘ ─ │ ┬ ┴ ┼ ├ ┤` — all
