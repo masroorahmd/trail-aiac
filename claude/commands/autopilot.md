@@ -161,12 +161,28 @@ literal token `AUTOPILOT-MODE` is what flips the persona's gated
 >    an unlogged decision is a bug, an itemised non-decision is noise.
 >    0–4 `AS-N` is the healthy range; past six you are numbering
 >    receipts, so re-read the list and demote them.
+>
+>    **Address a hazard to a stage, not to USER.** Your interactive role
+>    writes what USER should watch for into *Notes for USER*; in this
+>    lane that section has no reader until the hand-back, which is after
+>    every stage that could have acted on it. Name the stage that can —
+>    `For SR`, `For TM` — and put it where that stage reads. If no stage
+>    can act on it, it is an `AS-N`, not a note.
 > 5. STOP instead of guessing when your persona's `## Autonomous mode`
 >    STOP conditions hit (a hard security finding, a change that needs
 >    a migration / new external contract / new dependency with a
 >    licence question, or ambiguity no reasonable assumption resolves).
 >    On STOP: do NOT transition state further; leave a comment
 >    explaining the blocker; return verdict STOP.
+>
+>    **Split a process gate before reaching for STOP.** A gate addressed
+>    to a human cannot be discharged by the persona it constrains — but
+>    that does not make every one of them a STOP. A *consent* gate, where
+>    a sign-off must exist before the work is done, is a STOP. A *warning*
+>    gate is dischargeable at the hand-back, because the branch is pushed
+>    and not merged: the warning then reaches USER before the merge
+>    instead of before the implementation. That is a real weakening of
+>    the gate, so it goes in an `AS-N`, never in silence.
 > 6. Do NOT touch git (no add/commit/branch/push/merge). The
 >    orchestrator owns git. You only edit files and write to Plane,
 >    directly in the feature tree the orchestrator points you at — the
@@ -832,15 +848,23 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    >   hand-back unfixed and every `Follow-up: …` work-item TM filed,
    >   one line each with its ID. Omit the section only when the review
    >   run was clean or did not run — never when it found something.
-   > - **Watch out for** — every `AS-N` assumption whose wrongness USER
-   >   would notice while testing, and any known-red test with its
-   >   attribution.
-   > - **Shape** — every implementor `Shape vs SA's Expected shape`
-   >   line that says `exceeded`, one line each with what was added and
-   >   why. Omit the section when all of them held. On the human-driven
-   >   spine USER sees these at each handover; here nobody did, so this
-   >   is the only place a component that grew out of the design
-   >   surfaces before it is merged.
+   > - **Watch out for** — every `AS-N` that passes this test: *would a
+   >   correct implementation look broken to someone who does not know
+   >   this decision was made?* That keeps the warning that fires once,
+   >   the file that deliberately never spells a withdrawn name, the
+   >   sentence that renders on two of four forms. It drops every
+   >   process call with no product surface. Plus any known-red test
+   >   with its attribution.
+   > - **Shape** — every `Shape vs SA's Expected shape` line that says
+   >   `exceeded`, one line each with what was added and why. Only the
+   >   backend and frontend slices carry that line: SA predicts product
+   >   shape, never a suite's or a doc set's. For a testing or
+   >   documentation slice, name it and say its template carries no
+   >   shape line — reporting `held` for a slice that never claimed it
+   >   is an invention. Omit the section when every line that exists
+   >   held. On the human-driven spine USER sees these at each handover;
+   >   here nobody did, so this is the only place a component that grew
+   >   out of the design surfaces before it is merged.
    >
    > **If no TM *Review steps* comment exists** (lean-lane skipped TM),
    > write a short set yourself from the AC and the implementors'
