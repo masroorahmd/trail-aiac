@@ -37,6 +37,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .claude/hooks/fork-guard.py ] && python3 .claude/hooks/fork-guard.py || true",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

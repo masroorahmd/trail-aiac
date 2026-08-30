@@ -156,9 +156,31 @@ reading:
 #   `.claude/cache/persona/<session-id>.json`, one per session, so `/ba`
 #   in one terminal and `/tm` in another are each checked against their
 #   own role.
+#
+#   fork_in_persona_run — a `fork` subagent inherits the caller's whole
+#                         context, so one spawned while a persona is in
+#                         role gets the Plane tools and that persona's
+#                         API token, and can create work-items, comment
+#                         and reassign under an identity nobody handed
+#                         it. `persona_identity` cannot see this: the
+#                         fork carries the same persona the pin names,
+#                         so every duplicate write is correctly
+#                         attributed to the wrong author's intent.
+#
+#     deny        Refuse the spawn, naming the named-persona subagent
+#                 (`Agent(subagent_type='software-architect', …)`) as
+#                 the thing to use instead. That form starts fresh and
+#                 cannot write as you. Default.
+#     ask         Put it to USER as a permission prompt.
+#     off         No check.
+#
+#   Unlike `persona_identity` this does NOT pass the `*` pin the
+#   multi-persona lanes set: under `/autopilot` a fork is more dangerous,
+#   not less, because nobody reads the branch it opens.
 hooks:
   commit_id_required: plane-only
   persona_identity: strict
+  fork_in_persona_run: deny
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a

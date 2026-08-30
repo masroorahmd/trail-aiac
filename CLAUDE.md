@@ -127,6 +127,20 @@ trail-aiac/
 │   │                              which only ever looked like a guarantee. Both
 │   │                              fail open on every uncertain case, because a
 │   │                              false deny costs more than a missed check.
+│   │                              `fork-guard.py` (PreToolUse/`Agent`|`Task`)
+│   │                              covers the hole the identity guard cannot
+│   │                              see: a `fork` inherits the caller's whole
+│   │                              context, so one spawned in a persona run
+│   │                              holds the Plane tools AND that persona's
+│   │                              token, and every duplicate write it makes is
+│   │                              correctly attributed to the wrong author's
+│   │                              intent. Fires only on `subagent_type: fork`
+│   │                              (a NAMED persona subagent is sanctioned and
+│   │                              starts cold), at the strength
+│   │                              `hooks.fork_in_persona_run` asks for
+│   │                              (`deny` / `ask` / `off`), and deliberately
+│   │                              does NOT pass the `*` pin — unattended is
+│   │                              when a fork is worst.
 │   │                              `commit-msg-guard.py` (PreToolUse/Bash)
 │   │                              holds the commit-subject rule at the
 │   │                              strength `hooks.commit_id_required` asks

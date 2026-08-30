@@ -124,6 +124,23 @@ session submitted a prompt last and silently drop it for the other.
 Per-session files also mean two sessions never write the same path.
 Stale pins are pruned after seven days.
 
+**A `fork` subagent is the hole that guard cannot see, so it has its
+own.** A fork inherits the caller's whole context, which under a
+`/<persona>` command includes the Plane tools and that persona's API
+token — so it can create work-items, comment and reassign under an
+identity nobody handed it, in a branch of the conversation the persona
+never reads. `plane-persona-guard.py` passes every one of those calls,
+because the fork carries the *same* persona the pin names: each
+duplicate write is correctly attributed to the wrong author's intent.
+`.claude/hooks/fork-guard.py` (PreToolUse on `Agent` / `Task`) refuses
+the spawn instead, at the strength `hooks.fork_in_persona_run` asks
+for (`deny` / `ask` / `off`). It fires only on `subagent_type: "fork"`
+— a **named** persona subagent (`Agent(subagent_type=
+'software-architect', …)`) is sanctioned, starts fresh, and cannot
+write as its caller. One deliberate difference from its sibling: this
+one does not pass the `*` pin the multi-persona lanes set, because
+under `/autopilot` a fork is more dangerous, not less.
+
 > A previous design used Claude Code subagents with per-subagent
 > `mcpServers:` frontmatter to enforce identity separation at the
 > MCP layer. We moved to a main-loop / role-switch model because
