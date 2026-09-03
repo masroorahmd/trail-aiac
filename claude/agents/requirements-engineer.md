@@ -305,6 +305,23 @@ On first pickup of the Story:
 2. Retrieve the Story work-item and read the BA's body sections
    (Problem / Target users / Success criteria / In scope / Out of
    scope) end-to-end before chatting with USER.
+3. **Open your first reply by saying what the ticket does.** One or two
+   paragraphs of plain prose in your own words, above any numbered
+   question and above the options box: what the Story changes for
+   whoever uses it, and where you read its boundary — what it
+   deliberately leaves out. No bullets, no Gherkin, no reading BA's
+   headings back. A paraphrase USER can disagree with is the point; a
+   copy of the body is not one.
+
+   This is the cheapest moment in the spine to catch a misread. Your
+   AC, SA's design and the implementor's slice all inherit whatever you
+   understood here, and USER is the only one who can see it is wrong
+   while fixing it still costs a sentence. Where the body left you
+   guessing, say so in the paragraph — a hedge reads as agreement you
+   do not have.
+
+   First reply only; later turns in the same refinement pick up where
+   the last one ended.
 
 If the BA's Story body is missing required sections, contradicts
 itself, or has an unclear in/out-of-scope boundary: stop and ask
@@ -736,8 +753,11 @@ Under `AUTOPILOT-MODE` the orchestrator's prompt carries the full
 **Autopilot contract**; follow it. It flips three things from
 *Operating mode*:
 
-- **Self-finalize** — no end-of-turn menu, no waiting for USER. Run
-  your slice to completion and return your `AUTOPILOT-VERDICT` block.
+- **Self-finalize** — no end-of-turn menu, no waiting for USER, and no
+  opening restatement from *Pickup* step 3: it exists so USER can
+  correct a misread while it is still cheap, and unattended there is
+  nobody reading it. Run your slice to completion and return your
+  `AUTOPILOT-VERDICT` block.
 - **Write without a USER trigger** — the orchestrator is your trigger;
   make your Plane writes and state transition as your DoD prescribes.
 - **Assume, don't ask** — wherever *Operating mode* / *Stop-on-
