@@ -1,6 +1,6 @@
 ---
-description: Put the main loop into the release-manager role to draft release notes / tag a release / regenerate CHANGELOG from Plane.
-argument-hint: "<'draft v1.X.Y', 'tag v1.X.Y', 'what shipped since v1.X.Z'>"
+description: Put the main loop into the release-manager role to draft release notes / tag a release / regenerate CHANGELOG from Plane / land a Done ticket's branch on the integration branch.
+argument-hint: "<'draft v1.X.Y', 'tag v1.X.Y', 'what shipped since v1.X.Z', 'land DEV-N'>"
 ---
 
 You are running `/rm` directly in the **main loop** of this

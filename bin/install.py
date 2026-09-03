@@ -493,6 +493,15 @@ def render_settings(
         # stripped at render time so agents don't trip on an empty
         # placeholder.
         "USER_NAME": str(config.get("user_name") or "").strip(),
+        # The branch a landed ticket fast-forwards onto (`/rm land
+        # DEV-N`), when the project integrates somewhere other than its
+        # default branch. Empty is the normal case, and the whole
+        # paragraph naming it is then dropped from the release-manager's
+        # *Landing a finished ticket* section by the conditional block
+        # below, leaving the default branch as the target.
+        "INTEGRATION_BRANCH": str(
+            (config.get("git") or {}).get("integration_branch") or ""
+        ).strip(),
     }
 
     # Model lanes: consumer config overrides the framework defaults
@@ -594,8 +603,17 @@ def render_settings(
     return 0
 
 
-USER_NAME_BLOCK_RE = re.compile(
-    r"<!-- USER_NAME_LINE -->\n.*?\n<!-- /USER_NAME_LINE -->\n",
+# A conditional block, keyed to a `__VAR__` that may be empty:
+#     <!-- USER_NAME_LINE -->
+#     - **USER's name.** …
+#     <!-- /USER_NAME_LINE -->
+# Kept (markers stripped) when `env_map["USER_NAME"]` is non-empty,
+# removed wholesale when it is not — so a consumer who left the knob
+# blank never sees a bullet built around an empty placeholder. Any
+# `__VAR__` can gate a block this way; the marker name is the variable
+# plus `_LINE`.
+CONDITIONAL_BLOCK_RE = re.compile(
+    r"<!-- (?P<var>[A-Z0-9_]+)_LINE -->\n(?P<body>.*?)<!-- /(?P=var)_LINE -->\n",
     re.DOTALL,
 )
 
@@ -645,12 +663,12 @@ def render_persona_files(
     by `claude/partials/<name>.md` *before* placeholder substitution, so
     a partial may carry `__VAR__` placeholders of its own.
 
-    Conditional blocks: any text wrapped between `<!-- USER_NAME_LINE -->`
-    and `<!-- /USER_NAME_LINE -->` markers is kept (with markers
-    stripped) when `USER_NAME` is non-empty, and removed wholesale when
-    it is empty — so consumers who didn't set `user_name` in
-    `config.yaml` don't see an awkward bullet referring to a blank
-    placeholder.
+    Conditional blocks: any text wrapped between `<!-- <VAR>_LINE -->`
+    and `<!-- /<VAR>_LINE -->` markers is kept (with markers stripped)
+    when `env_map["<VAR>"]` is non-empty, and removed wholesale when it
+    is empty — so a consumer who left `user_name` (or
+    `git.integration_branch`) blank in `config.yaml` never sees prose
+    built around a placeholder with nothing behind it.
     """
     render_targets: list[Path] = []
     for subdir in ("agents", "commands", "output-styles"):
@@ -659,16 +677,16 @@ def render_persona_files(
             render_targets.extend(sorted(d.glob("*.md")))
     if not render_targets:
         return []
-    user_name = env_map.get("USER_NAME", "")
+
+    def resolve_block(match: "re.Match[str]") -> str:
+        """Keep a conditional block's body when its variable has a value."""
+        return match.group("body") if env_map.get(match.group("var"), "").strip() else ""
+
     written: list[Path] = []
     for persona_path in render_targets:
         original = persona_path.read_text(encoding="utf-8")
         substituted = expand_includes(original, partials_dir, persona_path)
-        if user_name:
-            substituted = substituted.replace("<!-- USER_NAME_LINE -->\n", "")
-            substituted = substituted.replace("<!-- /USER_NAME_LINE -->\n", "")
-        else:
-            substituted = USER_NAME_BLOCK_RE.sub("", substituted)
+        substituted = CONDITIONAL_BLOCK_RE.sub(resolve_block, substituted)
         for var_name, value in env_map.items():
             substituted = substituted.replace(f"__{var_name}__", value)
         if substituted != original:

@@ -94,6 +94,28 @@ reading:
   comment_full_bytes: 2000
   comment_head_bytes: 600
 
+# Git. Where a finished branch lands.
+#
+#   integration_branch — the branch the Release Manager fast-forwards a
+#                        landed ticket onto when USER hands it a Story
+#                        that is already `Done` (`/rm land DEV-N`). Leave
+#                        it empty and RM lands on the repo's default
+#                        branch; set it when the project integrates
+#                        somewhere else first (`develop`, `staging`).
+#                        It binds only where the branch EXISTS: this file
+#                        is shared by every repo `bin/link-shared.py`
+#                        links, and those can have different branch
+#                        layouts, so a repo without the named branch
+#                        falls back to its default branch rather than
+#                        failing. RM names the branch it resolved before
+#                        it touches anything.
+#                        Landing is always a rebase followed by
+#                        `merge --ff-only` — the linear-history rule in
+#                        `claude/partials/git-history.md` binds here too,
+#                        and `hooks/linear-history-guard.py` enforces it.
+git:
+  integration_branch:
+
 # Hooks — the rules the harness enforces instead of the prompt asking.
 # A rule that is mechanically checkable is the wrong thing to spend
 # prompt tokens on: `claude/hooks/` holds the check, `settings.json`
