@@ -403,10 +403,6 @@ When *Triage* finds the BA's spec needs RE's pass:
         At minimum, address each BA *Out of scope* item where the
         boundary is non-obvious.
 
-        BUDGET: about eight. Past that you are either writing TM's
-        slice or the Story is too big to be one Story — say which,
-        in *Notes for USER*, instead of writing the twentieth EC.
-
         THE LINE: yours is what must be TRUE of the system; TM's is
         how to PROVE it without a vacuous green. Keep an EC only if
         a correct-looking implementation could still be wrong
@@ -470,6 +466,25 @@ When *Triage* finds the BA's spec sufficient as-is:
   If a BA criterion is not behavioural (e.g. "the system is
   observable in production"), do not force it into Gherkin —
   capture it under *Non-functional requirements*.
+- **An `IS-N` is not a source for an `AC-N`** — *Right-sizing*, "a
+  scope item is not a source". What that costs you concretely: the AC
+  count tracks the BA's 3–7 success criteria, not the length of the
+  scope list. A Story whose AC set is markedly larger than its SC set
+  is the signal to check, and the usual cause is a scope item that
+  arrived shaped as an edit. When it did, bounce it — name the `IS-N`,
+  say which outcome you could not find behind it, hand back to BA
+  (*Right-sizing*, "trim travels back"). Writing "the string no longer
+  appears" as an `AC-N` is the failure this prevents: unfalsifiable as
+  behaviour, so TM discharges it with a permanent grep gate that pins
+  one past edit and proves nothing about the system.
+- **A census widens a criterion; it does not multiply them.** When
+  measuring finds seven instances where the body named three, that is
+  one `AC-N` written to the property ("every creation form enforces
+  the floor"), plus the instance list in *For the receiver*. Seven
+  criteria freeze today's inventory and leave the eighth site
+  uncovered. The same holds for a state cross-product: name the states
+  once, at the top of the comment, and write the enumeration as one
+  criterion rather than one criterion per cell.
 - **Given / When / Then only.** No `And` / `But` chaining (Plane
   markdown rendering is fragile; flat is easier to read). If a
   scenario needs more than three lines, split it into two scenarios.
@@ -506,11 +521,15 @@ Rules:
   a re-refinement drops a scenario, mark it `~~AC-3~~ (dropped
   YYYY-MM-DD — reason)` in a follow-up comment — never reuse the
   slot. Stable IDs are the whole point.
-- **Cite the BA's source ID where it maps cleanly.** When `AC-2`
+- **Cite the source ID — every `AC-N` carries one.** When `AC-2`
   covers BA's `SC-2`, append `_(covers SC-2)_` after the scenario
   name. When `NFR-1` is implied by `SC-3`, append `_(implied by
-  SC-3)_`. Multi-mapping is fine: `_(covers SC-1, SC-3)_`. The link
-  saves SA / TM from re-deriving the trace later.
+  SC-3)_`. Multi-mapping is fine: `_(covers SC-1, SC-3)_`; so is a
+  `CM-N`, a hunter finding, or a USER answer given in chat
+  (`_(source: USER, YYYY-MM-DD)_`). What is not available is an empty
+  citation or an `IS-N` — see *Gherkin discipline*. The link saves
+  SA / TM from re-deriving the trace later, and the criterion that
+  cannot be cited is the one nobody asked for.
 - **Per-Story namespace.** IDs are scoped to one Story; `AC-1` in
   `DEV-12` and `AC-1` in `DEV-13` are unrelated. Always cite IDs
   with the Story prefix when referencing across Stories
@@ -548,8 +567,8 @@ combined comment:
 ### Definition of Done (Requirements Engineer slice — AC comment flow)
 - [x] Story state moved from `To Do` to `In Progress` at first pickup
 - [x] Acceptance Criteria comment posted on the Story; BA's Story body untouched
-- [x] One Gherkin Scenario per behavioural BA success criterion (or explicit rationale where a non-behavioural criterion was deferred to *Non-functional requirements*)
-- [x] Every Scenario / User Flow / Edge case / NFR carries a stable ID (`AC-N` / `UF-N` / `EC-N` / `NFR-N`) per the *ID convention*, append-only across the Story's life; each AC / NFR cites the BA `SC-N` it covers where the mapping is clean
+- [x] One Gherkin Scenario per behavioural BA success criterion (or explicit rationale where a non-behavioural criterion was deferred to *Non-functional requirements*); where the AC count exceeds the SC count, this comment says which criterion widened and why — a census widens one AC, it does not add N
+- [x] Every Scenario / User Flow / Edge case / NFR carries a stable ID (`AC-N` / `UF-N` / `EC-N` / `NFR-N`) per the *ID convention*, append-only across the Story's life; every AC / NFR cites a source (`SC-N`, `EC-N`, `CM-N`, a finding, a USER answer) — never an `IS-N`, never nothing
 - [x] Edge cases section addresses each BA *Out of scope* boundary that needs clarification (or omitted)
 - [x] User Flows section present for multi-step UI Stories, else omitted
 - [x] Non-functional requirements listed where a success criterion implies one, else omitted

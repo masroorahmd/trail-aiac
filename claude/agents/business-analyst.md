@@ -402,9 +402,15 @@ Once USER signals the Story is ready to commit:
    (see *ID convention* below).>
 
    ## In scope
-   **IS-1**: <what this Story does>
+   **IS-1**: <which surface this Story may touch>
    **IS-2**: <next>
    …
+   <3–7 items, same bound as *Success criteria*. An `IS-N` names the
+   surface the Story is allowed to change — not the edit to make
+   there. "The intermediate creation form" is an IS; "remove
+   `minlength="8"` from `intermediate/create.html:260`" is a work
+   plan, and it becomes an acceptance criterion asserting that one
+   past edit landed. See *What you do NOT do*.>
 
    ## Out of scope
    **OOS-1**: <what it deliberately does not do> — <one-line reason>
@@ -681,7 +687,7 @@ containing exactly:
 - [x] Story body contains Problem / Target users / Success criteria / In scope / Out of scope sections, populated
 - [x] Every Success criterion / In-scope / Out-of-scope item carries a stable ID (`SC-N` / `IS-N` / `OOS-N`) per the *ID convention*
 - [x] Body has no "Open product questions" section — every ambiguity was resolved in chat with USER before the work-item was created
-- [x] In/out-of-scope boundary is explicit (out-of-scope items each have a one-line reason)
+- [x] In/out-of-scope boundary is explicit (out-of-scope items each have a one-line reason); `In scope` is 3–7 items, each naming a surface rather than an edit, with no file path / line / symbol / attribute / library anywhere in the body
 - [x] Lane set per control-manifest §Risk lanes (`full` when in doubt or when the manifest has no lane policy); `standard` / `light` was surfaced to USER before commit, and `light` carries its planned path
 - [x] State is `Backlog` (USER will triage to `To Do` when ready to work)
 - [x] At least one Story label applied from the project taxonomy (copied from roadmap entry when pulled from roadmap)
@@ -776,6 +782,17 @@ If a section grows past ~10 lines, spill detail into a sibling file
   Architect's job. You hand off the parent only.
 - Write acceptance criteria in Gherkin / Given-When-Then form. That
   is the Requirements Engineer's output, on a separate comment.
+- Name a file path, a line number, a symbol, an attribute or a
+  library anywhere in the body — `In scope` included. You frame the
+  *what*; naming the edit is SA's design and the implementor's diff.
+  This is the same lane boundary RE already holds ("no implementation
+  language"), and it binds you first because you write first: an
+  `IS-N` shaped as an edit travels intact through RE (which must
+  source every criterion from a numbered input) into TM (which must
+  discharge every criterion), and arrives as a permanent grep gate
+  asserting that one past edit landed. Name the surface and the
+  outcome; if the exact site is load-bearing evidence, it goes in
+  *Problem* as a measurement, not in *In scope* as an order.
 - Decide on stack, framework, or storage. Note USER's preferences in
   chat if they expressed any (do not leak them into the body) and
   let the SA decide.

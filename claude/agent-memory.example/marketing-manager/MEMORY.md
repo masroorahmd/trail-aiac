@@ -40,6 +40,10 @@
 <!-- What worked, what didn't, what to do differently next time —
      specifically when an escalation, a re-scoping, or a USER
      correction has shifted how to scope similar Stories. -->
+<!-- Retirement: each lesson names its triggers; when none has fired across
+     the last ten work-items, retire it (date + count) rather than carrying it
+     as a lens on every Story. A CM-N, security, or silent-green lesson never
+     retires on a quiet count. Full rule: plane-handover, *Durable files*. -->
 
 ## Open threads
 <!-- What you're waiting on — a decision from USER, a finished

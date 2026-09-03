@@ -128,6 +128,14 @@ downstream persona now has to design against, review, test and
 document, and that nobody asked for. Two exits: drop it, or ask USER
 and cite the answer.
 
+**A scope item is not a source.** `IS-N` is absent from that list on
+purpose, and so is any successor that inherits its job. A scope item
+says *where* an artefact may reach; it never licenses a *what*. The
+element sourced by a scope item is the one shaped like the edit that
+produced it — a criterion asserting a string is gone, a test pinning
+the sites you happened to find — and it survives every downstream gate
+because each persona is correctly discharging what the last one wrote.
+
 **The tie-breaks split — scrutiny is not size.** This framework breaks
 ties about *risk* toward more, deliberately: a borderline trigger
 fires, an uncertain slice is reviewed in full, an unsure RE writes the
@@ -198,6 +206,34 @@ what never enters. Either way: edit the entry you came for and leave
 the rest as it stands — a register is not compacted, tidied, or
 rewritten whole. The line you would have trimmed is the one the next
 reader was going to act on.
+
+**A lesson register has one more exit: its triggers went quiet.** A
+persona's `agent-memory/**` *Lessons learned* is a register, and it is
+the one register whose entries are not facts about the world but
+obligations on the next turn — each `L-N` adds a lens to sweep, a
+census to run, a cross-product to cover. That makes it the fastest
+growing durable file in the framework and the only one that silently
+enlarges every artefact its owner produces: the prompt carries
+*Right-sizing* as a counterweight, memory carries none, and memory is
+read every turn.
+
+So the pruning rule that bounds *instances* ("an instance earns its
+line only if it names a trigger I could not re-derive from the rule")
+does not bound the register — the rules themselves need the exit.
+Each `L-N` names its triggers; when none of them has fired across the
+last **ten** work-items the persona handled, the lesson has stopped
+being a lens and is retired to `lessons-instances.md` (or the file's
+own spill target) with the date and the count. It is retired, not
+deleted: a trigger that fires again brings it straight back, and the
+walkthroughs that produced it stay readable where they already are.
+
+Two guards, because this exit can be misused in the direction the
+framework cares about. A lesson whose trigger is a `CM-N` obligation,
+a security non-negotiable, or a *silent-green* class never retires on
+a quiet count — those are quiet precisely when they are working.
+And retirement happens as its own deliberate pass, announced in the
+turn's handover, never as a side effect of an edit that came for
+something else — the register rule above still holds.
 
 **State the fact, not the correction.** When you fix something a
 durable file got wrong, write what is true now. Do not write what the

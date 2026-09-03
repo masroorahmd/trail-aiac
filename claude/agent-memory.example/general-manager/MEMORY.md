@@ -31,6 +31,10 @@
 
 ## Lessons learned
 <!-- Was hat funktioniert, was nicht, was das nächste Mal anders. -->
+<!-- Retirement: each lesson names its triggers; when none has fired across
+     the last ten work-items, retire it (date + count) rather than carrying it
+     as a lens on every Story. A CM-N, security, or silent-green lesson never
+     retires on a quiet count. Full rule: plane-handover, *Durable files*. -->
 
 ## Offene Punkte
 <!-- Worauf wartest du? Auf USER, auf eine externe Stelle, auf einen
