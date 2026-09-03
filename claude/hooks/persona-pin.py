@@ -18,6 +18,13 @@ A prompt with no leading slash command leaves the pin untouched: a
 persona stays in role for follow-up turns, which is exactly what the
 `/<persona>` contract promises.
 
+It also renames the session after the persona it just pinned. Claude
+Code takes a `sessionTitle` in a `UserPromptSubmit` hook's output and
+the terminal tab title follows it, so `/ba` in one terminal and `/tm`
+in another read `business-analyst` and `test-manager` in `/resume` and
+in the tab bar — the same problem the per-session pin exists for, on
+the surface USER looks at. `hooks.session_title: off` turns it off.
+
 One pin file per session, named by session id. Two Claude sessions in
 one repo — `/ba` in one terminal, `/tm` in another — are a normal way
 to work here, and a single shared file would give the check to
@@ -33,6 +40,7 @@ import sys
 import time
 
 PIN_DIR = os.path.join(".claude", "cache", "persona")
+CONFIG = os.path.join(".claude", "config.yaml")
 
 # Session ids come from the harness, but they name a file, so they are
 # treated as untrusted input.
@@ -52,6 +60,9 @@ AGENT_REF_RE = re.compile(r"\.claude/agents/([a-z][a-z0-9-]*)\.md")
 
 ANY = "*"
 
+TITLE_MODES = ("on", "off")
+DEFAULT_TITLE_MODE = "on"
+
 
 def persona_for(root, command):
     """The persona `/`+command puts the main loop into, or `*`.
@@ -67,6 +78,52 @@ def persona_for(root, command):
     except OSError:
         return ANY
     return referenced.pop() if len(referenced) == 1 else ANY
+
+
+def title_mode(root):
+    """`hooks.session_title`, defaulting for configs seeded before it."""
+    try:
+        with open(os.path.join(root, CONFIG), encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except OSError:
+        return DEFAULT_TITLE_MODE
+
+    inside = False
+    for line in lines:
+        if re.match(r"^hooks:\s*(#.*)?$", line):
+            inside = True
+            continue
+        if not inside:
+            continue
+        entry = re.match(r"^\s+session_title:\s*([a-z]+)\s*(#.*)?$", line)
+        if entry and entry.group(1) in TITLE_MODES:
+            return entry.group(1)
+        if line.strip() and not line.startswith((" ", "\t")):
+            break
+    return DEFAULT_TITLE_MODE
+
+
+def rename(pin, root):
+    """Retitle the session `business-analyst`, or `autopilot` for a lane.
+
+    The persona's own username, spelled out — the name the framework
+    uses everywhere else. A lane that runs under more than one identity
+    has no single persona to name, so it keeps its command word. Same
+    distinction the pin already makes, so nothing new is maintained
+    here. No project in the title: the harness already shows the cwd.
+    """
+    if title_mode(root) == "off":
+        return
+    persona = pin["persona"]
+    json.dump(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "UserPromptSubmit",
+                "sessionTitle": pin["command"] if persona == ANY else persona,
+            }
+        },
+        sys.stdout,
+    )
 
 
 def prune(directory):
@@ -115,8 +172,9 @@ def main():
         # A pin we cannot write is a check that will not fire. That is
         # the acceptable half of the failure; blocking USER's prompt
         # over it is not.
-        return 0
+        pass
 
+    rename(pin, root)
     return 0
 
 

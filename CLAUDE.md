@@ -117,7 +117,15 @@ trail-aiac/
 │   │                              per session, so parallel sessions each keep
 │   │                              their own), derived from
 │   │                              the agents/*.md file that command loads, so a
-│   │                              twelfth persona needs no hook change;
+│   │                              twelfth persona needs no hook change; it also
+│   │                              retitles the session after that persona — the
+│   │                              username spelled out, or a lane's own word
+│   │                              (`autopilot`) — through the `sessionTitle` a
+│   │                              UserPromptSubmit hook may return, so two terminals
+│   │                              in one repo are told apart in `/resume` and in the
+│   │                              tab bar, not only in a pin file nobody reads;
+│   │                              `hooks.session_title: off` leaves the harness's own
+│   │                              titles alone;
 │   │                              `plane-persona-guard.py`
 │   │                              (PreToolUse/`mcp__plane__*`) denies a Plane
 │   │                              call whose `persona` argument disagrees, at

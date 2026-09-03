@@ -124,6 +124,16 @@ session submitted a prompt last and silently drop it for the other.
 Per-session files also mean two sessions never write the same path.
 Stale pins are pruned after seven days.
 
+The same hook also **retitles the session** after the persona it just
+pinned — `business-analyst`, the username spelled out; a lane that runs
+under several identities keeps its own word (`autopilot`) — using the
+`sessionTitle` field Claude Code accepts in a `UserPromptSubmit` hook's
+output. The
+terminal tab title follows it. That is the same "which session is
+which" problem the per-session pin solves, moved to the surface USER
+actually looks at: `/resume` and the tab bar. `hooks.session_title: off`
+leaves the harness's own auto-generated topic titles in place.
+
 **A `fork` subagent is the hole that guard cannot see, so it has its
 own.** A fork inherits the caller's whole context, which under a
 `/<persona>` command includes the Plane tools and that persona's API

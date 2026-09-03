@@ -177,10 +177,23 @@ reading:
 #   Unlike `persona_identity` this does NOT pass the `*` pin the
 #   multi-persona lanes set: under `/autopilot` a fork is more dangerous,
 #   not less, because nobody reads the branch it opens.
+#
+#   session_title — name the session after the persona `/<persona>` just
+#                   started, so `/ba` in one terminal and `/tm` in
+#                   another are told apart in `/resume` and in the
+#                   terminal tab, not only in the pin file nobody looks
+#                   at. The persona's username spelled out
+#                   (`business-analyst`); a lane that runs under several
+#                   identities keeps its own word (`autopilot`).
+#
+#     on          Rename on every `/<command>`. Default.
+#     off         Leave the harness's own title alone — pick this if you
+#                 want its auto-generated topic titles instead.
 hooks:
   commit_id_required: plane-only
   persona_identity: strict
   fork_in_persona_run: deny
+  session_title: on
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a
