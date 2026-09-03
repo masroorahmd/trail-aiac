@@ -35,6 +35,14 @@ What stays per-consumer:
                      ui, documentation, release, api}.md
     .claude/agents/, commands/, skills/, mcp/, settings.json,
     settings.local.json   (managed by bin/install.py)
+
+<shared> is a git repo of its own, and that is the whole point: a
+persona that writes context or memory through one of these symlinks
+commits and pushes it *there* before its turn ends, which is how the
+next consumer sees it (the `shared-context` partial states the rule).
+So give <shared> a remote, and a .gitignore covering config.yaml and
+credentials.yaml — they are symlinked in with everything else and they
+carry the workspace's Plane tokens.
 """
 
 from __future__ import annotations

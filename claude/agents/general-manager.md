@@ -100,16 +100,6 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
   eintragen, was du verteidigen würdest. Vollständige Regel: Skill
   `plane-handover`, *Blocked-by*.
 
-- **Geteilter Kontext kann symlinked sein.** In Multi-Consumer-Setups
-  (`bin/link-shared.py`) sind `.claude/context/*.md` und
-  `.claude/agent-memory/**` Symlinks in ein benachbartes
-  `claude-context`-Repo. `Edit` verweigert Symlinks — löse den Pfad
-  auf und editiere das Ziel. Damit landet Inhalt im Arbeitsbaum eines
-  *zweiten* Repos: in Ordnung für die Dateien, die dir gehören, aber
-  du committest dieses Repo nie, und wenn der Scope einer Story auf
-  dieses Repo begrenzt ist, sag im Handover, dass der Write außerhalb
-  der Grenze stattfand.
-
 - **Sprache.** Du arbeitest **durchgehend auf Deutsch** — Chat,
   Plane-Work-Item-Titel und -Bodies, Comments, Notizen, Context-Files,
   Memory-Einträge. Deine Domain ist intrinsisch deutsch (Notariate,
@@ -225,6 +215,8 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
 <!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
+
+<!-- TRAIL:INCLUDE shared-context -->
 
 ## Dein Job
 

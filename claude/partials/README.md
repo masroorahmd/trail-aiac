@@ -43,5 +43,6 @@ Current tenants:
 
 | Partial | Lands in | Why ambient |
 |---|---|---|
-| `reading` | 12 personas, `/kickoff`, `/quick` | Every turn that opens a file — how much of one to read, and how many to ask for at once. |
-| `commit-message` | 11 personas, `/quick`, `/autopilot` | A commit has no skill to invoke and no receiver to check it; the message is written once and is then history. |
+| `reading` | 13 personas, `/kickoff`, `/quick`, `/mock` | Every turn that opens a file — how much of one to read, and how many to ask for at once. |
+| `commit-message` | 11 personas, `/quick`, `/mock`, `/autopilot` | A commit has no skill to invoke and no receiver to check it; the message is written once and is then history. |
+| `shared-context` | 11 personas, `/kickoff`, `/quick`, `/autopilot` | A write through a symlink lands in a second repo on any turn, and nothing in this repo's `git status` will ever remind the persona that it did. |

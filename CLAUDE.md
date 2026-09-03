@@ -93,9 +93,15 @@ trail-aiac/
 │   │                              surface: a rule in force every turn
 │   │                              with nothing to invoke. Tenants:
 │   │                              `reading` (thresholds
-│   │                              from config's `reading:`) and
+│   │                              from config's `reading:`),
 │   │                              `commit-message` (the work-item ID
-│   │                              opens every commit subject).
+│   │                              opens every commit subject), and
+│   │                              `shared-context` (a write through a
+│   │                              `link-shared.py` symlink lands in the
+│   │                              sibling `claude-context` repo, and is
+│   │                              not finished until committed and
+│   │                              pushed *there* — the orchestrator does
+│   │                              it under `/autopilot`).
 │   │                              Cross-persona Plane mechanics still
 │   │                              belong in `plane-handover`, voice and
 │   │                              volume in `plain.md`.

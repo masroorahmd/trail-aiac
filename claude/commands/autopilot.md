@@ -40,6 +40,8 @@ the orchestrator a token.
 
 <!-- TRAIL:INCLUDE commit-message -->
 
+<!-- TRAIL:INCLUDE shared-context -->
+
 Every commit you write here carries work that came off a work-item, so
 the prefix is never optional: an implementor's commit leads with the
 sub-work-item it implements, the wrap-up commit with the Story.
@@ -800,6 +802,13 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
      hand-back names a local branch just as well as a pushed one. Say
      in the review steps that the branch is local-only, so USER
      doesn't look for it on the remote.
+   - **The shared context repo, when the install has one.** Whatever
+     your persona subagents wrote to `.claude/agent-memory/**` or
+     `.claude/context/*.md` lands in the sibling `claude-context` tree,
+     never on this feature branch — they were told to name those files
+     in their handover. Commit and push them there too, by the
+     shared-context rule above. A run that leaves them uncommitted
+     throws away every lesson it just learned.
    - **Watch the CI the push started**, when the push landed and
      `autopilot.ci_watch` is not `false`. USER is not at the keyboard
      to notice a red branch, so what ends this step is the *remote's*

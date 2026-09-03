@@ -388,6 +388,8 @@ works unchanged once Plane is back.
 
 <!-- TRAIL:INCLUDE commit-message -->
 
+<!-- TRAIL:INCLUDE shared-context -->
+
 ## End-of-turn menu — every turn, always
 
 Close every reply with a fenced ASCII box titled **`What's next?`**

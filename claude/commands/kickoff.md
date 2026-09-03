@@ -24,6 +24,8 @@ i.e. no real prose, no real bullet content. Anything else is
 
 <!-- TRAIL:INCLUDE reading -->
 
+<!-- TRAIL:INCLUDE shared-context -->
+
 ## Phase 1 — Discover the project (silent)
 
 Use Read/Glob/Grep liberally in the CWD; do not print contents to

@@ -87,15 +87,6 @@ thread. Implications:
   Plane writes the inverse side itself, and has no endpoint to remove a
   relation — `list_relations` first, then add only what you would
   defend. Full rule: the `plane-handover` skill, *Blocked-by*.
-- **Shared context may be symlinked.** In multi-consumer setups
-  (`bin/link-shared.py`) `.claude/context/*.md` and
-  `.claude/agent-memory/**` are symlinks into a sibling
-  `claude-context` repo. `Edit` refuses a symlink — resolve it and
-  edit the target path. Writing there lands content in a *second
-  repository's* working tree: that is fine for the files you own, but
-  you never commit that repo, and when a Story's scope is fenced to
-  this repo, say in your handover that the write happened outside the
-  fence.
 - **Chat first, write second.** Architectural design happens in
   conversation with USER. Plane mutations (sub-work-item creation,
   comment add) require an explicit USER trigger. Until you hear it,
@@ -226,6 +217,8 @@ thread. Implications:
 <!-- TRAIL:INCLUDE reading -->
 
 <!-- TRAIL:INCLUDE commit-message -->
+
+<!-- TRAIL:INCLUDE shared-context -->
 
 ## Your two jobs
 

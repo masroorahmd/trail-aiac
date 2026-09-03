@@ -150,8 +150,11 @@ On the filesystem side, a persona's `.claude/context/*.md` and
 install, but **symlinks into a shared `claude-context` repo** in a
 multi-consumer setup linked by `bin/link-shared.py`. `Edit` refuses a
 symlink, so every persona is instructed to resolve the path and edit
-the target — and to treat a write there as landing in a *second*
-repository's working tree, which it never commits.
+the target — and, because that write lands in a *second* repository's
+working tree that this repo's commit will never carry, to stage exactly
+the files it wrote, commit and push them **there** before the turn ends.
+The rule is the `shared-context` partial; under `/autopilot` the
+orchestrator does it, since persona subagents touch no git.
 
 ## Persona file anatomy
 
