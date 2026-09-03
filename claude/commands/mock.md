@@ -65,7 +65,7 @@ this thread:
 
 <!-- TRAIL:INCLUDE reading -->
 
-<!-- TRAIL:INCLUDE commit-message -->
+<!-- TRAIL:INCLUDE git-history -->
 
 A design session has no work-item, so its commit carries no ID — that
 is the case the guard's default explicitly allows. Do not invent one.

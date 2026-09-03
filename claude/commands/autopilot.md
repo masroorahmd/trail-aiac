@@ -23,8 +23,10 @@ You are the **orchestrator**. You own three things and nothing else:
 2. **Git** — branch, commit, push, and watching the CI run the push
    starts (personas never touch git; you do).
    **You never merge and you never delete a branch**, on any outcome.
-   One feature branch per Story, pushed and left standing. Merging into
-   the default branch is USER's, always.
+   One feature branch per Story, pushed and left standing. Landing it on
+   the default branch is USER's, always — and by the linear-history rule
+   below it lands as a rebase plus a fast-forward, so the disposal line
+   you hand them says exactly that.
 3. **The audit summary** — the final report to USER.
 
 Autopilot's terminal state is a **reviewable hand-back**, not a closed
@@ -38,7 +40,7 @@ directly — you read each subagent's returned `AUTOPILOT-VERDICT` block
 and decide. That is what keeps Plane attribution clean without giving
 the orchestrator a token.
 
-<!-- TRAIL:INCLUDE commit-message -->
+<!-- TRAIL:INCLUDE git-history -->
 
 <!-- TRAIL:INCLUDE shared-context -->
 
@@ -303,7 +305,7 @@ turn (call it `<DEV-N>` throughout the spine):
    inherit an earlier Story's work — so when triage's `NOTES`, SA's
    decomposition, or the Story bodies make it clear that Story B builds
    on Story A's output, branch **B off A's branch** instead of off
-   default, and record the resulting merge order in the summary. When
+   default, and record the resulting landing order in the summary. When
    in doubt, branch off default and say in the summary that the Stories
    are independent as far as you could tell.
 
@@ -939,7 +941,7 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    `release-manager` once for them with the same rules (`In Review`,
    assignee USER, nothing set to `Done`). Their comment is a **roll-up**
    rather than a test plan: which Stories were driven, each one's branch,
-   the order the branches should be merged, which Stories were skipped as
+   the order the branches should land, which Stories were skipped as
    already done, and a pointer to each Story's own review steps — with
    its review-run result and any open follow-up beside it, so the
    roll-up says which parts of the tree were actually exercised.
@@ -1107,8 +1109,8 @@ covering:
   watched, and which of those reasons). **State plainly that nothing
   was merged and no branch was deleted** — every branch is waiting for
   USER.
-- **The merge order** across branches when more than one Story ran, and
-  which branches are independent of each other.
+- **The landing order** across branches when more than one Story ran,
+  and which branches are independent of each other.
 - **The hand-back roster** — for every Story and container: its ID, that
   it is `In Review` and assigned to USER, and that its review steps comment
   (or roll-up) is posted. This is the actionable part of the summary:
@@ -1116,9 +1118,11 @@ covering:
   review run drove the steps, **which of them USER no longer has to
   repeat** and which are still theirs.
 - A one-line disposal per driven Story:
-  - COMPLETED / COMPLETED-WITH-FINDINGS → merge it yourself with
-    `git checkout <default> && git merge --no-ff autopilot/<DEV-N>-…`;
-    to discard instead, `git branch -D autopilot/<DEV-N>-…`.
+  - COMPLETED / COMPLETED-WITH-FINDINGS → land it yourself, linear:
+    `git rebase <default> autopilot/<DEV-N>-…`, then
+    `git checkout <default> && git merge --ff-only autopilot/<DEV-N>-…`
+    — no merge commit. To discard instead,
+    `git branch -D autopilot/<DEV-N>-…`.
   - STOPPED → `git branch -D autopilot/<DEV-N>-…` to discard, or resume
     with the recommended `/<persona>`.
 

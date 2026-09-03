@@ -94,8 +94,10 @@ trail-aiac/
 │   │                              with nothing to invoke. Tenants:
 │   │                              `reading` (thresholds
 │   │                              from config's `reading:`),
-│   │                              `commit-message` (the work-item ID
-│   │                              opens every commit subject), and
+│   │                              `git-history` (the work-item ID
+│   │                              opens every commit subject, and
+│   │                              integration is a rebase — never a
+│   │                              merge commit), and
 │   │                              `shared-context` (a write through a
 │   │                              `link-shared.py` symlink lands in the
 │   │                              sibling `claude-context` repo, and is
@@ -167,6 +169,20 @@ trail-aiac/
 │   │                              `TRAIL_SKIP_COMMIT_GUARD=1` for the
 │   │                              commit that genuinely has no work item
 │   │                              (the partial forbids inventing one).
+│   │                              `linear-history-guard.py`
+│   │                              (PreToolUse/Bash) is the same partial's
+│   │                              other half: it denies a `git merge` that
+│   │                              would write a merge commit, a bare
+│   │                              `git pull` (unless the repo's own
+│   │                              `pull.rebase` already rebases), and a
+│   │                              `push --force` that is not
+│   │                              `--force-with-lease` — at the strength
+│   │                              `hooks.linear_history` asks for
+│   │                              (`deny` / `ask` / `off`), yielding to
+│   │                              `TRAIL_SKIP_MERGE_GUARD=1`.
+│   │                              `merge --ff-only` and `--squash` pass:
+│   │                              the rule is against the merge *commit*,
+│   │                              not against landing a branch.
 │   ├── mcp/                       multi-tenant Plane MCP server
 │   │                              (Python + FastMCP). One process, ONE
 │   │                              tool set for all N personas: identity

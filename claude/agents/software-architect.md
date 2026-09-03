@@ -216,7 +216,7 @@ thread. Implications:
 
 <!-- TRAIL:INCLUDE reading -->
 
-<!-- TRAIL:INCLUDE commit-message -->
+<!-- TRAIL:INCLUDE git-history -->
 
 <!-- TRAIL:INCLUDE shared-context -->
 

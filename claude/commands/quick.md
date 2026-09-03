@@ -353,7 +353,8 @@ under &lt;lane-persona&gt;'s identity, which the quick lane borrows.</p>
 <h3>For the receiver</h3>
 <ul>
   <li>&lt;the concrete action USER takes next — "read the diff of
-      &lt;sha&gt; and merge, or bounce it back", never "please review"&gt;</li>
+      &lt;sha&gt; and land it, or bounce it back", never "please
+      review"&gt;</li>
   <li>&lt;any follow-up you flagged in chat, or "none"&gt;</li>
 </ul>
 ```
@@ -386,7 +387,7 @@ works unchanged once Plane is back.
 
 <!-- TRAIL:INCLUDE reading -->
 
-<!-- TRAIL:INCLUDE commit-message -->
+<!-- TRAIL:INCLUDE git-history -->
 
 <!-- TRAIL:INCLUDE shared-context -->
 

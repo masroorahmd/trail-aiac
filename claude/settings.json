@@ -25,6 +25,11 @@
             "type": "command",
             "command": "p=$(cat); case \"$p\" in *commit*) [ -f .claude/hooks/commit-msg-guard.py ] && printf %s \"$p\" | python3 .claude/hooks/commit-msg-guard.py || true ;; esac",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "p=$(cat); case \"$p\" in *merge*|*pull*|*push*) [ -f .claude/hooks/linear-history-guard.py ] && printf %s \"$p\" | python3 .claude/hooks/linear-history-guard.py || true ;; esac",
+            "timeout": 10
           }
         ]
       },

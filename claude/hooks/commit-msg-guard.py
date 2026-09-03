@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PreToolUse guard: the work-item ID must open every commit subject.
 
-`claude/partials/commit-message.md` states the rule; this script is what
+`claude/partials/git-history.md` states the rule; this script is what
 makes it hold. It reads the PreToolUse hook payload on stdin, finds the
 commit message inside a `git commit` command line, and denies the tool
 call when the work-item ID is not the first token of the subject.

@@ -28,7 +28,7 @@ Candidates:
   carries a `description` change. Description-once stops being a
   sentence in `plane-handover` and becomes a property of the system.
 - **`commit-msg` hook** — enforce the work-item ID prefix.
-  `claude/partials/commit-message.md` shrinks to the rationale.
+  `claude/partials/git-history.md` shrinks to the rationale.
 - **State-transition check** — validate a state change against the
   spine before it is written, instead of describing the spine in
   every persona prompt.

@@ -107,7 +107,7 @@ reading:
 #
 #   commit_id_required — how the commit-subject guard behaves when a
 #                        persona runs `git commit`. The rule it enforces
-#                        lives in `claude/partials/commit-message.md`:
+#                        lives in `claude/partials/git-history.md`:
 #                        the work-item ID is the first token of the
 #                        subject line.
 #
@@ -130,6 +130,24 @@ reading:
 #   In both live modes an ID whose prefix is not one of the `projects:`
 #   identifiers below is denied as a typo, since a wrong ID is a worse
 #   bridge than no ID.
+#
+#   linear_history — how the merge guard behaves when a persona runs
+#                    `git merge`, `git pull` or a force push. The rule it
+#                    enforces lives in `claude/partials/git-history.md`:
+#                    integrate by rebasing, so `git log --oneline` stays
+#                    a line rather than a diagram. `merge --ff-only` and
+#                    `--squash` write no merge commit and pass; a bare
+#                    `git pull` is denied only when the repo's own
+#                    `pull.rebase` does not already make it rebase; a
+#                    `push --force` is denied in favour of
+#                    `--force-with-lease`.
+#
+#     deny        Refuse the call and name the linear form. Default.
+#                 The escape hatch for the integration that genuinely
+#                 needs a merge commit is TRAIL_SKIP_MERGE_GUARD=1.
+#     ask         Put it to USER as a permission prompt — pick this if
+#                 your project merges deliberately in some places.
+#     off         No check.
 #
 #   persona_identity — every Plane MCP tool takes a `persona` argument
 #                      naming who authors the call. This checks it
@@ -191,6 +209,7 @@ reading:
 #                 want its auto-generated topic titles instead.
 hooks:
   commit_id_required: plane-only
+  linear_history: deny
   persona_identity: strict
   fork_in_persona_run: deny
   session_title: on

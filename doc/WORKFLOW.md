@@ -473,8 +473,19 @@ without the cold-start each subagent invocation otherwise causes.
   wrap-up commit the Story; anything else the repo's convention puts
   in front of a subject moves behind the ID. No ticket, no prefix —
   and no ID is ever invented. The rule is one file,
-  `claude/partials/commit-message.md`, stitched into every persona,
+  `claude/partials/git-history.md`, stitched into every persona,
   `/quick` and `/autopilot` at install time.
+- **The history stays a line.** That same file's other half: work is
+  integrated by rebasing, never by a merge commit. `git pull --rebase`
+  rather than a bare pull, and a finished branch lands by being rebased
+  onto the default branch and fast-forwarded (`merge --ff-only`, which
+  writes no merge commit) — so the `--oneline` view that carries the
+  work-item IDs stays readable instead of becoming a diagram.
+  `linear-history-guard.py` enforces it, and also refuses a bare
+  `push --force` in favour of `--force-with-lease`; both yield to an
+  explicit `TRAIL_SKIP_MERGE_GUARD=1`. Under `/autopilot` nothing is
+  integrated at all — the orchestrator hands USER a branch and the
+  rebase-then-fast-forward line to land it with.
 
 ## The upstream feedback loop (Upstream notes → retro)
 

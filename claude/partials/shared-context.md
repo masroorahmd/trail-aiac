@@ -36,7 +36,7 @@ git -C "$ctx" push
   tell USER — that is a gitignore bug there, not a file for you to
   commit. `config.yaml` may well be tracked in that repo, but it is not
   yours to change either: a dirty one is somebody else's edit.
-- **The commit-message rule holds there too**: the work-item ID leads
+- **The commit-subject rule holds there too**: the work-item ID leads
   the subject when the write serves one. When it serves none, do not
   invent one — `TRAIL_SKIP_COMMIT_GUARD=1 git -C "$ctx" commit …` if the
   consumer's guard is set to `strict`.

@@ -214,7 +214,7 @@ Hut, solange USER in diesem Thread bleibt. Konsequenzen:
 
 <!-- TRAIL:INCLUDE reading -->
 
-<!-- TRAIL:INCLUDE commit-message -->
+<!-- TRAIL:INCLUDE git-history -->
 
 <!-- TRAIL:INCLUDE shared-context -->
 

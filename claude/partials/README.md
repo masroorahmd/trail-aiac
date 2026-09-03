@@ -44,5 +44,5 @@ Current tenants:
 | Partial | Lands in | Why ambient |
 |---|---|---|
 | `reading` | 13 personas, `/kickoff`, `/quick`, `/mock` | Every turn that opens a file — how much of one to read, and how many to ask for at once. |
-| `commit-message` | 11 personas, `/quick`, `/mock`, `/autopilot` | A commit has no skill to invoke and no receiver to check it; the message is written once and is then history. |
+| `git-history` | 11 personas, `/quick`, `/mock`, `/autopilot` | A commit has no skill to invoke and no receiver to check it: the message is written once and is then history, and so is the shape of the graph it lands in. Holds both — the work-item ID opens the subject, and integration is a rebase, never a merge commit. |
 | `shared-context` | 11 personas, `/kickoff`, `/quick`, `/autopilot` | A write through a symlink lands in a second repo on any turn, and nothing in this repo's `git status` will ever remind the persona that it did. |
