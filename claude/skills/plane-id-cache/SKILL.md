@@ -1,6 +1,6 @@
 ---
 name: plane-id-cache
-description: Resolve Plane project / state / label / assignee / module / cycle UUIDs from a local cache file (`.claude/cache/plane-ids.yaml`) instead of round-tripping through MCP listing tools every turn. Read the cache before any `list_projects` / `list_states` / `list_labels` / `list_workspace_members` / `list_cycles` MCP call — these UUIDs are stable per deployment (cycles are the one exception: refresh after a new sprint is created). Refresh by running the bundled `refresh.py` script when a needed name is missing.
+description: "Resolve Plane project / state / label / assignee / module / cycle UUIDs from a local cache file (`.claude/cache/plane-ids.yaml`) instead of round-tripping through MCP listing tools every turn. Read the cache before any `list_projects` / `list_states` / `list_labels` / `list_workspace_members` / `list_cycles` MCP call — these UUIDs are stable per deployment (cycles are the one exception: refresh after a new sprint is created). Refresh by running the bundled `refresh.py` script when a needed name is missing."
 ---
 
 # plane-id-cache
