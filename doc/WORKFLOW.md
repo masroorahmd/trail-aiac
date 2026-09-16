@@ -825,6 +825,10 @@ are the module slices (`backend` / `frontend` / `testing` /
 or a tree nested deeper than that — and it drives each Story underneath
 on its own branch, then hands the containers back too, innermost first,
 with a roll-up comment naming every branch and the order to merge them.
+Hand it a **list** (`/autopilot DEV-42 DEV-47 DEV-51`, Stories or
+Epics in any mix) and it drives them in that order as one run — the
+way to batch Stories that share no parent, or to resume the PENDING
+remainder after a STOP, without restructuring Plane to do it.
 
 It does not weaken the user-triggered rule (see *Why the human is the
 dispatcher*): USER still triggers exactly one turn, and nothing in

@@ -1,6 +1,6 @@
 ---
-description: Unattended lane — drive an already-framed Story, or any Epic/parent above one, end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → RM) with personas as subagents and no human in the loop; one pushed feature branch per Story, left for USER to merge. Lean-lane by default (stages skipped only with a logged SKIP-N, hard floors kept), pauses for approval before repair rounds and Story switches, and hands back the moment the change leaves the autopilot risk lane.
-argument-hint: "<DEV-N — a Story to drive, or any parent/Epic above one; its Stories are driven in order, one branch each> [--no-tm] [--no-review-run]"
+description: Unattended lane — drive an already-framed Story, any Epic/parent above one, or a list of either, end-to-end through the engineering spine (RE → SA → SR → BD/UD → TM → TW → RM) with personas as subagents and no human in the loop; one pushed feature branch per Story, left for USER to merge. Lean-lane by default (stages skipped only with a logged SKIP-N, hard floors kept), pauses for approval before repair rounds and Story switches, and hands back the moment the change leaves the autopilot risk lane.
+argument-hint: "<DEV-N [DEV-M …] — one or more work-items, each a Story to drive or any parent/Epic above one; Stories are driven in the order given, one branch each> [--no-tm] [--no-review-run]"
 ---
 
 You are running `/autopilot` directly in the **main loop** of this
@@ -9,9 +9,9 @@ Plane identity, no token, and makes no Plane MCP calls whatsoever**;
 every Plane write in the run is made by a spine persona as itself. It is the framework's deliberate **unattended lane**: a
 single human-initiated session (USER typed `/autopilot DEV-N`) that
 orchestrates the *whole* engineering spine for one Story — or, when
-handed a container above one, for every Story in the tree beneath it —
-and runs each to a **reviewable hand-back** without stopping to ask
-USER anything.
+handed a container above one or a list of work-items, for every Story
+in the trees beneath them — and runs each to a **reviewable hand-back**
+without stopping to ask USER anything.
 
 This does **not** break the framework's user-triggered rule. USER
 triggered exactly one turn. Nothing in Plane drives Claude Code; *you*
@@ -63,13 +63,15 @@ sub-work-item it implements, the wrap-up commit with the Story.
    than logging a `SKIP-N` for it every run), and `autopilot.ci_watch`
    (default `true`) with `autopilot.ci_timeout_minutes` (default 20) —
    the remote-CI gate in spine step 9 (any forge, see there).
-2. **Argument check.** `$ARGUMENTS` must name exactly one work-item ID
-   (e.g. `DEV-42`) — a Story to drive, or any container above one
-   (Epic, sub-Epic, nested to any depth) whose Stories autopilot will
-   drive in order. *Triage* below resolves which. One ID is enough for
-   a whole tree; if empty or ambiguous, ask USER for the single
-   work-item ID and WAIT — this is the *one* question autopilot is
-   allowed. `$ARGUMENTS` may also carry **`--no-tm`** (before or after
+2. **Argument check.** `$ARGUMENTS` must name **one or more** work-item
+   IDs (e.g. `DEV-42`, or `DEV-42 DEV-47 DEV-51`; whitespace- or
+   comma-separated). Each is a Story to drive, or any container above
+   one (Epic, sub-Epic, nested to any depth) whose Stories autopilot
+   will drive in order. *Triage* below resolves which. One ID is enough
+   for a whole tree; a list is for Stories that share no parent USER
+   wants driven as one run, and **the order USER lists them is the
+   build order**. If empty or ambiguous, ask USER for the work-item
+   ID(s) and WAIT — this is the *one* question autopilot is allowed. `$ARGUMENTS` may also carry **`--no-tm`** (before or after
    the ID). It waives the Test Manager for the *whole run* — spine
    steps 5 and 6, on every Story — down the same path a lean-lane TM
    skip takes, and it waives the runtime-surface floor with it: that
@@ -87,8 +89,8 @@ sub-work-item it implements, the wrap-up commit with the Story.
    implies it, so both together are redundant, not a conflict — say so
    once and carry on.
 
-   Strip any flag before you use the argument as an ID:
-   everywhere below that reads `$ARGUMENTS` as a work-item means the ID
+   Strip any flag before you use the argument as IDs:
+   everywhere below that reads `$ARGUMENTS` as work-items means the IDs
    alone. An unrecognised flag is not a licence to guess — ask USER.
 3. **Standards load.** Read `.claude/context/control-manifest.md` (the
    `CM-N` guardrails — you need the *Security non-negotiables*,
@@ -226,11 +228,12 @@ subagent that returns no parseable verdict is treated as STOP (reason:
 
 Autopilot's spine drives **one Story**, and a Story is the level whose
 children are *implementation slices*. USER may hand you anything above
-that: a Story directly, or a container (Epic, sub-Epic) nested
-arbitrarily deep. You (the orchestrator) never call Plane, so you
-cannot see the shape yourself — spawn **one read-only triage subagent**
-to walk the tree under `$ARGUMENTS` before you create any branch or run
-any spine.
+that: a Story directly, a container (Epic, sub-Epic) nested arbitrarily
+deep, or a list of such items. You (the orchestrator) never call Plane,
+so you cannot see the shape yourself — spawn **one read-only triage
+subagent** to walk the tree under every ID in `$ARGUMENTS` before you
+create any branch or run any spine. One subagent for the whole list,
+not one per ID.
 
 The two levels the triage must separate:
 
@@ -251,26 +254,28 @@ self-finalizes by *reporting only* (transitioning nothing) and ends with
 the `TRIAGE-VERDICT` block below instead of the usual `AUTOPILOT-VERDICT`:
 
 > TRIAGE ONLY — do not transition any state, do not post any comment,
-> do not create or edit anything. Read work-item `$ARGUMENTS` and walk
-> its sub-work-items **recursively, to full depth**. Classify every
-> node:
+> do not create or edit anything. Read each work-item in `$ARGUMENTS`,
+> in the order given, and walk its sub-work-items **recursively, to
+> full depth**. Classify every node:
 > - A **Story** — no children at all, or children that are module
 >   sub-work-items (`backend` / `frontend` / `testing` /
 >   `documentation`). These are the drivable units.
 > - A **container** — children that are themselves Stories or further
 >   containers. Recurse into it; it is not drivable itself.
 >
-> Report every Story in the order it should be built (ascending
-> sequence, and where a Story plainly depends on an earlier sibling's
-> output, say so in NOTES). Note which Stories are already in a
-> terminal/done state. List the containers innermost first, so the last
-> entry is the item USER named.
+> Report every Story in the order it should be built: the named items
+> in USER's order, and within one item ascending sequence (where a
+> Story plainly depends on an earlier one's output, say so in NOTES).
+> A Story reachable from two named items is listed once, at its first
+> position. Note which Stories are already in a terminal/done state.
+> List the containers innermost first, so each named container comes
+> after everything beneath it.
 > End with this block and nothing after it:
 >
 >     TRIAGE-VERDICT: LEAF | NESTED
 >     STORIES: <ordered, comma-separated Story IDs to drive — the item
->              itself if LEAF; every not-yet-done Story in the tree
->              if NESTED>
+>              itself if LEAF; every not-yet-done Story across all
+>              named items if NESTED>
 >     CONTAINERS: <comma-separated container IDs, innermost first
 >                  (outermost last), or none>
 >     SKIPPED: <Stories already done, comma-separated, or none>
@@ -278,10 +283,13 @@ the `TRIAGE-VERDICT` block below instead of the usual `AUTOPILOT-VERDICT`:
 
 Parse the block to build your **work list** — the ordered Story IDs the
 spine will drive:
-- **LEAF** → a one-element list: `[$ARGUMENTS]`, and `CONTAINERS: none`.
-  Drive it exactly as a single-Story run.
-- **NESTED** → the `STORIES` list, in order, however many container
-  levels sit above them. You drive the **Stories**, never a container:
+- **LEAF** → exactly one ID was named and it is a Story: a one-element
+  list, `[$ARGUMENTS]`, and `CONTAINERS: none`. Drive it exactly as a
+  single-Story run.
+- **NESTED** → anything else: a container, or more than one ID. The
+  `STORIES` list, in order, however many container levels sit above
+  them — for a list of plain Stories that is just the list, with
+  `CONTAINERS: none`. You drive the **Stories**, never a container:
   a container gets no branch and no spine. It does get handed back to
   USER at the end — see *Hand-back* in spine step 11. Report the
   `SKIPPED` Stories in the summary so USER sees nothing was silently
@@ -323,17 +331,19 @@ turn (call it `<DEV-N>` throughout the spine):
    the remaining Stories. Hand back per *Hand-back on STOP*, and in the
    summary record which Stories COMPLETED, which one STOPPED and why, and
    which are still PENDING (untouched) — so USER can fix the blocker and
-   re-run autopilot on just the remainder (or on the individual Story).
+   re-run autopilot on just the remainder: the PENDING IDs, handed in
+   as a list (or the one stopped Story on its own).
 
 **After the last Story completes**, and only if *every* Story in the
 work list COMPLETED, hand back the **containers** from triage —
-innermost first, outermost (the item USER named) last. See spine step 11.
+innermost first, outermost (the items USER named) last. See spine step
+11. A work list with no containers has nothing to hand back here.
 On a STOP, containers are not handed back: the tree is not finished, and
 moving it to `In Review` would say it is.
 
 For a LEAF work list this loop runs exactly once, with no containers.
-For a NESTED tree it is the same spine, looped once per Story, with the
-container hand-back appended.
+For a NESTED tree or a list of IDs it is the same spine, looped once
+per Story, with the container hand-back (if any) appended.
 
 ## Approval gates — a new round needs USER's word
 
@@ -937,7 +947,8 @@ the work list above — `<DEV-N>` is that Story, on its own feature branch.
    Story is not finished.
 
    **Container hand-back.** After the *last* Story in the work list
-   completes, walk triage's `CONTAINERS` innermost → outermost and spawn
+   completes, and when triage listed any, walk triage's `CONTAINERS`
+   innermost → outermost and spawn
    `release-manager` once for them with the same rules (`In Review`,
    assignee USER, nothing set to `Done`). Their comment is a **roll-up**
    rather than a test plan: which Stories were driven, each one's branch,
@@ -1050,10 +1061,10 @@ covering:
   answer whenever a review run ended with an unfixed finding or a
   follow-up work-item: the Story is handed back and the branch is
   waiting, but "finished" would read as "clean" and it isn't.
-- **If a parent work-item was expanded:** name the parent and give the
-  work-list roster — each child Story marked COMPLETED / STOPPED /
-  SKIPPED (already done) / PENDING (not reached because an earlier child
-  stopped).
+- **If the work list held more than one Story** (a parent expanded, or
+  several IDs named): name what USER handed in and give the work-list
+  roster — each Story marked COMPLETED / STOPPED / SKIPPED (already
+  done) / PENDING (not reached because an earlier one stopped).
 - For each Story actually driven: the Story and every sub-work-item,
   with final states.
 - **Every `AS-N` assumption** logged across all personas, gathered in
@@ -1155,5 +1166,5 @@ The user's brief follows:
 $ARGUMENTS
 ```
 
-If `$ARGUMENTS` is empty, ask USER for the single Story ID to autopilot
+If `$ARGUMENTS` is empty, ask USER for the work-item ID(s) to autopilot
 and WAIT.
