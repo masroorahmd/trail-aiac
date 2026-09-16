@@ -6,6 +6,31 @@
 > claims here should be re-verified before each major Phase-3 design
 > commit — Plane's API and MCP both move quickly.
 >
+> **Update 2026-09-01 (upstream re-evaluated — the gaps are closed)**:
+> the official `makeplane/plane-mcp-server` reached v0.3.1, and both
+> gaps this document was written around are gone. `workitem_comment`
+> gives comments full CRUD; `page` gives pages full CRUD at workspace
+> *and* project scope through the public SDK, plus work-item page
+> links. On 2026-08-14 (#199) upstream also consolidated its 55+
+> granular tools into **one action-dispatch tool per resource** — 30
+> tools total — and its remote transports now carry identity in the
+> *connection* (OAuth, or HTTP with `x-api-key` + `x-workspace-slug`)
+> instead of a process env. Headline findings #2 and #3, the *Gaps*
+> table, and the *Tracking the upstream gap* open question are
+> therefore obsolete; they are annotated in place rather than deleted,
+> because the design they justified is still the one we ship.
+>
+> **We did not switch back.** Measured the same way on the same day,
+> upstream advertises 30 tools / 61,691 B of tool schema against our 26
+> tools / 12,571 B — roughly **4.9× per identity**. MCP still has no
+> per-*call* identity, so eleven personas mean either eleven client
+> entries (~11 × 15.4k tokens of schema in every system prompt) or one
+> entry and a single Plane author for all eleven, which would void
+> `hooks/plane-persona-guard.py`. The `persona` argument remains the
+> only shape that buys N identities at one schema's cost. Worth
+> borrowing rather than adopting: upstream's `fields`/`expand` sparse
+> fieldsets, and its PQL query language.
+>
 > **Update 2026-06-02 (cycles wired in)**: the multi-tenant MCP now
 > exposes cycles (sprints) — full CRUD plus work-item membership
 > (`add`/`remove`/`list`) and `transfer-issues` — verified against
@@ -75,13 +100,17 @@
 2. **The MCP server has two critical gaps** for our workflow: no tools
    for **comments** and no tools for **pages** (create/list/link). The
    underlying REST API supports comments fully and pages partially.
+   *(Superseded by the 2026-09-01 update above — v0.3.1 ships a
+   `workitem_comment` and a `page` tool, both full CRUD.)*
 3. **Pages have no UPDATE endpoint** in the REST API as of 2026-04-25
    (open feature requests:
    [#7319](https://github.com/makeplane/plane/issues/7319),
    [#8598](https://github.com/makeplane/plane/issues/8598)). Pages can
    be **created and read** but not edited. Implication: agents must
    treat pages as append-only artefacts — produce a new page rather
-   than mutate an existing one.
+   than mutate an existing one. *(Superseded twice: by the 2026-04-25
+   spike below for the internal API, and by the 2026-09-01 update above
+   for the public one — pages now have a working UPDATE.)*
 4. **Per-persona token isolation works mechanically.** The official
    MCP server's stdio transport reads `PLANE_API_KEY` from the
    environment, so each persona's `mcpServers:` entry can pass its own
@@ -168,10 +197,13 @@ Source: [github.com/makeplane/plane-mcp-server](https://github.com/makeplane/pla
 | Repo | `makeplane/plane-mcp-server` |
 | Implementation | Python + FastMCP (the Node.js version is **deprecated**) |
 | License | MIT |
+| Version observed | v0.3.1 (2026-09-01); v0.2.x at the 2026-04-25 research date |
 | Transports | stdio, HTTP (OAuth or PAT), SSE (legacy) |
+| Auth methods | `api_key_env` (stdio), `api_key_header` (`x-api-key` + `x-workspace-slug`), OAuth — identity travels per *connection*, never per call |
 | Stdio env vars | `PLANE_API_KEY` (req), `PLANE_WORKSPACE_SLUG` (req), `PLANE_BASE_URL` (opt, defaults to cloud) |
+| Registry | **not** listed in the official MCP registry — "official" here means vendor-maintained |
 
-### Tool coverage (55+ tools, by category)
+### Tool coverage (55+ tools, by category) — as observed 2026-04-25
 
 | Category | Tools | Coverage notes |
 |---|---|---|
@@ -184,7 +216,29 @@ Source: [github.com/makeplane/plane-mcp-server](https://github.com/makeplane/pla
 | Work Item Properties (5) | full CRUD | full |
 | Users (1) | `get_me` | minimal |
 
+**Current shape (v0.3.1, 2026-09-01).** The granular tools above were
+consolidated on 2026-08-14 (#199) into **30 action-dispatch tools**, one
+per resource, each taking an `action` argument — the same move this
+framework made for its own server, arrived at independently. The
+resource set is much wider than the table above: alongside `workitem`,
+`cycle`, `module`, `project`, `state`, `label` and `member` it now
+carries `workitem_comment`, `page`, `collection`, `milestone`,
+`release` (+ `release_label`, `release_tag`), `template`, `customer`
+(+ `customer_property`, `customer_request`), `work_log`,
+`workitem_attachment`, `workitem_activity`, `workitem_link`,
+`workitem_relation`, `workitem_property`, `workitem_type`,
+`project_estimate`, `initiative`, `intake`, `workspace` and a
+`get_pql_reference` for Plane's query language. Work-item reads accept
+`fields` / `expand` sparse fieldsets.
+
 ### Gaps in the MCP server (vs. our Phase-2 workflow design)
+
+> **All closed as of v0.3.1 (2026-09-01).** The table below is kept as
+> the 2026-04-25 record that justified building a supplementary server.
+> Every row marked *missing* now exists upstream: comments as
+> `workitem_comment` (list/retrieve/create/update/delete), page CRUD and
+> page-to-work-item links as `page`. The reason we still ship our own
+> server is no longer capability — see the 2026-09-01 update at the top.
 
 | Workflow need | MCP support | REST support | Mitigation |
 |---|---|---|---|
@@ -284,9 +338,11 @@ augmented with the internal app API for pages. Final shape:
   → Testing as sub-phases. Plane has no nested-state concept. Options:
   (a) encode in a custom property on the work item, (b) use labels,
   (c) flatten into top-level states. Decide in Phase 3.
-- **Tracking the upstream gap**: subscribe to issues #7319 and #8598;
-  if Plane ships Page UPDATE + MCP tools for comments/pages, our
-  supplementary server can shrink or disappear.
+- **Tracking the upstream gap** — *resolved 2026-09-01*: Plane shipped
+  both. Page UPDATE and MCP tools for comments and pages all exist in
+  `plane-mcp-server` v0.3.1. Our server did not shrink or disappear,
+  because what keeps it is per-persona identity and schema size, not
+  the missing verbs — see the 2026-09-01 update at the top.
 
 ## Sources
 
