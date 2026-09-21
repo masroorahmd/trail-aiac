@@ -183,6 +183,26 @@ trail-aiac/
 │   │                              `merge --ff-only` and `--squash` pass:
 │   │                              the rule is against the merge *commit*,
 │   │                              not against landing a branch.
+│   │                              `rtk-rewrite.py` (PreToolUse/Bash) is
+│   │                              not a guard but the third leg of the
+│   │                              reading budget: `reading:` bounds
+│   │                              files and Plane, the MCP listing
+│   │                              tools bound what Plane returns, and
+│   │                              this bounds what a Bash call returns.
+│   │                              It hands the command to `rtk`
+│   │                              (rtk-ai/rtk) which rewrites
+│   │                              `pytest -q` → `rtk pytest -q`
+│   │                              (failures kept, passes collapsed, a
+│   │                              failed run's full output behind
+│   │                              `rtk recall <id>`), at
+│   │                              `hooks.bash_output_trim` (`on` /
+│   │                              `off`). Invisible to the persona, so
+│   │                              it is the one token saving that costs
+│   │                              no prompt tokens; a no-op without the
+│   │                              `rtk` binary on PATH. The two guards
+│   │                              above see the command before the
+│   │                              rewrite and also match the rewritten
+│   │                              form.
 │   ├── mcp/                       multi-tenant Plane MCP server
 │   │                              (Python + FastMCP). One process, ONE
 │   │                              tool set for all N personas: identity

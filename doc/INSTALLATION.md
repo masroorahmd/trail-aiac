@@ -51,6 +51,21 @@ Whatever scenario applies, the controller needs:
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
   Drops `uv` and `uvx` into `~/.local/bin/`.
+- **`rtk`** (optional, recommended) — [rtk-ai/rtk](https://github.com/rtk-ai/rtk),
+  a single Rust binary that condenses what a Bash command prints
+  before the persona reads it (a test run to its failures, `git log`
+  to its lines, no progress bars, no ANSI). The framework's
+  `rtk-rewrite.py` hook calls it on every Bash tool call, controlled
+  by `hooks.bash_output_trim` in the consumer's `config.yaml`; with no
+  `rtk` on PATH the hook does nothing, so install order does not
+  matter. One-line install:
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+  ```
+  (also `brew install rtk`; or the release tarball into
+  `~/.local/bin/`). Do **not** also run `rtk init` in a consumer:
+  it writes its own hook into `settings.json`, which `install.py`
+  overwrites on the next run. The framework's hook is that hook.
 - **`ansible` ≥ 2.15** and **`ssh`** (for scenarios 1 & 2 only).
 - **Private-CA Plane** trust configuration: if your Plane sits
   behind a self-signed or internal-PKI certificate (Caddy `tls

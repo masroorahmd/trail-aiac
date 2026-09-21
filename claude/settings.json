@@ -30,6 +30,11 @@
             "type": "command",
             "command": "p=$(cat); case \"$p\" in *merge*|*pull*|*push*) [ -f .claude/hooks/linear-history-guard.py ] && printf %s \"$p\" | python3 .claude/hooks/linear-history-guard.py || true ;; esac",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "command -v rtk >/dev/null 2>&1 && [ -f .claude/hooks/rtk-rewrite.py ] && python3 .claude/hooks/rtk-rewrite.py || true",
+            "timeout": 10
           }
         ]
       },

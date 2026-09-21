@@ -229,12 +229,43 @@ git:
 #     on          Rename on every `/<command>`. Default.
 #     off         Leave the harness's own title alone — pick this if you
 #                 want its auto-generated topic titles instead.
+#
+#   bash_output_trim — a persona reads a command's summary, not its
+#                      stream. The `reading:` block above bounds what a
+#                      persona reads from files and from Plane; this is
+#                      the third stream it reads on every turn — what a
+#                      Bash call prints: a test run, `git log`, a
+#                      build, a package install. The hook hands each
+#                      Bash command to `rtk` (https://github.com/rtk-ai/rtk),
+#                      which rewrites `pytest -q` to `rtk pytest -q`
+#                      before it runs: failures stay, passing tests
+#                      collapse to a count, progress bars and ANSI go,
+#                      and a failed command keeps its full output behind
+#                      `rtk recall <id>`, so nothing is re-run to see
+#                      it. Invisible to the persona — no prompt text
+#                      changes — which makes it the one token saving
+#                      that costs no prompt tokens. Only Bash: `Read`,
+#                      `Grep` and `Glob` never pass through it.
+#
+#     on          Rewrite every Bash command rtk has a filter for.
+#                 Needs the `rtk` binary on PATH (see
+#                 doc/INSTALLATION.md → Prerequisites); without it the
+#                 hook does nothing, so `on` is safe to leave as the
+#                 default on a machine that has not installed it yet.
+#                 Default.
+#     off         No rewrite.
+#
+#   The two Bash guards above run on the same event and see the command
+#   before the rewrite; both also match the rewritten form, so a
+#   rewrite cannot slip a merge commit or a buried work-item ID past
+#   them. An escape hatch (`TRAIL_SKIP_*=1 git …`) is never rewritten.
 hooks:
   commit_id_required: plane-only
   linear_history: deny
   persona_identity: strict
   fork_in_persona_run: deny
   session_title: on
+  bash_output_trim: on
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a

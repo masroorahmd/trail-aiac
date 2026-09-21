@@ -90,7 +90,10 @@ prompt paragraph asking a persona to remember. One guard refuses a commit
 whose subject drops the work-item ID; another refuses a Plane write claiming a
 persona other than the one you started. How hard each holds is set in the
 consumer's own `config.yaml`, and both fail open on uncertain cases — a false
-deny costs more than a missed check.
+deny costs more than a missed check. A third hook is not a guard but a
+saving: it hands every Bash command to [`rtk`](https://github.com/rtk-ai/rtk),
+so a persona reads a test run's failures rather than its scroll — the one
+token cut that adds no prompt text.
 
 ## Is this for you?
 
