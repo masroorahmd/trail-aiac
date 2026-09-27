@@ -1,6 +1,6 @@
 ---
-description: Look up one Plane work-item and print its status card — identifier, description, state, assignee(s), and any children with their state and assignee. Read-only; does not change the persona in role.
-argument-hint: "<work-item identifier, e.g. DEV-7> [full]"
+description: Look up one Plane work-item and print its status card — identifier, a short summary of the description, state, assignee(s), and any children with their state and assignee. Read-only; does not change the persona in role.
+argument-hint: "<work-item identifier, e.g. DEV-7> [full — whole description instead of a summary]"
 ---
 
 <!-- TRAIL:KEEPS-ROLE -->
@@ -37,8 +37,7 @@ Print in **__CHAT_LANGUAGE__**, in this order and nothing else:
 **<IDENTIFIER>** — <name>
 **Status:** <state>  ·  **Assignee:** <names, or "—">
 
-<description, as returned; if description_truncated, end with
-"… (<shown>/<full_length> chars — `/ticket <ID> full` for all)">
+<summary>
 
 **Children (<n>):**
 | ID | Name | Status | Assignee |
@@ -46,5 +45,9 @@ Print in **__CHAT_LANGUAGE__**, in this order and nothing else:
 | … |
 ```
 
-Leave out the children block when there are none. Do not summarise,
-interpret, or suggest next steps unless USER asks.
+`<summary>` is **2–3 sentences** of your own: what the ticket wants
+and why — not its structure, its AC list, or its implementation notes.
+With `full`, print the description as returned instead.
+
+Leave out the children block when there are none. Do not interpret or
+suggest next steps unless USER asks.
