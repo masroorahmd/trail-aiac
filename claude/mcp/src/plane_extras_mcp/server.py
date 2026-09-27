@@ -270,6 +270,58 @@ def _note_relations(
     return result
 
 
+def _state_name(item: dict[str, Any]) -> str | None:
+    state = item.get("state")
+    return state.get("name") if isinstance(state, dict) else state
+
+
+def _assignee_names(item: dict[str, Any]) -> list[Any]:
+    return [
+        a.get("display_name") or a.get("email") or a.get("id")
+        if isinstance(a, dict)
+        else a
+        for a in item.get("assignees") or []
+    ]
+
+
+def _overview(
+    identifier: str,
+    item: dict[str, Any],
+    children: list[dict[str, Any]],
+    description_chars: int,
+) -> dict[str, Any]:
+    """Project a work item and its children down to the status card.
+
+    Plane answers with ~30 fields per item and the body as HTML; a
+    status question needs five of them, in text. Children carry the
+    project prefix of their parent — a child always lives in the same
+    project, and the list response has no identifier of its own.
+    """
+    prefix = identifier.rsplit("-", 1)[0].upper()
+    description = _html_to_text(item.get("description_html"))
+    card: dict[str, Any] = {
+        "identifier": f"{prefix}-{item.get('sequence_id')}",
+        "name": item.get("name"),
+        "state": _state_name(item),
+        "assignees": _assignee_names(item),
+        "description": description,
+    }
+    if 0 < description_chars < len(description):
+        card["description"] = description[:description_chars].rstrip()
+        card["description_truncated"] = True
+        card["description_full_length"] = len(description)
+    card["children"] = [
+        {
+            "identifier": f"{prefix}-{child.get('sequence_id')}",
+            "name": child.get("name"),
+            "state": _state_name(child),
+            "assignees": _assignee_names(child),
+        }
+        for child in sorted(children, key=lambda c: c.get("sequence_id") or 0)
+    ]
+    return card
+
+
 _PERSONA_NOTE = (
     "\n\n``persona`` is the username of the persona making the call — the "
     "one whose `/<persona>` command is running (e.g. "
@@ -407,6 +459,27 @@ def _register_tools(creds_by_persona: dict[str, dict[str, str]]) -> None:
             return await c.retrieve_work_item(
                 project_id, work_item_id, expand=expand
             )
+
+    @_tool
+    async def work_item_overview(
+        persona: str, identifier: str, description_chars: int = 3000
+    ) -> dict[str, Any]:
+        """Status card for one work item: identifier, name, description
+        as plain text, state, assignees, and its children — each child
+        with its own state and assignees. Takes the human identifier
+        (``DEV-7``) alone; no project id needed. Read-only.
+
+        The description is cut at ``description_chars`` (``0`` = whole)
+        and flagged ``description_truncated``. Children come from a scan
+        of the whole project, because Plane's list endpoint ignores a
+        ``parent`` filter — expect a second or two on a large project.
+        """
+        async with _client(persona) as c:
+            item = await c.retrieve_work_item_by_identifier(
+                identifier, expand="state,assignees"
+            )
+            children = await c.list_children(item["project"], item["id"])
+        return _overview(identifier, item, children, description_chars)
 
     @_tool
     async def create_work_item(

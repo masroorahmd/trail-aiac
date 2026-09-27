@@ -67,6 +67,10 @@ trail-aiac/
 │   │                              design/<slug>/ in the project repo,
 │   │                              never Plane),
 │   │                              /quick — off-Plane quick lane,
+│   │                              /ticket — read-only status card
+│   │                              of one work-item + its children;
+│   │                              marked `TRAIL:KEEPS-ROLE` so
+│   │                              persona-pin leaves the role alone,
 │   │                              /autopilot — unattended full-spine lane)
 │   ├── output-styles/             system-prompt styles for the main
 │   │                              loop. `plain.md` (shipped as the

@@ -7,6 +7,7 @@ and the PlaneClient constructs URLs correctly.
 
 from __future__ import annotations
 
+import json
 import os
 from typing import Any
 from unittest.mock import MagicMock
@@ -47,6 +48,7 @@ TOOL_VERBS = (
     "remove_work_item_from_module",
     "list_work_items",
     "retrieve_work_item",
+    "work_item_overview",
     "create_work_item",
     "update_work_item",
     "add_comment",
@@ -1260,3 +1262,78 @@ def test_env_float_falls_back_on_garbage(
     assert _env_float("PLANE_RETRY_BUDGET", 45.0) == 45.0
     monkeypatch.setenv("PLANE_RETRY_BUDGET", "12.5")
     assert _env_float("PLANE_RETRY_BUDGET", 45.0) == 12.5
+
+
+async def test_work_item_overview_is_a_status_card_with_children(
+    two_personas_registered, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """One call answers "what is DEV-7 doing": text body, state and
+    assignee names, and the children — found by scanning every page,
+    because Plane ignores a ``parent`` filter on the list endpoint.
+    """
+    parent_uuid = WORK_ITEM_UUID
+    urls: list[str] = []
+
+    def row(seq: int, parent: str | None, state: str, who: str) -> dict:
+        return {
+            "id": f"id-{seq}",
+            "sequence_id": seq,
+            "name": f"Item {seq}",
+            "parent": parent,
+            "state": {"id": "s", "name": state},
+            "assignees": [{"id": "u", "display_name": who}],
+        }
+
+    pages = {
+        None: [row(9, parent_uuid, "Done", "test-manager"), row(3, None, "Todo", "x")],
+        "100:1:0": [row(8, parent_uuid, "In Progress", "backend-developer")],
+    }
+
+    async def fake_request(
+        self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
+    ) -> Any:
+        urls.append(str(url))
+        params = kwargs.get("params") or {}
+        if "/projects/" in str(url):
+            payload: Any = {
+                "results": pages[params.get("cursor")],
+                "total_pages": 2,
+            }
+        else:
+            payload = {
+                "id": parent_uuid,
+                "project": PROJECT_UUID,
+                "sequence_id": 7,
+                "name": "Story",
+                "description_html": "<p>" + "word " * 50 + "</p>",
+                "state": {"id": "s", "name": "In Progress"},
+                "assignees": [{"id": "u", "display_name": "masroor"}],
+            }
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 200
+        response.content = b"{}"
+        response.json = lambda: payload
+        response.text = "{}"
+        return response
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    result = await mcp.call_tool(
+        "work_item_overview",
+        {"persona": "business-analyst", "identifier": "dev-7", "description_chars": 20},
+    )
+    card = result[1] if isinstance(result, tuple) else json.loads(result[0].text)
+
+    assert urls[0].endswith("/work-items/dev-7/")
+    assert card["identifier"] == "DEV-7"
+    assert card["state"] == "In Progress"
+    assert card["assignees"] == ["masroor"]
+    assert "<" not in card["description"] and len(card["description"]) <= 20
+    assert card["description_truncated"] is True
+    assert [c["identifier"] for c in card["children"]] == ["DEV-8", "DEV-9"]
+    assert card["children"][0] == {
+        "identifier": "DEV-8",
+        "name": "Item 8",
+        "state": "In Progress",
+        "assignees": ["backend-developer"],
+    }

@@ -14,7 +14,7 @@ it.
 
 | Server | Where from | Used for | Auth |
 |---|---|---|---|
-| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset), states / labels, modules (list + work-item membership), cycles (sprints, full CRUD + work-item membership + transfer), relations (list + add), workspace members, comments. 26 tools, each taking a `persona` argument that selects whose token authors the call. | `X-API-Key` against `/api/v1/` |
+| `plane` | `claude/mcp/` in this repo (Python + FastMCP) | The full Plane tool surface the persona team uses — projects, work items (CRUD subset, plus `work_item_overview` — the read-only status card with children behind `/ticket`), states / labels, modules (list + work-item membership), cycles (sprints, full CRUD + work-item membership + transfer), relations (list + add), workspace members, comments. 27 tools, each taking a `persona` argument that selects whose token authors the call. | `X-API-Key` against `/api/v1/` |
 
 > Earlier versions ran two servers per persona — upstream
 > `makeplane/plane-mcp-server` (via `uvx`) plus a supplementary

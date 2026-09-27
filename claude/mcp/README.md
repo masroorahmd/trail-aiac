@@ -21,8 +21,8 @@ lands in Plane under the right account.
 Registering the set once per persona instead (the earlier layout, with
 the identity in the tool name) put 286 tool schemas — 179 KB, ~45k
 tokens — into the system prompt of every session, on every turn, so
-that one persona could reach the 26 it actually holds. Twenty-six
-verbs, one set:
+that one persona could reach the 26 it actually holds. Twenty-seven
+verbs today, one set:
 
 | Verb | Endpoint |
 |---|---|
@@ -36,6 +36,7 @@ verbs, one set:
 | `remove_work_item_from_module` | `DELETE /api/v1/workspaces/{slug}/projects/{p}/modules/{m}/module-issues/{id}/` |
 | `list_work_items` | `GET  /api/v1/workspaces/{slug}/projects/{p}/work-items/` |
 | `retrieve_work_item` | `GET  /api/v1/workspaces/{slug}/projects/{p}/work-items/{id}/` |
+| `work_item_overview` | `GET  /api/v1/workspaces/{slug}/work-items/{identifier}/` + a projected scan of `…/projects/{p}/work-items/` for children (Plane ignores a `parent` filter) — read-only status card behind `/ticket` |
 | `create_work_item` | `POST /api/v1/workspaces/{slug}/projects/{p}/work-items/` |
 | `update_work_item` | `PATCH /api/v1/workspaces/{slug}/projects/{p}/work-items/{id}/` |
 | `add_comment` | `POST /api/v1/workspaces/{slug}/projects/{p}/work-items/{id}/comments/` |

@@ -16,7 +16,10 @@ guard reads as "any". Add a twelfth persona and this keeps working.
 
 A prompt with no leading slash command leaves the pin untouched: a
 persona stays in role for follow-up turns, which is exactly what the
-`/<persona>` contract promises.
+`/<persona>` contract promises. So does a command whose file carries
+`<!-- TRAIL:KEEPS-ROLE -->` — a read-only lookup like `/ticket` that a
+persona in role may run mid-story. Pinning `*` for it would silently
+switch the identity check off for the rest of that persona's turns.
 
 It also renames the session after the persona it just pinned. Claude
 Code takes a `sessionTitle` in a `UserPromptSubmit` hook's output and
@@ -58,6 +61,9 @@ COMMAND_RE = re.compile(r"^\s*/([a-z][a-z0-9-]*)\b")
 # `.claude/agents/<persona>.md` as the command file spells it.
 AGENT_REF_RE = re.compile(r"\.claude/agents/([a-z][a-z0-9-]*)\.md")
 
+# A command that runs alongside whatever role is in force.
+KEEPS_ROLE_MARKER = "<!-- TRAIL:KEEPS-ROLE -->"
+
 ANY = "*"
 
 TITLE_MODES = ("on", "off")
@@ -65,18 +71,22 @@ DEFAULT_TITLE_MODE = "on"
 
 
 def persona_for(root, command):
-    """The persona `/`+command puts the main loop into, or `*`.
+    """The persona `/`+command puts the main loop into, `*`, or None.
 
     `*` covers both "this command drives several personas" and "no idea
     what this command is" — the guard treats it as no constraint, which
-    is the right answer for a command the framework did not ship.
+    is the right answer for a command the framework did not ship. None
+    means the command keeps whatever role is in force: leave the pin.
     """
     path = os.path.join(root, ".claude", "commands", f"{command}.md")
     try:
         with open(path, encoding="utf-8") as handle:
-            referenced = set(AGENT_REF_RE.findall(handle.read()))
+            text = handle.read()
     except OSError:
         return ANY
+    if KEEPS_ROLE_MARKER in text:
+        return None
+    referenced = set(AGENT_REF_RE.findall(text))
     return referenced.pop() if len(referenced) == 1 else ANY
 
 
@@ -158,7 +168,10 @@ def main():
 
     root = payload.get("cwd") or os.getcwd()
     command = match.group(1)
-    pin = {"persona": persona_for(root, command), "command": command}
+    persona = persona_for(root, command)
+    if persona is None:
+        return 0
+    pin = {"persona": persona, "command": command}
 
     try:
         directory = os.path.join(root, PIN_DIR)

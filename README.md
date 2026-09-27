@@ -202,6 +202,12 @@ Bounded risk is not bounded size: a mechanical sweep across twenty files whose
 sites one command can enumerate *and* re-verify is in lane; a two-file change
 to an auth path is not.
 
+**`/ticket <ID>`** — a read-only lookup. Prints the work-item's ID,
+description, state and assignee, plus a table of its children with their
+state and assignee. One Plane call, no writes, and it does not change the
+persona in role, so you can run it in the middle of a `/bd` session.
+Add `full` to get the whole description instead of the first 3,000 characters.
+
 **`/autopilot`** — the unattended lane. One human-initiated turn drives an
 already-framed Story through the whole spine, each persona running as a
 subagent under its own Plane identity. Going *forward* needs no human; going
