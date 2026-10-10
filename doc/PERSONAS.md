@@ -63,9 +63,9 @@ command files (the framework sources carry `__MODEL_STANDARD__` /
 
 | Lane | Default | Who runs on it |
 |---|---|---|
-| `standard` | `claude-opus-5` | Routine persona turns: GM, BA, RE, BD, UD, TM, TW, RM, MM. |
-| `full` | `claude-opus-5` | High-stakes, long-horizon reasoning: `/sa` design, `/sr` threat review, and the `edge-case-hunter` subagent. |
-| `codegen` | `claude-opus-5` | Volume code-writing subagents: `ui-test-writer`. |
+| `standard` | `claude-opus-5-5` | Routine persona turns: GM, BA, RE, BD, UD, TM, TW, RM, MM. |
+| `full` | `claude-opus-5-5` | High-stakes, long-horizon reasoning: `/sa` design, `/sr` threat review, and the `edge-case-hunter` subagent. |
+| `codegen` | `claude-opus-5-5` | Volume code-writing subagents: `ui-test-writer`. |
 
 **Where a lane actually binds — and where it does not.** Only a real
 subagent reads the `model:` frontmatter of its agent file, and exactly

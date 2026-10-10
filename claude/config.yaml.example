@@ -44,9 +44,9 @@ user_name:
 # equal to the model you run the session on, so a subagent never drops
 # below the persona that spawned it.
 model_lanes:
-  standard: claude-opus-5
-  full: claude-opus-5
-  codegen: claude-opus-5
+  standard: claude-opus-5-5
+  full: claude-opus-5-5
+  codegen: claude-opus-5-5
 
 # Reading budget. Two thirds of a mature repository's bytes sit in a
 # quarter of its files, and a persona that opens one of those whole
