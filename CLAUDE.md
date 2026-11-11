@@ -143,7 +143,10 @@ trail-aiac/
 │   │                              in one repo are told apart in `/resume` and in the
 │   │                              tab bar, not only in a pin file nobody reads;
 │   │                              `hooks.session_title: off` leaves the harness's own
-│   │                              titles alone;
+│   │                              titles alone; inside a herdr terminal it also
+│   │                              labels it `trail.persona` / `trail.ticket` via
+│   │                              `hc label` (`herdr.enabled: auto|off`, the
+│   │                              block future herdr features hang off);
 │   │                              `plane-persona-guard.py`
 │   │                              (PreToolUse/`mcp__plane__*`) denies a Plane
 │   │                              call whose `persona` argument disagrees, at

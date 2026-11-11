@@ -13,6 +13,14 @@ page-based, per-persona-MCP** design (0.1.0) to the current
 
 ### Added
 
+- **herdr integration, step one** — inside a herdr terminal,
+  `/<persona>` labels that terminal `trail.persona=<username>` and
+  `trail.ticket=<ID>` through `hc label`, so herdr's `hc ls`, `hc events`
+  and mods can find persona sessions by role and ticket. A new
+  `herdr.enabled: auto | off` block in `config.yaml` switches it, and is
+  where later herdr features will go. A no-op without `HC_TERMINAL_ID`
+  or the `hc` binary. (`claude/hooks/persona-pin.py`,
+  `claude/config.yaml.example`, `doc/MCP.md`)
 - **General Manager + Marketing Manager personas** (eleven personas
   total). The General Manager runs founder operations — Behörden, Notar,
   Recht, Steuern, Staffing, Förderung, Compliance — on a dedicated `HQ`

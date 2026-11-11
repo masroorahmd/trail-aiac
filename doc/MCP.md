@@ -134,6 +134,15 @@ which" problem the per-session pin solves, moved to the surface USER
 actually looks at: `/resume` and the tab bar. `hooks.session_title: off`
 leaves the harness's own auto-generated topic titles in place.
 
+Inside a [herdr](https://herdr.dev) terminal the hook does the same for
+herdr's runtime, `hc`: it labels the terminal `trail.persona=<username>`
+and `trail.ticket=<ID>` (the work-item the command names, cleared when
+it names none). `hc ls`, `hc events --label trail.persona=test-manager`
+and herdr mods can then find persona sessions by role and ticket rather
+than by tab name. It needs `HC_TERMINAL_ID` in the environment and `hc`
+on PATH, gives up silently after two seconds, and `herdr.enabled: off`
+in `config.yaml` turns it off.
+
 **A `fork` subagent is the hole that guard cannot see, so it has its
 own.** A fork inherits the caller's whole context, which under a
 `/<persona>` command includes the Plane tools and that persona's API

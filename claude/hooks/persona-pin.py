@@ -28,6 +28,13 @@ in another read `business-analyst` and `test-manager` in `/resume` and
 in the tab bar — the same problem the per-session pin exists for, on
 the surface USER looks at. `hooks.session_title: off` turns it off.
 
+Inside a herdr terminal (`HC_TERMINAL_ID` set, `hc` on PATH) it also
+labels that terminal `trail.persona=<persona>` and
+`trail.ticket=<work-item ID>`, so `hc ls`, `hc events --label …` and
+herdr mods can tell persona sessions apart by what they are, not by
+tab name. `herdr.enabled: off` turns it off; outside herdr it does
+nothing.
+
 One pin file per session, named by session id. Two Claude sessions in
 one repo — `/ba` in one terminal, `/tm` in another — are a normal way
 to work here, and a single shared file would give the check to
@@ -39,6 +46,8 @@ path, so there is no lost update to lose.
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 import time
 
@@ -69,6 +78,16 @@ ANY = "*"
 TITLE_MODES = ("on", "off")
 DEFAULT_TITLE_MODE = "on"
 
+HERDR_MODES = ("auto", "off")
+DEFAULT_HERDR_MODE = "auto"
+
+# The work-item the command was started on: `/re CRTHVN-198 …`.
+TICKET_RE = re.compile(r"\b([A-Z][A-Z0-9]{1,9}-[0-9]+)\b")
+
+# A label call talks to a local socket; anything slower is a core in
+# trouble, and USER's prompt must not wait on it.
+HC_TIMEOUT_SECONDS = 2
+
 
 def persona_for(root, command):
     """The persona `/`+command puts the main loop into, `*`, or None.
@@ -90,27 +109,80 @@ def persona_for(root, command):
     return referenced.pop() if len(referenced) == 1 else ANY
 
 
-def title_mode(root):
-    """`hooks.session_title`, defaulting for configs seeded before it."""
+def config_value(root, block, key, allowed, default):
+    """`<block>.<key>` from config.yaml, or the default.
+
+    A line scan, not a YAML parser: hooks stay dependency-free, and a
+    config seeded before the key existed simply gets the default.
+    """
     try:
         with open(os.path.join(root, CONFIG), encoding="utf-8") as handle:
             lines = handle.read().splitlines()
     except OSError:
-        return DEFAULT_TITLE_MODE
+        return default
 
+    head = re.compile(rf"^{re.escape(block)}:\s*(#.*)?$")
+    item = re.compile(rf"^\s+{re.escape(key)}:\s*([a-z]+)\s*(#.*)?$")
     inside = False
     for line in lines:
-        if re.match(r"^hooks:\s*(#.*)?$", line):
+        if head.match(line):
             inside = True
             continue
         if not inside:
             continue
-        entry = re.match(r"^\s+session_title:\s*([a-z]+)\s*(#.*)?$", line)
-        if entry and entry.group(1) in TITLE_MODES:
+        entry = item.match(line)
+        if entry and entry.group(1) in allowed:
             return entry.group(1)
         if line.strip() and not line.startswith((" ", "\t")):
             break
-    return DEFAULT_TITLE_MODE
+    return default
+
+
+def title_mode(root):
+    """`hooks.session_title`, defaulting for configs seeded before it."""
+    return config_value(
+        root, "hooks", "session_title", TITLE_MODES, DEFAULT_TITLE_MODE
+    )
+
+
+def label_terminal(pin, prompt, root):
+    """Label this herdr terminal with the persona and work-item.
+
+    Best-effort and silent: no herdr, no `hc`, a slow core or a refused
+    call all leave USER's prompt exactly as it was. The ticket label is
+    cleared when the command names none, so a terminal that moved on
+    from a Story never keeps advertising it.
+    """
+    terminal = os.environ.get("HC_TERMINAL_ID")
+    if not terminal:
+        return
+    if config_value(
+        root, "herdr", "enabled", HERDR_MODES, DEFAULT_HERDR_MODE
+    ) == "off":
+        return
+    hc = shutil.which("hc") or shutil.which("herdr-core")
+    if not hc:
+        return
+
+    persona = pin["command"] if pin["persona"] == ANY else pin["persona"]
+    ticket = TICKET_RE.search(prompt)
+    try:
+        subprocess.run(
+            [
+                hc,
+                "label",
+                terminal,
+                f"trail.persona={persona}",
+                f"trail.ticket={ticket.group(1) if ticket else ''}",
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=HC_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return
 
 
 def rename(pin, root):
@@ -157,7 +229,8 @@ def main():
     except (json.JSONDecodeError, ValueError):
         return 0
 
-    match = COMMAND_RE.match(payload.get("prompt") or "")
+    prompt = payload.get("prompt") or ""
+    match = COMMAND_RE.match(prompt)
     if not match:
         return 0
 
@@ -187,6 +260,7 @@ def main():
         # over it is not.
         pass
 
+    label_terminal(pin, prompt, root)
     rename(pin, root)
     return 0
 

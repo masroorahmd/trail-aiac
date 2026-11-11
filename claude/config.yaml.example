@@ -267,6 +267,25 @@ hooks:
   session_title: on
   bash_output_trim: on
 
+# herdr — integration with the herdr desktop app (https://herdr.dev),
+# whose runtime `hc` (herdr-core) keeps each terminal alive and gives
+# it an address (`HC_TERMINAL_ID`). Trail never requires herdr: every
+# feature below does nothing outside a herdr terminal or without the
+# `hc` binary on PATH, so the default is safe on any machine.
+#
+#   enabled — master switch for everything herdr-related.
+#
+#     auto        Use herdr when the session runs inside it. Today that
+#                 means `/<persona>` labels its own terminal
+#                 `trail.persona=<username>` and `trail.ticket=<ID>`
+#                 (the work-item named in the command, cleared when it
+#                 names none), so `hc ls`, `hc events --label …` and
+#                 herdr mods can find persona sessions by role and
+#                 ticket. Default.
+#     off         Never call `hc`, even inside herdr.
+herdr:
+  enabled: auto
+
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a
 # work-item tree above it (Epic → Story → module children, nested to
