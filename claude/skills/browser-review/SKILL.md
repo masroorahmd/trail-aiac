@@ -39,8 +39,8 @@ and didn't get one, or expected a real browser and got a curl.
    `--headed --slowmo <ms>` (or the harness equivalent). That is what
    makes a run both watchable and fast: the window shows the clicks
    while `-v` prints a live `PASSED` / `FAILED` per step, and nothing
-   round-trips through a model between steps. Turn tracing on; a video
-   records nothing the watcher did not already see.
+   round-trips through a model between steps. Turn tracing on and the
+   video **captioned** (*Captioned video* below).
 2. **A DOM / accessibility-tree browser MCP** (Playwright MCP, Chrome
    DevTools MCP) when the steps need judgement a fixed script cannot
    encode. Element refs instead of coordinates, so clicks don't miss.
@@ -174,15 +174,21 @@ so rather than reporting a clean sweep you never took.
   leaves a replayable spec behind pays for itself the second time it is
   needed.
 
-## Captioned video (unattended, pytest harness)
+## Captioned video (every review run that drives a browser)
 
-Under `/autopilot` nobody watched, so the video is what USER reviews —
-and a silent recording of a headless run is a blur of clicks. Two
-scripts in `.claude/skills/browser-review/scripts/` turn it into one
-where every step is labelled with its number, the requirement IDs it
-checks and, once it ran, its verdict, plus one chapter per step. The
-captions come from the test log, never from your account of the run.
-Attended runs skip all of this.
+A TM review run records a video whenever it drives a browser, attended
+or not. Unattended, nobody watched, so the video is what USER reviews;
+attended, it is what the people who were not at the screen review —
+and a re-run costs more than a replay. A silent recording is a blur of
+clicks, so two scripts in `.claude/skills/browser-review/scripts/` turn
+it into one where every step is labelled with its number, the
+requirement IDs it checks and, once it ran, its verdict, plus one
+chapter per step. The captions come from the test log, never from your
+account of the run.
+
+**Not worth it** when no step opens a browser (an API or CLI run has
+nothing to film), and for UD's visual gate, where the screenshot is the
+evidence.
 
 1. **Encode** each step's requirement IDs — the ones the *Review steps*
    comment names — as `@pytest.mark.req("AC-3", "EC-2")` on its test,
@@ -198,10 +204,11 @@ Attended runs skip all of this.
    .claude/review-runs/<ID>/round-<N> --burn`, and name `review.mp4`
    under *Evidence*.
 
-No ffmpeg, a non-pytest harness that does not write `steps.json` (its
-shape is in `review_video.py`), or a driver that is not a harness at
-all: leave the video uncaptioned and say so in `NOTES`. A caption is
-never a reason to stop a run.
+No ffmpeg, or a non-pytest harness that does not write `steps.json`
+(its shape is in `review_video.py`): leave the video uncaptioned and
+say so. A browser MCP instead of a harness: turn on the driver's own
+recording where it has one, uncaptioned. A caption is never a reason
+to stop a run, and a missing recording never a reason to skip a step.
 
 ## Never retry for a greener result
 

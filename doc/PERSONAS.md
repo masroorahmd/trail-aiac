@@ -184,8 +184,8 @@ Every `claude/agents/<persona>.md` follows the same template:
   [`browser-review`](../claude/skills/browser-review/SKILL.md) — the
   driver ladder, evidence discipline and dialog/destructive rules that
   TM's review run and UD's visual verification gate both follow, plus
-  the two scripts that caption an unattended review run's video from
-  its per-step log. Plus
+  the two scripts that caption a review run's video from its per-step
+  log. Plus
   [`ui-mockup`](../claude/skills/ui-mockup/SKILL.md) — the `/mock`
   design-session contract: where a mock lives, its fidelity, the `D-N`
   decision record, and how BA, RE, SA and UD each read the folder it

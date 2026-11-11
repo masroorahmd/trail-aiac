@@ -59,7 +59,7 @@ trail-aiac/
 │   │                              TM's review run and UD's visual gate
 │   │                              both follow, and in scripts/ the
 │   │                              pytest plugin + ffmpeg step that
-│   │                              caption an unattended run's video
+│   │                              caption a review run's video
 │   │                              from its per-step log; evidence
 │   │                              lands in the gitignored
 │   │                              .claude/review-runs/<ID>/, which RM
