@@ -750,6 +750,19 @@ to ship a security finding is not USER's decision to be asked about.
 Set both knobs `false` for the old behaviour — rounds run automatically
 up to `max_repair_iterations`.
 
+**Under herdr, a stage can be its own session.** With
+`herdr.autopilot_sessions: on` in `config.yaml` and the run started in
+a [herdr](https://herdr.dev) terminal, the orchestrator starts each
+persona stage as an interactive Claude Code session in a tab of its own
+herdr space, instead of an `Agent` subagent. The session opens with the
+real `/<persona>` command and the brief in a file. Two things change.
+The pin hook gives each stage its own identity instead of the
+orchestrator's `*`, so the Plane identity guard checks every stage.
+And USER can watch a stage, answer a permission prompt in its tab, or
+take it over. The verdict comes back through `hc send` as a file path.
+The spine, the contract and the gates are the same in both modes;
+without herdr the run falls back to subagents and says so.
+
 **There is no security pass after the Technical Writer.** TW lands
 after SR's diff pass by construction, so its edits are always
 post-review; that is the design, not a gap. A docs-only diff is what

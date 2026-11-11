@@ -77,7 +77,11 @@ trail-aiac/
 │   │                              of one work-item + its children;
 │   │                              marked `TRAIL:KEEPS-ROLE` so
 │   │                              persona-pin leaves the role alone,
-│   │                              /autopilot — unattended full-spine lane)
+│   │                              /autopilot — unattended full-spine lane;
+│   │                              under herdr with
+│   │                              `herdr.autopilot_sessions: on` each
+│   │                              stage is its own `hc` session with
+│   │                              its own persona pin)
 │   ├── output-styles/             system-prompt styles for the main
 │   │                              loop. `plain.md` (shipped as the
 │   │                              default via settings.json's

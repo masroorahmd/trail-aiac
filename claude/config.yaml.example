@@ -283,8 +283,25 @@ hooks:
 #                 herdr mods can find persona sessions by role and
 #                 ticket. Default.
 #     off         Never call `hc`, even inside herdr.
+#
+#   autopilot_sessions — how `/autopilot` runs its persona stages.
+#
+#     off         As `Agent` subagents inside the orchestrator's own
+#                 session, all under its `*` pin. Default.
+#     on          Each stage is its own interactive Claude Code session
+#                 in a herdr tab of the orchestrator's space, started
+#                 with the real `/<persona>` command. The pin hook then
+#                 gives every stage its own identity, so
+#                 `hooks.persona_identity` checks each one, and USER can
+#                 watch, steer or take over a stage while it runs. A
+#                 stage's verdict comes back through `hc send`. Each
+#                 session takes the permission mode and model your
+#                 settings give any new session. Needs a repo Claude Code
+#                 already trusts. Without herdr it falls back to `off`
+#                 and says so in the summary.
 herdr:
   enabled: auto
+  autopilot_sessions: off
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a

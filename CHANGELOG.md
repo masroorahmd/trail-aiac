@@ -13,6 +13,16 @@ page-based, per-persona-MCP** design (0.1.0) to the current
 
 ### Added
 
+- **`/autopilot` stages as herdr sessions** — with
+  `herdr.autopilot_sessions: on` (default `off`) and the run started in
+  a herdr terminal, each persona stage runs as its own interactive
+  Claude Code session in a tab of the orchestrator's herdr space,
+  started with the real `/<persona>` command. Every stage then carries
+  its own persona pin instead of `*`, so the Plane identity guard checks
+  it, and USER can watch, answer or take over a stage. Verdicts return
+  through `hc send` as a file under `.claude/cache/autopilot/`. Falls
+  back to subagents without herdr. (`claude/commands/autopilot.md`,
+  `claude/config.yaml.example`, `doc/WORKFLOW.md`)
 - **herdr integration, step one** — inside a herdr terminal,
   `/<persona>` labels that terminal `trail.persona=<username>` and
   `trail.ticket=<ID>` through `hc label`, so herdr's `hc ls`, `hc events`

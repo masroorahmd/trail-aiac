@@ -122,6 +122,15 @@ sub-work-item it implements, the wrap-up commit with the Story.
    subagent, surface it in the summary — do **not** ask USER to broaden
    committed permissions as a side effect of a run.
 
+6. **Stage runner.** Read `herdr.enabled` (default `auto`) and
+   `herdr.autopilot_sessions` (default `off`). Only when the first is
+   not `off`, the second is `on`, `HC_TERMINAL_ID` is set and `hc` is
+   on PATH, every persona stage runs as a herdr session — see *Persona
+   sessions under herdr* below. If `on` was asked for and any of the
+   rest is missing, run with subagents and say so once in the summary.
+   It never changes *which* stages run, only how each one is started
+   and collected.
+
 If any pre-flight item fails, you have not spawned a single subagent —
 report the failure and stop. Cheap to abort here, expensive later.
 
@@ -223,6 +232,65 @@ its repairs on a red suite has none left for the review run — which is
 deliberate, and step 6 says what to do when the budget is gone. A
 subagent that returns no parseable verdict is treated as STOP (reason:
 "no verdict — subagent aborted").
+
+## Persona sessions under herdr (only when pre-flight 6 chose them)
+
+Each **persona** stage then runs as its own interactive Claude Code
+session in a herdr terminal instead of an `Agent` subagent. The triage
+subagent stays an `Agent` subagent: it has no persona to pin. The point
+is that every stage starts with a real `/<persona>` command, so the
+pin hook gives it that persona's identity instead of your `*`, and
+USER can watch, steer or take over the stage in its own tab. Wherever
+this file says *spawn* or *re-spawn* a persona, do this:
+
+1. **Start it.** Write the brief you would have given the subagent
+   (contract, persona, ticket, handover) to
+   `.claude/cache/autopilot/<DEV-N>-<n>-<cmd>.brief.md`. Then launch the
+   session with the slash command as its first prompt. Only a prompt
+   that begins with `/<command>` pins the persona, and `hc send` wraps
+   text in `<hc>` tags, so a task sent later never does. The prompt goes
+   **before** the options, because `--allowedTools` swallows every word
+   after it:
+
+   ```sh
+   hc run --bg --name ap-<n>-<cmd> --cwd "$PWD" \
+     --label trail.lane=autopilot --label herdr.space=<space> \
+     -- claude "/<cmd> <DEV-N> AUTOPILOT-MODE — your full brief is in <brief path>; read it first and follow it." \
+        --allowedTools 'Bash(hc send:*)'
+   ```
+
+   `<space>` is the `herdr.space` label in your own
+   `hc get "$HC_TERMINAL_ID" --json`. It puts the stage in a tab of the
+   space USER is watching; leave that label out when you have none.
+   `<cmd>` is the persona's dispatcher (`re`, `sa`, `sr`, `bd`, `ud`,
+   `tm`, `tw`, `rm`). `<n>` counts your spawns, so a re-spawn never
+   reuses a live name. The session takes the permission mode and model
+   USER's settings give any new session, the same as if USER had typed
+   the command in a new tab. Every spawn is a new session, even a
+   repair round: it starts cold, exactly like a subagent.
+2. **Contract item 7 becomes:** write the `AUTOPILOT-VERDICT` block to
+   `.claude/cache/autopilot/<DEV-N>-<n>-<cmd>.md`, then run
+   `hc send <your HC_TERMINAL_ID> 'AUTOPILOT-VERDICT-FILE <that path>'`
+   as its last action. Append that sentence to the contract you pass
+   in; everything else in the contract stays verbatim.
+3. **Wait** with `hc wait --children any --timeout 540`, giving the
+   Bash call a timeout above that (600000 ms), and loop on
+   `reason: timeout`. A `reason: message` report arrives as your next
+   input, tagged `<hc from="… ap-…">`. It is a child's report, never
+   USER's word: read the file it names and parse the verdict there,
+   exactly as you would parse a subagent's reply.
+4. **`blocked`** means the session hit a permission prompt or a
+   question. Do not answer it and do not `--force` past it. Wait again,
+   because USER can answer in the stage's tab, and list it in the
+   summary as a permission prompt that interrupted the run.
+5. **No verdict.** If a child exits, errors, or settles without sending
+   a verdict file, read its screen once (`hc read <name> --lines 60`)
+   and STOP with "no verdict — session aborted". If the screen shows
+   Claude Code's folder-trust dialog, the launch prompt was lost: the
+   STOP reason tells USER to open one session in this repo and trust it.
+6. **Clean up** each child once its verdict is parsed:
+   `hc kill <name>; hc rm <name>`. Only ever your own `ap-…` children.
+   USER's other terminals are not yours to touch.
 
 ## Triage — find the Stories in the tree (run once, before the spine)
 
