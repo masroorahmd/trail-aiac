@@ -355,7 +355,8 @@ def ensure_gitignore_entries(
     block = (
         "\n# Trail framework — inlined Plane API tokens / UI passwords /\n"
         "# multi-tenant MCP wiring, plus per-session scratch state\n"
-        "# (.claude/cache/). Never commit.\n"
+        "# (.claude/cache/) and review-run evidence\n"
+        "# (.claude/review-runs/). Never commit.\n"
         + "\n".join(to_append) + "\n"
     )
     if existing and not existing.endswith("\n"):
@@ -790,7 +791,8 @@ def main() -> int:
             fresh_seeds.add(target_name)
 
     gitignore_added = ensure_gitignore_entries(
-        consumer_root, [".mcp.json", ".claude/agents/", ".claude/cache/"]
+        consumer_root,
+        [".mcp.json", ".claude/agents/", ".claude/cache/", ".claude/review-runs/"],
     )
 
     print(f"Installed framework into {consumer_claude}")
@@ -808,7 +810,7 @@ def main() -> int:
     else:
         print(
             f"{consumer_root}/.gitignore already covers .mcp.json + "
-            ".claude/agents/ + .claude/cache/"
+            ".claude/agents/ + .claude/cache/ + .claude/review-runs/"
         )
     print()
 

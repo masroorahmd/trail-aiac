@@ -39,7 +39,8 @@ and didn't get one, or expected a real browser and got a curl.
    `--headed --slowmo <ms>` (or the harness equivalent). That is what
    makes a run both watchable and fast: the window shows the clicks
    while `-v` prints a live `PASSED` / `FAILED` per step, and nothing
-   round-trips through a model between steps. Turn tracing and video on.
+   round-trips through a model between steps. Turn tracing on; a video
+   records nothing the watcher did not already see.
 2. **A DOM / accessibility-tree browser MCP** (Playwright MCP, Chrome
    DevTools MCP) when the steps need judgement a fixed script cannot
    encode. Element refs instead of coordinates, so clicks don't miss.
@@ -52,7 +53,8 @@ and didn't get one, or expected a real browser and got a curl.
 is watching, so "watchable" buys nothing and headless is simply faster:
 
 1. **The project's own harness, headless**, one test per numbered step,
-   tracing and video on so the run still leaves replayable evidence.
+   tracing on and the video **captioned** (*Captioned video* below), so
+   the run leaves evidence USER can watch at 2× instead of re-driving.
 2. **A DOM / accessibility-tree browser MCP.**
 3. **Not** a screenshot-driven, human-session-bound driver. Claude in
    Chrome needs a live browser window and per-site permission grants
@@ -154,10 +156,14 @@ so rather than reporting a clean sweep you never took.
 
 ## Evidence, and where it lands
 
-- Prefer the artefact directory the harness already writes to
-  (`test-results/`, `playwright-report/`, …) — it is normally
-  gitignored already. If you have to invent a path, use
-  `.claude/review-runs/<WORK-ITEM-ID>/`.
+- **One place: `.claude/review-runs/<WORK-ITEM-ID>/`**, and for a TM
+  review run one subfolder per round, `round-<N>/` — a repair round
+  re-drives only some steps, and must not overwrite the full run's
+  evidence. Point the harness's artefact and video options there rather
+  than leaving them in its defaults (`test-results/`, …), which the next
+  suite run wipes. `install.py` gitignores the folder; a later run of the
+  same round simply overwrites it, and RM deletes the ticket's folder
+  when it lands the branch.
 - **Evidence is never committed.** Traces, videos and screenshots are
   run output, not deliverables; under `/autopilot`, say in your verdict
   `NOTES` where they landed so the orchestrator can keep them out of
@@ -167,6 +173,35 @@ so rather than reporting a clean sweep you never took.
   with the change, and is named in your report — a review run that
   leaves a replayable spec behind pays for itself the second time it is
   needed.
+
+## Captioned video (unattended, pytest harness)
+
+Under `/autopilot` nobody watched, so the video is what USER reviews —
+and a silent recording of a headless run is a blur of clicks. Two
+scripts in `.claude/skills/browser-review/scripts/` turn it into one
+where every step is labelled with its number, the requirement IDs it
+checks and, once it ran, its verdict, plus one chapter per step. The
+captions come from the test log, never from your account of the run.
+Attended runs skip all of this.
+
+1. **Encode** each step's requirement IDs — the ones the *Review steps*
+   comment names — as `@pytest.mark.req("AC-3", "EC-2")` on its test,
+   and in the conftest call `review_video.video_started(page)` right
+   after the page is created, behind a guarded import (the docstring of
+   `review_video.py` has the snippet). Set `record_video_size` to the
+   viewport, or Playwright shrinks the video to 800 px.
+2. **Run** with the plugin and the round's folder:
+   `PYTHONPATH=.claude/skills/browser-review/scripts … pytest <spec>
+   -p review_video --review-video=.claude/review-runs/<ID>/round-<N>`.
+   It holds each step about 2.5 s on screen so the captions can be read.
+3. **Caption**: `python3 .claude/skills/browser-review/scripts/caption_video.py
+   .claude/review-runs/<ID>/round-<N> --burn`, and name `review.mp4`
+   under *Evidence*.
+
+No ffmpeg, a non-pytest harness that does not write `steps.json` (its
+shape is in `review_video.py`), or a driver that is not a harness at
+all: leave the video uncaptioned and say so in `NOTES`. A caption is
+never a reason to stop a run.
 
 ## Never retry for a greener result
 

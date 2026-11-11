@@ -819,6 +819,20 @@ definition; when no driver can be reached at all TM says the steps were
 not driven and the run continues — a missing browser is a disclosed gap,
 never a STOP, and never an invented click-through.
 
+**What USER watches afterwards.** Because nobody saw an unattended run,
+TM leaves a **captioned video** of it: each test is tagged with the
+requirement IDs its step names, a pytest plugin logs every step on the
+video's clock, and a script turns that log into subtitles —
+`Step 7 · AC-11, AC-13`, then `✓ PASS` or `✗ FAIL — <reason>` — plus
+one chapter per step, so USER can jump to a failed requirement or watch
+the whole run at 2× instead of re-driving it. The captions are built
+from what the test did, never from a model's narration. Video, trace
+and screenshots land in `.claude/review-runs/<DEV-N>/round-<N>/`
+(gitignored by `install.py`, one folder per repair round), TM's *Review
+run* comment names the file, and RM deletes the ticket's folder when it
+lands the branch. Attended runs record no video — USER watched them
+live. Mechanics: the `browser-review` skill's *Captioned video*.
+
 **One branch per Story.** The branch hangs on the Story whose children
 are the module slices (`backend` / `frontend` / `testing` /
 `documentation`); those children all share it. Hand autopilot an Epic —

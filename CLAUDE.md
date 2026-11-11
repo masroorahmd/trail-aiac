@@ -57,7 +57,13 @@ trail-aiac/
 │   │                              the last one carries the browser
 │   │                              driver ladder + evidence discipline
 │   │                              TM's review run and UD's visual gate
-│   │                              both follow)
+│   │                              both follow, and in scripts/ the
+│   │                              pytest plugin + ffmpeg step that
+│   │                              caption an unattended run's video
+│   │                              from its per-step log; evidence
+│   │                              lands in the gitignored
+│   │                              .claude/review-runs/<ID>/, which RM
+│   │                              deletes on landing)
 │   ├── commands/                  slash-command dispatchers
 │   │                              (/gm, /ba, /re, /sa, /sr, /bd,
 │   │                              /ud, /tm, /tw, /rm, /mm, /kickoff,

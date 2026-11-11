@@ -357,10 +357,13 @@ is the record, and a landing comment would only restate it.
 6. **Delete the branch**, local and remote, only after step 5's push
    came back clean. Use `git branch -d` and never `-d --force` / `-D`:
    `-d` refuses a branch whose commits are not on the target, which is
-   the last check that the landing actually happened.
+   the last check that the landing actually happened. In the same
+   breath remove `.claude/review-runs/<ID>/` if it exists: the review
+   run's evidence served the review, and the landing ends it.
 7. **Report** in chat: target branch and its new SHA, how many commits
-   landed, the branch deleted on both sides, and — because nobody
-   watched it — that you have **not** checked CI on the target.
+   landed, the branch (and any review-run evidence) deleted, and —
+   because nobody watched it — that you have **not** checked CI on the
+   target.
 
 Landing is a commit-action, so it earns a `★` menu row only once
 steps 1–3 have actually been run and came back clean. "The ticket is

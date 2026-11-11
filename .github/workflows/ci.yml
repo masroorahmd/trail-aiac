@@ -36,6 +36,8 @@ jobs:
           test -f "$consumer/.claude/trail-manifest.yaml"        # manifest written
           test -f "$consumer/.claude/commands/autopilot.md"      # deliverables copied
           test -f "$consumer/.claude/agents/general-manager.md"  # 11-persona set present
+          test -f "$consumer/.claude/skills/browser-review/scripts/caption_video.py"  # skill scripts copied
+          grep -qxF '.claude/review-runs/' "$consumer/.gitignore"  # evidence never committed
           echo "stage-1 smoke OK"
 
       - name: Populated render — all eleven personas + no leftover placeholders
