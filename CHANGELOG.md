@@ -13,6 +13,16 @@ page-based, per-persona-MCP** design (0.1.0) to the current
 
 ### Added
 
+- **Handover signal + `trail` herdr mod** — after a persona reassigns a
+  work-item, `handover-signal.py` labels its herdr terminal
+  `trail.handover=<to> <ID> <time>` (`herdr.handover_signal`, default
+  `on`). The new herdr-app mod in `herdr/mods/trail/` names unnamed
+  tabs after their persona and unnamed spaces after their ticket, shows
+  pending handovers and persona sessions in a side panel, and posts a
+  toast whose click goes to the receiving persona's tab, or opens one.
+  Starting the turn stays USER's click. The mod is installed by hand on
+  the window's computer (`herdr/README.md`). The `hc` helpers now live
+  in `claude/hooks/herdr_hc.py`, shared by both hooks.
 - **`/autopilot` stages as herdr sessions** — with
   `herdr.autopilot_sessions: on` (default `off`) and the run started in
   a herdr terminal, each persona stage runs as its own interactive

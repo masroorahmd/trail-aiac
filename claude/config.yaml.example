@@ -299,9 +299,20 @@ hooks:
 #                 settings give any new session. Needs a repo Claude Code
 #                 already trusts. Without herdr it falls back to `off`
 #                 and says so in the summary.
+#
+#   handover_signal — after a persona reassigns a work-item in Plane,
+#                     label its own terminal `trail.handover=<to> <ID>
+#                     <time>`. The `trail` herdr mod (trail-aiac's
+#                     herdr/mods/trail) turns that into a toast and a
+#                     marked tab, so USER sees which persona has work
+#                     next. It never starts that persona's turn.
+#
+#     on          Default.
+#     off         No label.
 herdr:
   enabled: auto
   autopilot_sessions: off
+  handover_signal: on
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a

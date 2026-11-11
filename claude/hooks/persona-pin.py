@@ -46,13 +46,13 @@ path, so there is no lost update to lose.
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
 import time
 
+import herdr_hc
+from herdr_hc import config_value
+
 PIN_DIR = os.path.join(".claude", "cache", "persona")
-CONFIG = os.path.join(".claude", "config.yaml")
 
 # Session ids come from the harness, but they name a file, so they are
 # treated as untrusted input.
@@ -78,15 +78,8 @@ ANY = "*"
 TITLE_MODES = ("on", "off")
 DEFAULT_TITLE_MODE = "on"
 
-HERDR_MODES = ("auto", "off")
-DEFAULT_HERDR_MODE = "auto"
-
 # The work-item the command was started on: `/re CRTHVN-198 …`.
 TICKET_RE = re.compile(r"\b([A-Z][A-Z0-9]{1,9}-[0-9]+)\b")
-
-# A label call talks to a local socket; anything slower is a core in
-# trouble, and USER's prompt must not wait on it.
-HC_TIMEOUT_SECONDS = 2
 
 
 def persona_for(root, command):
@@ -109,35 +102,6 @@ def persona_for(root, command):
     return referenced.pop() if len(referenced) == 1 else ANY
 
 
-def config_value(root, block, key, allowed, default):
-    """`<block>.<key>` from config.yaml, or the default.
-
-    A line scan, not a YAML parser: hooks stay dependency-free, and a
-    config seeded before the key existed simply gets the default.
-    """
-    try:
-        with open(os.path.join(root, CONFIG), encoding="utf-8") as handle:
-            lines = handle.read().splitlines()
-    except OSError:
-        return default
-
-    head = re.compile(rf"^{re.escape(block)}:\s*(#.*)?$")
-    item = re.compile(rf"^\s+{re.escape(key)}:\s*([a-z]+)\s*(#.*)?$")
-    inside = False
-    for line in lines:
-        if head.match(line):
-            inside = True
-            continue
-        if not inside:
-            continue
-        entry = item.match(line)
-        if entry and entry.group(1) in allowed:
-            return entry.group(1)
-        if line.strip() and not line.startswith((" ", "\t")):
-            break
-    return default
-
-
 def title_mode(root):
     """`hooks.session_title`, defaulting for configs seeded before it."""
     return config_value(
@@ -148,41 +112,23 @@ def title_mode(root):
 def label_terminal(pin, prompt, root):
     """Label this herdr terminal with the persona and work-item.
 
-    Best-effort and silent: no herdr, no `hc`, a slow core or a refused
-    call all leave USER's prompt exactly as it was. The ticket label is
-    cleared when the command names none, so a terminal that moved on
-    from a Story never keeps advertising it.
+    The ticket label is cleared when the command names none, so a
+    terminal that moved on from a Story never keeps advertising it.
     """
-    terminal = os.environ.get("HC_TERMINAL_ID")
-    if not terminal:
+    found = herdr_hc.terminal(root)
+    if not found:
         return
-    if config_value(
-        root, "herdr", "enabled", HERDR_MODES, DEFAULT_HERDR_MODE
-    ) == "off":
-        return
-    hc = shutil.which("hc") or shutil.which("herdr-core")
-    if not hc:
-        return
-
+    hc, address = found
     persona = pin["command"] if pin["persona"] == ANY else pin["persona"]
     ticket = TICKET_RE.search(prompt)
-    try:
-        subprocess.run(
-            [
-                hc,
-                "label",
-                terminal,
-                f"trail.persona={persona}",
-                f"trail.ticket={ticket.group(1) if ticket else ''}",
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=HC_TIMEOUT_SECONDS,
-            check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return
+    herdr_hc.label(
+        hc,
+        address,
+        {
+            "trail.persona": persona,
+            "trail.ticket": ticket.group(1) if ticket else "",
+        },
+    )
 
 
 def rename(pin, root):

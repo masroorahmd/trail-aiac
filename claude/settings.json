@@ -81,6 +81,18 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__plane__update_work_item|mcp__plane__create_work_item",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$HC_TERMINAL_ID\" ] && [ -f .claude/hooks/handover-signal.py ] && python3 .claude/hooks/handover-signal.py || true",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

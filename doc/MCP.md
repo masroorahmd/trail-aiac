@@ -143,6 +143,17 @@ than by tab name. It needs `HC_TERMINAL_ID` in the environment and `hc`
 on PATH, gives up silently after two seconds, and `herdr.enabled: off`
 in `config.yaml` turns it off.
 
+A second hook, `handover-signal.py` (PostToolUse on
+`update_work_item` / `create_work_item`), covers the handover. When a
+call sets `assignees`, it resolves the first assignee that is not the
+caller through the plane-id-cache's `members.by-email` (the local part
+is the persona username, USER's own address becomes `user`) and labels
+the *calling* terminal `trail.handover=<to> <ID> <unix time>`. It never
+writes to the receiver's terminal and never starts its turn. The
+`trail` herdr mod in `herdr/mods/trail/` reads the label, posts a
+toast, and on a click goes to the receiver's tab in the same space or
+opens one. `herdr.handover_signal: off` turns the label off.
+
 **A `fork` subagent is the hole that guard cannot see, so it has its
 own.** A fork inherits the caller's whole context, which under a
 `/<persona>` command includes the Plane tools and that persona's API

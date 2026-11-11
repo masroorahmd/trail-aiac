@@ -151,6 +151,11 @@ trail-aiac/
 │   │                              labels it `trail.persona` / `trail.ticket` via
 │   │                              `hc label` (`herdr.enabled: auto|off`, the
 │   │                              block future herdr features hang off);
+│   │                              `handover-signal.py` (PostToolUse on
+│   │                              Plane `update/create_work_item`) labels
+│   │                              the sender's terminal
+│   │                              `trail.handover=<to> <ID> <time>` for the
+│   │                              herdr mod; both share `herdr_hc.py`;
 │   │                              `plane-persona-guard.py`
 │   │                              (PreToolUse/`mcp__plane__*`) denies a Plane
 │   │                              call whose `persona` argument disagrees, at
@@ -309,6 +314,11 @@ trail-aiac/
 │                                  touched. Bootstrap once from a canonical
 │                                  consumer, then link N consumers
 │                                  idempotently.
+│
+├── herdr/                         optional herdr-app mod (`mods/trail`):
+│                                  persona tab names, handover toasts.
+│                                  Copied by hand onto the window's
+│                                  computer, never by install.py.
 │
 ├── doc/                           public docs — see index below
 ├── avatars/                       11 persona PNGs + generator source
