@@ -249,6 +249,7 @@ what's missing. Do not install without confirmation.
 | `openssl` | vault password generation | almost always present |
 | `ansible` ≥ 2.15 | scenarios 1 + 2 only | `pip install --user ansible` or distro pkg |
 | `ssh` | scenarios 1 + 2 only | distro pkg |
+| herdr (`herdr-app`, `hc`) | optional: persona tabs, side panel, handover toasts | never install it yourself; only note whether it is here |
 
 After the table, ask the scenario question:
 
@@ -554,7 +555,32 @@ populated state and writes `settings.local.json`, `.mcp.json`, and
 re-templated `<consumer>/.claude/agents/*.md` (mode 0600). If it
 reports anything missing, fix and re-run.
 
-After this step, persist (`last_step_completed: 7`).
+Then settle **herdr** (optional; see `doc/INSTALLATION.md` § *Optional:
+herdr*). The `trail` herdr-app mod lives on the computer that shows the
+herdr window, which may not be this one.
+
+- If the install.py output has a `herdr mod: … installed` or
+  `… up to date` line, herdr is on this computer and the mod is in
+  place. Say so in one line.
+- If it has no `herdr mod:` line, ask once: *"Do you use herdr? If so,
+  does its window run on this computer or another one?"*
+  - No herdr: nothing to do.
+  - Another computer: ask for its SSH host and run
+    `python3 /path/to/framework/bin/herdr_mod.py --ssh <host>`. If SSH
+    needs a password or a key touch, it cannot work from your shell:
+    hand the user that exact command with the `!` prefix instead.
+  - This computer, but no line: herdr-app has never run here. Tell the
+    user to open herdr once, then re-run step 7.
+- If a line says **edited since the last install** or **not installed
+  by this script**, a `trail` mod is already there that the script did
+  not leave (an edit, an earlier hand copy, or someone else's mod).
+  Show the line and ask before adding `--force`; never add it on your
+  own.
+- Mention once that `herdr.autopilot_sessions` (default `off`) makes
+  `/autopilot` run each stage in its own herdr tab. Do not change it.
+
+After this step, persist (`last_step_completed: 7`, `herdr`: `local` /
+`remote:<host>` / `none`).
 
 ## Step 8 — Closeout card
 
@@ -595,6 +621,13 @@ Rotating credentials
   After rotating an API token in Plane, re-run:
     ansible-playbook ansible/plane.yml --tags plane_users
     /path/to/framework/bin/install.py /path/to/consumer
+
+herdr (only if used)
+--------------------
+  mod:     <installed here | installed on <host> | not used>
+  update:  re-running install.py updates it here; for a window
+           elsewhere: python3 bin/herdr_mod.py --ssh <host>
+  knobs:   herdr: block in <consumer>/.claude/config.yaml
 
 Use the framework
 -----------------

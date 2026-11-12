@@ -217,6 +217,15 @@ boot still stop the run. **It never merges and never closes:** one feature
 branch per Story, pushed and left standing, handed back `In Review` and
 assigned to you.
 
+**In [herdr](https://herdr.dev)** — optional. Run each persona in its own herdr
+tab and Trail labels the sessions, names the tabs after their persona, and
+shows a side panel with each ticket's sessions. When a persona hands a ticket
+on in Plane, a toast names the receiver, and one click takes you to its tab.
+Starting the next turn stays your click. With `herdr.autopilot_sessions: on`,
+`/autopilot` runs each stage as its own herdr tab you can watch and take over.
+The install helper sets it up; see
+[`doc/INSTALLATION.md`](doc/INSTALLATION.md) § *Optional: herdr*.
+
 ## Spec-driven, without the document-pile
 
 Each hand-off produces the artefact a traditional spec document would have

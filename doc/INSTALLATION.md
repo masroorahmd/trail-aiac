@@ -66,6 +66,11 @@ Whatever scenario applies, the controller needs:
   `~/.local/bin/`). Do **not** also run `rtk init` in a consumer:
   it writes its own hook into `settings.json`, which `install.py`
   overwrites on the next run. The framework's hook is that hook.
+- **[herdr](https://herdr.dev)** (optional) — a terminal app for coding
+  agents. Trail does not need it. When you run your persona sessions
+  in herdr, Trail labels them, shows them in a side panel, and signals
+  handovers; see *Optional: herdr* below. Nothing to install up front:
+  `install.py` sets up the herdr part when it finds herdr.
 - **`ansible` ≥ 2.15** and **`ssh`** (for scenarios 1 & 2 only).
 - **Private-CA Plane** trust configuration: if your Plane sits
   behind a self-signed or internal-PKI certificate (Caddy `tls
