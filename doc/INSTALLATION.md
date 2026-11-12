@@ -243,6 +243,20 @@ case that fits:
 
   It needs only `ssh` and `python3` on that host. Nothing else is
   copied or installed there.
+- **Window on a computer you cannot ssh *into*** (a Windows laptop that
+  attaches herdr to your Linux box, for example): pull instead. On the
+  window's computer, where `ssh <repo-host>` works because herdr uses
+  it too:
+
+  ```bat
+  cmd /c "ssh <repo-host> python3 <path-to>/trail-aiac/bin/herdr_mod.py --emit | python -"
+  ```
+
+  `--emit` prints a self-contained installer; `python -` runs it
+  against the local herdr-app home (`%APPDATA%\herdr-app` on Windows
+  when `~/.config/herdr-app` is not there; `HERDR_APP_HOME` overrides).
+  Use `cmd /c` from PowerShell so the pipe stays byte-exact. It needs
+  Python on that computer.
 
 Both paths share `bin/herdr_mod.py`, so they behave the same:
 

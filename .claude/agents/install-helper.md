@@ -569,6 +569,10 @@ herdr window, which may not be this one.
     `python3 /path/to/framework/bin/herdr_mod.py --ssh <host>`. If SSH
     needs a password or a key touch, it cannot work from your shell:
     hand the user that exact command with the `!` prefix instead.
+    If that host cannot be reached over ssh at all (typically a Windows
+    laptop that attaches herdr *to* this computer), give the user the
+    pull command to run there instead: `cmd /c "ssh <this host> python3
+    /path/to/framework/bin/herdr_mod.py --emit | python -"`.
   - This computer, but no line: herdr-app has never run here. Tell the
     user to open herdr once, then re-run step 7.
 - If a line says **edited since the last install** or **not installed

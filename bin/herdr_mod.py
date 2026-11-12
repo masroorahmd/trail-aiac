@@ -56,8 +56,13 @@ def app_home(explicit: str | None = None) -> Path | None:
     env = os.environ.get("HERDR_APP_HOME")
     if env:
         return Path(env).expanduser()
-    home = Path.home() / ".config" / "herdr-app"
-    return home if home.is_dir() else None
+    candidates = [Path.home() / ".config" / "herdr-app"]
+    if os.environ.get("APPDATA"):  # Windows
+        candidates.append(Path(os.environ["APPDATA"]) / "herdr-app")
+    for home in candidates:
+        if home.is_dir():
+            return home
+    return None
 
 
 def generated(rel: Path) -> bool:
@@ -72,7 +77,7 @@ def generated(rel: Path) -> bool:
 
 
 def bundle(source: Path) -> dict[str, bytes]:
-    """The mod's own files, relative path → bytes."""
+    """The mod's own files, relative path -> bytes."""
     files = {}
     for path in sorted(source.rglob("*")):
         rel = path.relative_to(source)
@@ -195,8 +200,8 @@ def run(payload: dict) -> int:
     """The part that runs on the window's computer, locally or over ssh."""
     home = app_home(payload.get("app_home"))
     if home is None:
-        print("herdr-app home not found (~/.config/herdr-app). Open herdr once, "
-              "or pass --app-home.", file=sys.stderr)
+        print("herdr-app home not found (~/.config/herdr-app, or %APPDATA%\\herdr-app "
+              "on Windows). Open herdr once, or set HERDR_APP_HOME.", file=sys.stderr)
         return 1
     if payload.get("uninstall"):
         code, line = uninstall(home, payload.get("force", False))
@@ -235,17 +240,29 @@ def payload_for(root: Path, args) -> dict:
     }
 
 
-def over_ssh(host: str, payload: dict) -> int:
-    """Run `run(payload)` on HOST with nothing but its python3."""
+CLI_GUARD = 'if __name__ == "__main__" and REMOTE_FLAG not in sys.argv:'
+
+
+def program(payload: dict) -> str:
+    """This file as a self-contained program that runs `run(payload)`.
+
+    ASCII only and with the CLI switched off, so it survives any shell
+    pipe (PowerShell re-encodes text) and needs no arguments.
+    """
     source = Path(__file__).read_text(encoding="utf-8")
-    program = (
-        source
+    assert CLI_GUARD in source
+    return (
+        source.replace(CLI_GUARD, "if False:")
         + "\n\nimport sys as _s\n"
         + f"_s.exit(run(__import__('json').loads({json.dumps(json.dumps(payload))})))\n"
     )
+
+
+def over_ssh(host: str, payload: dict) -> int:
+    """Run `run(payload)` on HOST with nothing but its python3."""
     try:
         r = subprocess.run(
-            ["ssh", host, "python3", "-", REMOTE_FLAG], input=program, text=True
+            ["ssh", host, "python3", "-", REMOTE_FLAG], input=program(payload), text=True
         )
     except OSError as exc:
         print(f"ssh did not run: {exc}", file=sys.stderr)
@@ -260,12 +277,21 @@ def main() -> int:
         description="Install, update or remove Trail's herdr-app mod."
     )
     parser.add_argument("--ssh", metavar="HOST", help="install on the window's computer over ssh")
-    parser.add_argument("--app-home", help="herdr-app home (default: $HERDR_APP_HOME or ~/.config/herdr-app)")
+    parser.add_argument("--app-home", help="herdr-app home (default: $HERDR_APP_HOME, ~/.config/herdr-app, or %%APPDATA%%\\herdr-app on Windows)")
     parser.add_argument("--force", action="store_true", help="replace an edited or foreign 'trail' mod")
     parser.add_argument("--uninstall", action="store_true", help="remove the mod")
+    parser.add_argument(
+        "--emit", action="store_true",
+        help="print a self-contained installer for the window's computer to run "
+             "(`ssh <this host> python3 .../herdr_mod.py --emit | python -`), "
+             "for a window that cannot be reached over ssh",
+    )
     args = parser.parse_args()
 
     payload = payload_for(framework_root(), args)
+    if args.emit:
+        sys.stdout.write(program(payload))
+        return 0
     if args.ssh:
         return over_ssh(args.ssh, payload)
     return run(payload)
