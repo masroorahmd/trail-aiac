@@ -37,7 +37,7 @@ page-based, per-persona-MCP** design (0.1.0) to the current
 - **`/autopilot` stages as herdr sessions** — with
   `herdr.autopilot_sessions: on` (default `off`) and the run started in
   a herdr terminal, each persona stage runs as its own interactive
-  Claude Code session in a tab of the orchestrator's herdr space,
+  Claude Code session, listed under the orchestrator's herdr tab and
   started with the real `/<persona>` command. Every stage then carries
   its own persona pin instead of `*`, so the Plane identity guard checks
   it, and USER can watch, answer or take over a stage. Verdicts return

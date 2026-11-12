@@ -577,7 +577,7 @@ herdr window, which may not be this one.
   Show the line and ask before adding `--force`; never add it on your
   own.
 - Mention once that `herdr.autopilot_sessions` (default `off`) makes
-  `/autopilot` run each stage in its own herdr tab. Do not change it.
+  `/autopilot` run each stage as its own herdr session. Do not change it.
 
 After this step, persist (`last_step_completed: 7`, `herdr`: `local` /
 `remote:<host>` / `none`).

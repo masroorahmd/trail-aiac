@@ -222,7 +222,7 @@ tab and Trail labels the sessions, names the tabs after their persona, and
 shows a side panel with each ticket's sessions. When a persona hands a ticket
 on in Plane, a toast names the receiver, and one click takes you to its tab.
 Starting the next turn stays your click. With `herdr.autopilot_sessions: on`,
-`/autopilot` runs each stage as its own herdr tab you can watch and take over.
+`/autopilot` runs each stage as its own herdr session you can watch and take over.
 The install helper sets it up; see
 [`doc/INSTALLATION.md`](doc/INSTALLATION.md) § *Optional: herdr*.
 

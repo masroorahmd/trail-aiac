@@ -288,8 +288,8 @@ hooks:
 #
 #     off         As `Agent` subagents inside the orchestrator's own
 #                 session, all under its `*` pin. Default.
-#     on          Each stage is its own interactive Claude Code session
-#                 in a herdr tab of the orchestrator's space, started
+#     on          Each stage is its own interactive Claude Code session,
+#                 listed in herdr under the orchestrator's tab, started
 #                 with the real `/<persona>` command. The pin hook then
 #                 gives every stage its own identity, so
 #                 `hooks.persona_identity` checks each one, and USER can
