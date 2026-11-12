@@ -300,6 +300,14 @@ trail-aiac/
 │                                  and re-template the consumer's
 │                                  agents/*.md placeholders (mode 0600).
 │
+├── bin/herdr_mod.py               installs/updates/removes the herdr-app
+│                                  mod on the window's computer (stdlib;
+│                                  `--ssh <host>` for a remote window).
+│                                  install.py calls it when a herdr-app
+│                                  home exists here (`herdr.mod`). Never
+│                                  overwrites an edited mod; rolls back
+│                                  a version that fails `herdr-app check`.
+│
 ├── bin/link-shared.py             multi-consumer linker. For setups
 │                                  where one company has several consumer
 │                                  repos sharing one Plane workspace and
@@ -317,8 +325,8 @@ trail-aiac/
 │
 ├── herdr/                         optional herdr-app mod (`mods/trail`):
 │                                  persona tab names, handover toasts.
-│                                  Copied by hand onto the window's
-│                                  computer, never by install.py.
+│                                  Installed by bin/herdr_mod.py, not
+│                                  copied into consumers.
 │
 ├── doc/                           public docs — see index below
 ├── avatars/                       11 persona PNGs + generator source

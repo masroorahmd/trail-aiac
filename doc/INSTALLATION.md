@@ -212,6 +212,43 @@ re-installing the framework — including `--force-seed` for context —
 never touches those files. To reset memory, remove the directory
 manually and re-run.
 
+## Optional: herdr
+
+Trail works without [herdr](https://herdr.dev). Inside a herdr terminal
+its hooks label each session (persona, ticket, handovers), `/autopilot`
+can run each stage as its own herdr session, and a herdr-app **mod**
+shows all of it in the window: tabs named after their persona, a side
+panel, and a toast for each handover. Everything is switched in the
+`herdr:` block of `config.yaml`.
+
+The mod lives on the computer that shows the herdr window. Pick the
+case that fits:
+
+- **Window and repos on the same computer** (the usual case): nothing
+  to do. `install.py` installs the mod when it finds a herdr-app home
+  (`$HERDR_APP_HOME` or `~/.config/herdr-app`), and updates it on every
+  re-run. It prints one `herdr mod:` line. Opt out with `herdr.mod: off`
+  or `--no-herdr-mod`.
+- **Window on another computer** (herdr attached over SSH): run once
+  from the framework checkout, and again after framework updates:
+
+  ```bash
+  python3 bin/herdr_mod.py --ssh <window-host>
+  ```
+
+  It needs only `ssh` and `python3` on that host. Nothing else is
+  copied or installed there.
+
+Both paths share `bin/herdr_mod.py`, so they behave the same:
+
+- A mod you edited, or another mod already named `trail`, is never
+  overwritten. You get one line saying so; `--force` replaces it.
+- If `herdr-app` is on PATH, the new version must pass
+  `herdr-app check`. If it fails, the previous version is put back.
+- `--uninstall` removes the mod, with the same protection.
+
+Details on the labels and the mod: [`herdr/README.md`](../herdr/README.md).
+
 ## After install
 
 ```bash

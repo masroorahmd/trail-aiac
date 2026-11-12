@@ -13,6 +13,17 @@ page-based, per-persona-MCP** design (0.1.0) to the current
 
 ### Added
 
+- **herdr mod installer** — `bin/herdr_mod.py` installs, updates and
+  removes the `trail` herdr-app mod, stdlib only. `bin/install.py` runs
+  it when this computer has a herdr-app home (`herdr.mod: auto | off`,
+  `--no-herdr-mod`). `--ssh <host>` installs on a window's computer
+  that only has `ssh` and `python3`. It records what it installed,
+  never overwrites a mod someone edited (or a foreign `trail` mod)
+  without `--force`, and restores the previous version when
+  `herdr-app check` fails. CI covers install, re-run, edit protection
+  and uninstall. `herdr/mods/trail/RECIPE.md` describes the mod for
+  herdr's catalog. (`bin/herdr_mod.py`, `bin/install.py`,
+  `doc/INSTALLATION.md`, `.github/workflows/ci.yml`)
 - **Handover signal + `trail` herdr mod** — after a persona reassigns a
   work-item, `handover-signal.py` labels its herdr terminal
   `trail.handover=<to> <ID> <time>` (`herdr.handover_signal`, default

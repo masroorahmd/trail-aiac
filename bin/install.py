@@ -701,6 +701,42 @@ def render_persona_files(
 # Driver
 # ---------------------------------------------------------------------------
 
+def install_herdr_mod(
+    framework_root: Path, consumer_claude: Path, disabled: bool
+) -> str | None:
+    """Install or update the herdr-app mod when herdr-app lives here.
+
+    Silent (None) when herdr-app never ran on this computer — most
+    installs. The mod is per computer, not per consumer, so N consumers
+    installing it is one install and N-1 "up to date" lines. Never fails
+    the install: a refusal (edited mod, failed check) is one line of
+    output and the rest goes on. See bin/herdr_mod.py.
+    """
+    import herdr_mod
+
+    if disabled:
+        return None
+    config_path = consumer_claude / "config.yaml"
+    try:
+        config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        config = {}
+    herdr = config.get("herdr") or {}
+    # YAML reads a bare `off` as False.
+    if herdr.get("enabled") in ("off", False) or herdr.get("mod") in ("off", False):
+        return None
+    home = herdr_mod.app_home()
+    if home is None:
+        return None
+    files = herdr_mod.bundle(framework_root / "herdr" / "mods" / herdr_mod.MOD_NAME)
+    if not files:
+        return None
+    _code, line = herdr_mod.install(
+        home, files, herdr_mod.version(framework_root), force=False
+    )
+    return line
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Install the Trail framework into a consumer project."
@@ -715,6 +751,12 @@ def main() -> int:
         help="Also overwrite consumer-owned context/ from the .example "
              "sources. Does NOT touch config.yaml, credentials.yaml, "
              "agent-memory/, or settings.local.json.",
+    )
+    parser.add_argument(
+        "--no-herdr-mod",
+        action="store_true",
+        help="Do not install or update the herdr-app mod on this computer, "
+             "even when herdr-app is here (same as `herdr.mod: off`).",
     )
     args = parser.parse_args()
 
@@ -813,6 +855,11 @@ def main() -> int:
             ".claude/agents/ + .claude/cache/ + .claude/review-runs/"
         )
     print()
+
+    herdr_line = install_herdr_mod(framework_root, consumer_claude, args.no_herdr_mod)
+    if herdr_line:
+        print(f"herdr mod: {herdr_line}")
+        print()
 
     # Stage 2 — render MCP wiring iff config + credentials look populated.
     ready, reasons = render_ready(consumer_claude)

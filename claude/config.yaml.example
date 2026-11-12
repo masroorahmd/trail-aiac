@@ -309,10 +309,20 @@ hooks:
 #
 #     on          Default.
 #     off         No label.
+#
+#   mod — the `trail` herdr-app mod (tab names, side panel, handover
+#         toasts). It lives on the computer that shows the herdr window.
+#
+#     auto        `bin/install.py` installs and updates it when that
+#                 computer has a herdr-app home. Default. For a window
+#                 on another computer, run `python3 bin/herdr_mod.py
+#                 --ssh <host>` from the framework checkout instead.
+#     off         `install.py` leaves the mod alone.
 herdr:
   enabled: auto
   autopilot_sessions: off
   handover_signal: on
+  mod: auto
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-
 # initiated turn drives an already-framed Story — or every Story in a

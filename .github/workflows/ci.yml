@@ -40,6 +40,25 @@ jobs:
           grep -qxF '.claude/review-runs/' "$consumer/.gitignore"  # evidence never committed
           echo "stage-1 smoke OK"
 
+      - name: herdr mod — install, idempotent re-run, edit protection, uninstall
+        run: |
+          set -euo pipefail
+          home="$(mktemp -d)"
+          consumer="$(mktemp -d)"
+          HERDR_APP_HOME="$home" uv run --no-project --with pyyaml python bin/install.py "$consumer" | grep -q "herdr mod: .*installed"
+          test -f "$home/mods/trail/main.js"
+          test -f "$home/mods/trail/.trail-install.json"
+          python3 bin/herdr_mod.py --app-home "$home" | grep -q "up to date"
+          echo "// local edit" >> "$home/mods/trail/main.js"
+          if python3 bin/herdr_mod.py --app-home "$home"; then   # edited: must refuse
+            echo "edited mod was overwritten"; exit 1
+          fi
+          grep -q "local edit" "$home/mods/trail/main.js"        # and kept
+          python3 bin/herdr_mod.py --app-home "$home" --force | grep -q updated
+          python3 bin/herdr_mod.py --app-home "$home" --uninstall | grep -q removed
+          test ! -e "$home/mods/trail"
+          echo "herdr mod smoke OK"
+
       - name: Populated render — all eleven personas + no leftover placeholders
         run: |
           set -euo pipefail

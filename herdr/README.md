@@ -31,13 +31,14 @@ What it does:
   That click is USER starting the turn. The mod never types into a
   session.
 
-Install it on the window's computer:
+Installing it: see [`doc/INSTALLATION.md`](../doc/INSTALLATION.md)
+§ *Optional: herdr*. In short, `bin/install.py` installs and updates it
+when the herdr window runs on the same computer, and
+`python3 bin/herdr_mod.py --ssh <host>` does it for a window on another
+computer. Don't copy the folder by hand: the script records what it
+installed, so later updates can tell your own edits from old versions.
 
-```sh
-mkdir -p ~/.config/herdr-app/mods
-cp -r herdr/mods/trail ~/.config/herdr-app/mods/
-herdr-app check ~/.config/herdr-app/mods/trail
-```
-
-Herdr picks it up on save and docks it on the right the first time.
-To update, copy the folder again. To remove it, delete the folder.
+`RECIPE.md` describes the mod for herdr's catalog (herdr.dev/mods): an
+agent with an empty folder can rebuild it from that brief. To list it,
+the repo needs the GitHub topic `herdr-mod` and a `preview.png`
+(a screenshot of the panel) next to the recipe.
