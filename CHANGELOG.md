@@ -13,6 +13,16 @@ page-based, per-persona-MCP** design (0.1.0) to the current
 
 ### Added
 
+- **Handover dispatch** — with `herdr.handover_dispatch: on` (default
+  `off`), a persona's Plane reassignment to another persona starts that
+  persona's turn in its own tab of the same space: an idle Claude Code
+  session gets `/<cmd> <ID>` typed with `hc keys` (`hc send` would wrap
+  it in `<hc>` tags and the persona would not pin), a tab holding only a
+  shell gets `claude "/<cmd> <ID>"`, a busy session is left to the
+  toast, and a missing tab is opened. Lanes (`/autopilot` and its
+  stages) never dispatch. The mod's click selects a tab already named
+  for the persona. (`claude/hooks/herdr_dispatch.py`,
+  `handover-signal.py`, `herdr/mods/trail/main.js`)
 - **herdr mod installer** — `bin/herdr_mod.py` installs, updates and
   removes the `trail` herdr-app mod, stdlib only. `bin/install.py` runs
   it when this computer has a herdr-app home (`herdr.mod: auto | off`,

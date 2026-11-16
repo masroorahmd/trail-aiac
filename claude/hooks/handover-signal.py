@@ -20,6 +20,11 @@ the plane-id-cache's `members.by-email` (its local part is the persona
 username). USER's own address resolves to `user`. A self-assignment, an
 unknown UUID or a missing cache is no signal.
 
+With `herdr.handover_dispatch: on` it goes one step further and starts
+the receiving persona's turn in its own tab of the same space
+(`herdr_dispatch.py`). That is off by default: it is a persona starting
+another persona's turn, which the framework otherwise leaves to USER.
+
 Best-effort and silent, like every herdr hook: it never blocks, never
 fails the tool call, and does nothing outside herdr or with
 `herdr.handover_signal: off`.
@@ -31,6 +36,7 @@ import re
 import sys
 import time
 
+import herdr_dispatch
 import herdr_hc
 from herdr_hc import config_value
 
@@ -39,6 +45,9 @@ AGENTS_DIR = os.path.join(".claude", "agents")
 
 SIGNAL_MODES = ("on", "off")
 DEFAULT_SIGNAL_MODE = "on"
+
+DISPATCH_MODES = ("on", "off")
+DEFAULT_DISPATCH_MODE = "off"
 
 ID_RE = re.compile(r"^[A-Z][A-Z0-9]{1,9}-[0-9]+$")
 UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -173,6 +182,10 @@ def main():
     herdr_hc.label(
         hc, address, {"trail.handover": f"{receiver} {item} {int(time.time())}"}
     )
+    if receiver != "user" and config_value(
+        root, "herdr", "handover_dispatch", DISPATCH_MODES, DEFAULT_DISPATCH_MODE
+    ) == "on":
+        herdr_dispatch.dispatch(hc, address, receiver, item, root)
     return 0
 
 

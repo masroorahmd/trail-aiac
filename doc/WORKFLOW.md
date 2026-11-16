@@ -764,6 +764,13 @@ take it over. The verdict comes back through `hc send` as a file path.
 The spine, the contract and the gates are the same in both modes;
 without herdr the run falls back to subagents and says so.
 
+**Handover dispatch (herdr, opt-in).** Outside autopilot, a space can
+hold one herdr tab per persona. With `herdr.handover_dispatch: on`, a
+persona's Plane reassignment to another persona makes that persona's tab
+start the turn itself (`/<cmd> <ID>`), instead of waiting for USER to
+click the toast. It is off by default because it is a persona, not USER,
+starting the turn. Details in [`herdr/README.md`](../herdr/README.md).
+
 **There is no security pass after the Technical Writer.** TW lands
 after SR's diff pass by construction, so its edits are always
 post-review; that is the design, not a gap. A docs-only diff is what

@@ -155,7 +155,10 @@ trail-aiac/
 │   │                              Plane `update/create_work_item`) labels
 │   │                              the sender's terminal
 │   │                              `trail.handover=<to> <ID> <time>` for the
-│   │                              herdr mod; both share `herdr_hc.py`;
+│   │                              herdr mod, and with
+│   │                              `herdr.handover_dispatch: on` starts the
+│   │                              receiver's turn in its own tab
+│   │                              (`herdr_dispatch.py`); both share `herdr_hc.py`;
 │   │                              `plane-persona-guard.py`
 │   │                              (PreToolUse/`mcp__plane__*`) denies a Plane
 │   │                              call whose `persona` argument disagrees, at
@@ -372,7 +375,10 @@ trail-aiac/
   service for the Claude Code CLI do not allow a third-party harness
   driving CC beyond user-initiated turns. So Plane's `assignee` field
   is the user's TODO list, not an auto-trigger; every persona turn is
-  a slash command the human issues.
+  a slash command the human issues. The one opt-in exception is
+  `herdr.handover_dispatch: on` (default `off`), where USER has
+  decided that a persona's handover types the next persona's command
+  into that persona's herdr tab (`hooks/herdr_dispatch.py`).
 - **Personas run in the main loop, not as subagents.** Each
   `/<persona>` slash command puts the main loop into the persona's
   role for this and any follow-up turns, until USER says "done" /

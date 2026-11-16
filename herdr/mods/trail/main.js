@@ -165,6 +165,11 @@ export default class Trail extends View {
     if (h.target) return { name: "agent.focus", args: { terminal: h.target.agent.address } };
     const cmd = CMD[h.to];
     if (!cmd) return { name: "agent.focus", args: { terminal: h.sender.address } };
+    // A tab already named for the persona (its session may have ended,
+    // leaving a shell): go there rather than open a second one.
+    const space = spaces().find((p) => p.id === h.sender.space);
+    const named = space?.tabs.find((t) => t.named && t.name.toLowerCase() === cmd);
+    if (named) return { name: "tab.select", args: { id: named.id } };
     const pane = panes().find((p) => p.pane === h.sender.pane);
     return {
       name: "tab.new",

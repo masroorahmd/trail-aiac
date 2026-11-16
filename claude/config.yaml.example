@@ -310,6 +310,22 @@ hooks:
 #     on          Default.
 #     off         No label.
 #
+#   handover_dispatch — after such a handover, start the receiving
+#                       persona's turn in its own tab of the same space,
+#                       so that tab "runs off" without USER typing
+#                       `/<cmd> <ID>`. A tab holding an idle Claude Code
+#                       session gets the command typed in; a tab with
+#                       only a shell gets `claude "/<cmd> <ID>"`; a busy
+#                       session is left alone (the toast stays); a
+#                       missing tab is opened. Only a persona hands
+#                       over — `/autopilot` and its stages never do.
+#                       This is a persona starting another persona's
+#                       turn, which the framework otherwise leaves to
+#                       USER: turning it on is USER's decision.
+#
+#     off         Default. The handover is a label and a toast.
+#     on          Dispatch as described.
+#
 #   mod — the `trail` herdr-app mod (tab names, side panel, handover
 #         toasts). It lives on the computer that shows the herdr window.
 #
@@ -322,6 +338,7 @@ herdr:
   enabled: auto
   autopilot_sessions: off
   handover_signal: on
+  handover_dispatch: off
   mod: auto
 
 # Autopilot — the unattended lane (`/autopilot DEV-N`). One human-

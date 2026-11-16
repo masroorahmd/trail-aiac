@@ -11,6 +11,13 @@ and the mod in this folder shows those labels in the herdr window.
 | `trail.handover` | `handover-signal.py`, after a Plane reassignment | `<to> <ID> <unix time>`, on the sending terminal |
 | `trail.lane` | `/autopilot` with `herdr.autopilot_sessions: on` | `autopilot` on each stage session |
 
+With `herdr.handover_dispatch: on` the handover also **starts** the
+receiving persona's turn in its tab of the same space (one tab per
+persona, named `BA`, `RE`, …): an idle session gets the command typed
+in, a tab with only a shell gets `claude "/<cmd> <ID>"`, a busy session
+is left alone, and a missing tab is opened. Default `off`: it is a
+persona starting another persona's turn. Lanes never dispatch.
+
 All of it is switched in the consumer's `config.yaml`, block `herdr:`
 (see `claude/config.yaml.example`).
 
