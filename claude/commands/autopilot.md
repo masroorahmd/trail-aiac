@@ -255,12 +255,12 @@ this file says *spawn* or *re-spawn* a persona, do this:
    ```sh
    hc run --bg --name <cmd> --cwd "$PWD" --label trail.lane=autopilot \
      -- claude "/<cmd> <DEV-N> AUTOPILOT-MODE — your full brief is in <brief path>; read it first and follow it." \
-        --name <persona> --allowedTools 'Bash(hc send:*)'
+        --name <CMD> --allowedTools 'Bash(hc send:*)'
    ```
 
-   `--name <persona>` (the username, `backend-developer`) names the
-   Claude Code session from its first second, before the pin hook
-   retitles it; without it the session shows a generated name.
+   `--name <CMD>` (the dispatcher in capitals, `BD`) names the Claude
+   Code session from its first second, before the pin hook retitles
+   it the same way; without it the session shows a generated name.
 
    `<cmd>` is the persona's dispatcher (`re`, `sa`, `sr`, `bd`, `ud`,
    `tm`, `tw`, `rm`), and it is also the name herdr shows for the stage.

@@ -139,15 +139,24 @@ def rename(pin, root):
     has no single persona to name, so it keeps its command word. Same
     distinction the pin already makes, so nothing new is maintained
     here. No project in the title: the harness already shows the cwd.
+
+    Inside a herdr terminal the persona is its command code instead
+    (`RE`): herdr lists the session title next to the space, and the
+    tab is already named `RE`, so the spelled-out name only repeats it
+    at a width that gets cut off.
     """
     if title_mode(root) == "off":
         return
     persona = pin["persona"]
+    if persona != ANY and herdr_hc.terminal(root):
+        persona_title = pin["command"].upper()
+    else:
+        persona_title = pin["command"] if persona == ANY else persona
     json.dump(
         {
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
-                "sessionTitle": pin["command"] if persona == ANY else persona,
+                "sessionTitle": persona_title,
             }
         },
         sys.stdout,

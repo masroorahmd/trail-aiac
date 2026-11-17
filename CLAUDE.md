@@ -141,7 +141,7 @@ trail-aiac/
 │   │                              the agents/*.md file that command loads, so a
 │   │                              twelfth persona needs no hook change; it also
 │   │                              retitles the session after that persona — the
-│   │                              username spelled out, or a lane's own word
+│   │                              command code (`RE`) in herdr, else the username, or a lane's own word
 │   │                              (`autopilot`) — through the `sessionTitle` a
 │   │                              UserPromptSubmit hook may return, so two terminals
 │   │                              in one repo are told apart in `/resume` and in the
